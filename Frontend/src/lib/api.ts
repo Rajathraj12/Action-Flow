@@ -84,11 +84,41 @@ export interface BackendMessage {
   time: string;
   createdAt: string;
   status: "sent" | "delivered" | "read";
+  isEdited?: boolean;
+  editedAt?: string;
+  isDeletedForEveryone?: boolean;
+  deliveredAt?: string;
+  readAt?: string;
   sender?: {
     id: string;
     displayName: string;
     initials: string;
   };
+}
+
+export interface MessageInfoResponse {
+  id: string;
+  text: string;
+  status: "sent" | "delivered" | "read";
+  isEdited: boolean;
+  editedAt?: string;
+  isDeletedForEveryone: boolean;
+  sentAt: string;
+  deliveredAt?: string | null;
+  readAt?: string | null;
+  sender: {
+    id: string;
+    displayName: string;
+    email: string;
+    initials: string;
+  };
+  recipient?: {
+    id: string;
+    displayName: string;
+    email: string;
+    initials: string;
+    online: boolean;
+  } | null;
 }
 
 export const api = {
@@ -108,5 +138,29 @@ export const api = {
     request<{ message: BackendMessage }>(`/api/conversations/${conversationId}/messages`, {
       method: "POST",
       body: JSON.stringify({ text }),
+    }),
+  editMessage: (conversationId: string, messageId: string, text: string) =>
+    request<{ success: boolean; message: { id: string; text: string; isEdited: boolean; editedAt: string } }>(
+      `/api/conversations/${conversationId}/messages/${messageId}`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ text }),
+      }
+    ),
+  deleteMessage: (conversationId: string, messageId: string, deleteType: "everyone" | "me") =>
+    request<{ success: boolean; deleteType: string; messageId: string }>(
+      `/api/conversations/${conversationId}/messages/${messageId}`,
+      {
+        method: "DELETE",
+        body: JSON.stringify({ deleteType }),
+      }
+    ),
+  getMessageInfo: (conversationId: string, messageId: string) =>
+    request<{ info: MessageInfoResponse }>(
+      `/api/conversations/${conversationId}/messages/${messageId}/info`
+    ),
+  markConversationRead: (conversationId: string) =>
+    request<{ success: boolean; count: number }>(`/api/conversations/${conversationId}/read`, {
+      method: "POST",
     }),
 };

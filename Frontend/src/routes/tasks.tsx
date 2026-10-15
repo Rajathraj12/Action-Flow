@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { ArrowLeft, CheckCircle2, CircleDashed, CircleDot, XCircle, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -9,14 +10,9 @@ export const Route = createFileRoute("/tasks")({
   component: TasksPage,
 });
 
-const mockTasks = [
-  { id: 1, title: "Review Q3 marketing budget", status: "in-progress", deadline: "Today, 5:00 PM", priority: "High" },
-  { id: 2, title: "Update client presentation slides", status: "pending", deadline: "Tomorrow, 12:00 PM", priority: "Medium" },
-  { id: 3, title: "Send weekly report to stakeholders", status: "completed", deadline: "Yesterday", priority: "High" },
-  { id: 4, title: "Schedule alignment meeting with design team", status: "overdue", deadline: "Mon, 9:00 AM", priority: "Low" },
-];
-
 function TasksPage() {
+  const [tasks, setTasks] = useState<any[]>([]);
+
   return (
     <>
       <div className="flex flex-col flex-1 h-full w-full">
@@ -34,9 +30,19 @@ function TasksPage() {
           </div>
 
           <div className="grid gap-4">
-            {mockTasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
-            ))}
+            {tasks.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-border p-12 text-center">
+                <CheckCircle2 className="mx-auto h-10 w-10 text-muted-foreground/30 mb-3" />
+                <h3 className="font-semibold text-foreground text-base">No tasks assigned</h3>
+                <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto">
+                  You are all caught up! When teammates assign tasks to you, they will appear here.
+                </p>
+              </div>
+            ) : (
+              tasks.map((task) => (
+                <TaskCard key={task.id} task={task} />
+              ))
+            )}
           </div>
         </div>
       </main>

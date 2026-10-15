@@ -6,6 +6,12 @@ export interface IMessage extends Document {
   senderFirebaseUid: string;
   text: string;
   status: "sent" | "delivered" | "read";
+  isEdited: boolean;
+  editedAt?: Date;
+  isDeletedForEveryone: boolean;
+  deletedForUsers: Types.ObjectId[];
+  deliveredAt?: Date;
+  readAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,6 +46,30 @@ const MessageSchema = new Schema<IMessage>(
       enum: ["sent", "delivered", "read"],
       default: "sent",
     },
+    isEdited: {
+      type: Boolean,
+      default: false,
+    },
+    editedAt: {
+      type: Date,
+    },
+    isDeletedForEveryone: {
+      type: Boolean,
+      default: false,
+    },
+    deletedForUsers: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        default: [],
+      },
+    ],
+    deliveredAt: {
+      type: Date,
+    },
+    readAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,
@@ -48,5 +78,6 @@ const MessageSchema = new Schema<IMessage>(
 
 // Compound index for chronologically ordered messages in a conversation
 MessageSchema.index({ conversationId: 1, createdAt: 1 });
+MessageSchema.index({ conversationId: 1, deletedForUsers: 1 });
 
 export const Message = mongoose.model<IMessage>("Message", MessageSchema);

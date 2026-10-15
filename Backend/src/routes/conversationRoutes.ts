@@ -5,6 +5,7 @@ import { Conversation } from "../models/Conversation.js";
 import { ConversationMembership } from "../models/ConversationMembership.js";
 import { Message } from "../models/Message.js";
 import { User, IUser } from "../models/User.js";
+import { getIO } from "../socket/socketHandler.js";
 
 const router = Router();
 
@@ -272,17 +273,57 @@ router.get("/:id/messages", requireAuth, async (req: AuthenticatedRequest, res: 
       await membership.save();
     }
 
-    // Fetch messages in chronological order
-    const messages = await Message.find({ conversationId: id })
+    // Fetch messages in chronological order, omitting messages deleted by current user
+    const messages = await Message.find({
+      conversationId: id,
+      deletedForUsers: { $ne: currentUserId },
+    })
       .sort({ createdAt: 1 })
       .limit(limit)
-      .populate<{ sender: IUser }>("sender", "displayName initials")
+      .populate<{ sender: IUser }>("sender", "displayName initials email")
       .lean();
+
+    // Mark unread messages sent by the other party as "read"
+    const now = new Date();
+    const unreadMessages = messages.filter(
+      (m) => m.sender._id.toString() !== currentUserId?.toString() && m.status !== "read"
+    );
+
+    if (unreadMessages.length > 0) {
+      const unreadIds = unreadMessages.map((m) => m._id);
+      await Message.updateMany(
+        { _id: { $in: unreadIds } },
+        { $set: { status: "read", readAt: now } }
+      );
+      await Message.updateMany(
+        { _id: { $in: unreadIds }, deliveredAt: { $exists: false } },
+        { $set: { deliveredAt: now } }
+      );
+
+      try {
+        const io = getIO();
+        if (io) {
+          io.to(`conversation:${id}`).emit("messages_read", {
+            conversationId: id,
+            readAt: now,
+            readBy: currentUserId?.toString(),
+            messageIds: unreadIds.map((msgId) => msgId.toString()),
+          });
+        }
+      } catch (err) {
+        // Socket emission skipped if not ready
+      }
+    }
 
     const formattedMessages = messages.map((m) => {
       const isMe = m.sender._id.toString() === currentUserId?.toString();
       const date = new Date(m.createdAt);
       const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+      // If message was marked read just now, reflect it
+      const isNewlyRead = !isMe && m.status !== "read";
+      const status = isNewlyRead ? "read" : m.status;
+      const readAt = isNewlyRead ? now : m.readAt;
 
       return {
         id: m._id.toString(),
@@ -290,7 +331,12 @@ router.get("/:id/messages", requireAuth, async (req: AuthenticatedRequest, res: 
         text: m.text,
         time: timeStr,
         createdAt: m.createdAt,
-        status: m.status,
+        status: status,
+        isEdited: !!m.isEdited,
+        editedAt: m.editedAt,
+        isDeletedForEveryone: !!m.isDeletedForEveryone,
+        deliveredAt: m.deliveredAt,
+        readAt: readAt,
         sender: {
           id: m.sender._id.toString(),
           displayName: m.sender.displayName,

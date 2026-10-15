@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { ArrowLeft, Check, X, Sparkles, Users, LayoutDashboard, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -9,12 +10,8 @@ export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
 });
 
-const aiSuggestions = [
-  { id: 101, title: "Prepare Q4 roadmap presentation", assignee: "Sarah Connor", context: "Could you have the Q4 roadmap presentation ready by Thursday?", source: "Marketing Team Chat", deadline: "Thursday" },
-  { id: 102, title: "Review frontend architecture", assignee: "Stephen Smith", context: "Stephen, please review the new frontend architecture before the meeting.", source: "Engineering Sync", deadline: "Before meeting" },
-];
-
 function DashboardPage() {
+  const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
   return (
     <>
       <div className="flex flex-col flex-1 h-full w-full">
@@ -27,8 +24,8 @@ function DashboardPage() {
           
           {/* Overview Stats */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <StatCard icon={<LayoutDashboard />} title="Total Active Tasks" value="24" />
-            <StatCard icon={<Users />} title="Team Members" value="8" />
+            <StatCard icon={<LayoutDashboard />} title="Total Active Tasks" value="0" />
+            <StatCard icon={<Users />} title="Team Members" value="0" />
             <StatCard icon={<Sparkles className="text-purple-500" />} title="AI Extractions Pending" value={aiSuggestions.length.toString()} />
           </div>
 

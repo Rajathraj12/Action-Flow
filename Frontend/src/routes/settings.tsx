@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Bell, Key, Sparkles, CheckSquare, Users, HelpCircle, Monitor, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -14,6 +15,7 @@ type SettingTab = "none" | "Account" | "AI Extractions" | "Task Preferences" | "
 
 function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingTab>("none");
+  const { user } = useAuth();
 
   return (
     <>
@@ -28,11 +30,11 @@ function SettingsPage() {
           {/* Profile Section */}
           <div className="flex items-center gap-4 px-6 py-5 cursor-pointer hover:bg-muted/50 transition-colors">
             <div className="grid h-16 w-16 place-items-center rounded-full bg-primary/12 font-display text-xl font-semibold text-primary">
-              SS
+              {user?.initials || "U"}
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-lg font-semibold truncate">Stephen Smith</h2>
-              <p className="text-sm text-muted-foreground truncate">Available</p>
+              <h2 className="text-lg font-semibold truncate">{user?.displayName || "User"}</h2>
+              <p className="text-sm text-muted-foreground truncate">{user?.email || "Connected"}</p>
             </div>
           </div>
 
@@ -67,7 +69,7 @@ function SettingsPage() {
             <ThemeToggleOption title="Dark Mode" description="Switch between light and dark theme for the whole website" />
             
             <h3 className="px-6 pt-6 pb-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider">Security</h3>
-            <ListOption title="Email address" value="stephen.smith@example.com" />
+            <ListOption title="Email address" value={user?.email || "Connected"} />
             <ListOption title="Two-step verification" />
             <ListOption title="Active sessions" value="1 device" />
             <ListOption title="Delete account" danger />

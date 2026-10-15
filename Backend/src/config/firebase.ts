@@ -33,6 +33,12 @@ export function initFirebase(): void {
       });
       firebaseInitialized = true;
       console.log("[Firebase Admin] Initialized with environment credentials.");
+    } else if (projectId) {
+      admin.initializeApp({
+        projectId,
+      });
+      firebaseInitialized = true;
+      console.log(`[Firebase Admin] Initialized with Project ID: ${projectId}`);
     } else {
       console.warn(
         "[Firebase Admin] Notice: No Firebase Admin credentials found in environment. Running in development verification mode until FIREBASE_PROJECT_ID or FIREBASE_SERVICE_ACCOUNT_KEY is configured in .env."
@@ -54,14 +60,18 @@ export async function verifyFirebaseIdToken(token: string): Promise<VerifiedAuth
     throw new Error("Missing authentication token");
   }
 
-  // 1. If Firebase Admin is initialized with credentials, verify via Admin SDK
+  // 1. If Firebase Admin is initialized, verify via Admin SDK
   if (firebaseInitialized && admin.apps.length > 0) {
-    const decoded = await admin.auth().verifyIdToken(token);
-    return {
-      uid: decoded.uid,
-      email: decoded.email || `${decoded.uid}@actionflow.dev`,
-      displayName: decoded.name || decoded.email?.split("@")[0] || "User",
-    };
+    try {
+      const decoded = await admin.auth().verifyIdToken(token);
+      return {
+        uid: decoded.uid,
+        email: decoded.email || `${decoded.uid}@actionflow.dev`,
+        displayName: decoded.name || decoded.email?.split("@")[0] || "User",
+      };
+    } catch (adminErr: any) {
+      console.warn("[Firebase Admin] verifyIdToken note:", adminErr?.message || adminErr);
+    }
   }
 
   // 2. Development & Offline testing fallback when Firebase credentials are not yet set in .env
