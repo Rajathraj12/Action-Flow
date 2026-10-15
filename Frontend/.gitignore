@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.output/
+.tanstack/
+.wrangler/
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
