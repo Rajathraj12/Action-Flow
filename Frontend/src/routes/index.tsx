@@ -20,6 +20,13 @@ import {
   Copy,
   X,
   Ban,
+  Phone,
+  Video,
+  Sparkles,
+  Zap,
+  ShieldCheck,
+  UserPlus,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
@@ -27,6 +34,7 @@ import {
   api,
   type BackendConversation,
   type BackendMessage,
+  type BackendUser,
 } from "@/lib/api";
 import {
   initSocketClient,
@@ -37,6 +45,8 @@ import {
 import { NewConversationModal } from "@/components/chat/NewConversationModal";
 import { MessageInfoModal } from "@/components/chat/MessageInfoModal";
 import { DeleteMessageModal } from "@/components/chat/DeleteMessageModal";
+
+const QUICK_EMOJIS = ["👍", "❤️", "😂", "🔥", "🎉", "🚀", "🙌", "✨", "😊", "👀", "💯", "👏"];
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -59,20 +69,23 @@ function Avatar({
 }: {
   initials: string;
   online?: boolean;
-  size?: "md" | "lg";
+  size?: "md" | "lg" | "xl";
 }) {
   return (
     <div className="relative shrink-0">
       <div
         className={cn(
-          "grid place-items-center rounded-full bg-primary/12 font-display font-semibold text-primary",
-          size === "md" ? "h-11 w-11 text-sm" : "h-10 w-10 text-sm"
+          "grid place-items-center rounded-2xl bg-gradient-to-tr from-primary/25 via-primary/15 to-primary/5 font-display font-bold text-primary transition-all duration-200 hover:scale-105 border border-primary/20 shadow-xs",
+          size === "md" ? "h-11 w-11 text-sm" : size === "lg" ? "h-12 w-12 text-base" : "h-14 w-14 text-lg"
         )}
       >
         {initials || "U"}
       </div>
       {online && (
-        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card bg-emerald-500" />
+        <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-card" />
+        </span>
       )}
     </div>
   );
@@ -112,6 +125,11 @@ function ChatApp() {
   const [connectionStatus, setConnectionStatus] = useState<SocketConnectionStatus>("connecting");
   const [networkError, setNetworkError] = useState<string | null>(null);
 
+  // New UI Enhancements State
+  const [filterTab, setFilterTab] = useState<"all" | "unread">("all");
+  const [teammates, setTeammates] = useState<BackendUser[]>([]);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
   // WhatsApp Features State: Edit, Delete, Info
   const [editingMessage, setEditingMessage] = useState<BackendMessage | null>(null);
   const [deleteModalMessage, setDeleteModalMessage] = useState<BackendMessage | null>(null);
@@ -132,6 +150,14 @@ function ChatApp() {
     window.addEventListener("click", handleClickOutside);
     return () => window.removeEventListener("click", handleClickOutside);
   }, []);
+
+  // Reset conversation state when switching users
+  useEffect(() => {
+    setActiveId(null);
+    setMessages([]);
+    setConversations([]);
+    setNetworkError(null);
+  }, [user?._id]);
 
   // 1. Load Conversations from MongoDB
   const loadConversations = async (selectConvId?: string) => {
@@ -163,7 +189,7 @@ function ChatApp() {
     if (token) {
       loadConversations();
     }
-  }, [token]);
+  }, [token, user?._id]);
 
   // 2. Real-Time Socket.IO Setup with WhatsApp Edit, Delete, Read & Delivered Events
   useEffect(() => {
@@ -369,9 +395,15 @@ function ChatApp() {
   useEffect(() => {
     if (!activeId || !token) return;
 
+    // Guard: Only fetch messages if activeId is among current user's conversations
+    if (conversations.length > 0 && !conversations.some((c) => c.id === activeId)) {
+      setActiveId(null);
+      setMessages([]);
+      return;
+    }
+
     joinConversationRoom(activeId);
     setLoadingMessages(true);
-    setNetworkError(null);
     setEditingMessage(null);
     setActiveMenuMessageId(null);
 
@@ -379,13 +411,21 @@ function ChatApp() {
       .getMessages(activeId)
       .then((res) => {
         setMessages(res.messages);
+        setNetworkError(null);
         setConversations((prev) =>
           prev.map((c) => (c.id === activeId ? { ...c, unread: 0 } : c))
         );
       })
       .catch((err) => {
         console.error("[ChatApp] Error loading messages:", err);
-        setNetworkError(err.message || "Failed to load messages");
+        // If user is not authorized for this conversation (e.g. after switching accounts), cleanly deselect
+        if (err.message?.includes("Access denied") || err.message?.includes("403")) {
+          setActiveId(null);
+          setMessages([]);
+          setNetworkError(null);
+        } else {
+          setNetworkError(err.message || "Failed to load messages");
+        }
       })
       .finally(() => {
         setLoadingMessages(false);
@@ -403,20 +443,41 @@ function ChatApp() {
     }
   }, [messages.length, activeId]);
 
+  // Load teammates directory for quick launcher in empty state
+  useEffect(() => {
+    if (token) {
+      api
+        .getUsers()
+        .then((res) => {
+          setTeammates(res.users);
+        })
+        .catch(() => {});
+    }
+  }, [token, user?._id]);
+
   const active = useMemo(
     () => conversations.find((t) => t.id === activeId),
     [conversations, activeId]
   );
 
+  const unreadCount = useMemo(
+    () => conversations.reduce((acc, c) => acc + (c.unread > 0 ? 1 : 0), 0),
+    [conversations]
+  );
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return conversations;
-    return conversations.filter(
+    let list = conversations;
+    if (filterTab === "unread") {
+      list = list.filter((t) => t.unread > 0);
+    }
+    if (!q) return list;
+    return list.filter(
       (t) =>
         t.name.toLowerCase().includes(q) ||
         t.lastMessageText.toLowerCase().includes(q)
     );
-  }, [conversations, query]);
+  }, [conversations, query, filterTab]);
 
   function openThread(id: string) {
     setActiveId(id);
@@ -424,6 +485,28 @@ function ChatApp() {
     setConversations((prev) =>
       prev.map((t) => (t.id === id ? { ...t, unread: 0 } : t))
     );
+  }
+
+  // Quick Chat Launcher with teammate
+  async function handleStartChatWithUser(userId: string) {
+    try {
+      const res = await api.createConversation(userId);
+      await loadConversations(res.conversation.id);
+      setMobileOpen(true);
+    } catch (err: any) {
+      console.error("[ChatApp] Failed to start conversation:", err);
+      setNetworkError(err.message || "Failed to start conversation");
+    }
+  }
+
+  // Instant Emoji Reaction handler
+  async function handleSendReaction(emoji: string) {
+    if (!activeId || sending) return;
+    try {
+      await api.sendMessage(activeId, emoji);
+    } catch (err: any) {
+      console.error("[ChatApp] Failed to send reaction:", err);
+    }
   }
 
   // 4. Send or Edit Message Handler
@@ -544,34 +627,17 @@ function ChatApp() {
           mobileOpen && "hidden md:flex"
         )}
       >
-        <header className="border-b border-border px-5 pb-4">
+        <header className="border-b border-border/80 px-5 pb-3 bg-card/60 backdrop-blur-md">
           <div className="flex h-16 items-center justify-between">
-            <img src="/logo.png" alt="ActionFlow" className="h-6 object-contain" />
             <div className="flex items-center gap-2">
-              {/* Connection Status Badge */}
-              <div
-                title={`Socket status: ${connectionStatus}`}
-                className={cn(
-                  "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border",
-                  connectionStatus === "connected"
-                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400"
-                    : connectionStatus === "connecting"
-                    ? "bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse"
-                    : "bg-destructive/10 text-destructive border-destructive/20"
-                )}
-              >
-                {connectionStatus === "connected" ? (
-                  <Wifi className="h-3 w-3" />
-                ) : (
-                  <WifiOff className="h-3 w-3" />
-                )}
-                <span className="capitalize">{connectionStatus}</span>
-              </div>
-
+              <img src="/logo.png" alt="ActionFlow" className="h-6 object-contain" />
+            </div>
+            
+            <div className="flex items-center gap-2">
               {/* Start New Conversation Button */}
               <button
                 onClick={() => setIsNewChatModalOpen(true)}
-                className="grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20 cursor-pointer"
+                className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary transition-all duration-200 hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95 cursor-pointer shadow-xs"
                 aria-label="New chat"
                 title="Start new conversation"
               >
@@ -580,21 +646,63 @@ function ChatApp() {
             </div>
           </div>
 
-          {/* Search Box */}
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          {/* Search Box with Clear Button */}
+          <div className="relative mt-1">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search conversations..."
-              className="h-10 w-full rounded-full border border-transparent bg-muted pl-9 pr-4 text-sm outline-none transition placeholder:text-muted-foreground focus:border-primary/40 focus:bg-card"
+              className="h-10 w-full rounded-2xl border border-border/60 bg-muted/70 pl-9 pr-9 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary/50 focus:bg-card focus:shadow-xs"
             />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Filter Tabs: All & Unread */}
+          <div className="flex items-center gap-1.5 mt-3 pt-1 border-t border-border/40">
+            <button
+              type="button"
+              onClick={() => setFilterTab("all")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer",
+                filterTab === "all"
+                  ? "bg-primary text-primary-foreground shadow-xs scale-100"
+                  : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <span>All</span>
+              <span className="text-[10px] opacity-75 font-mono">({conversations.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterTab("unread")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer",
+                filterTab === "unread"
+                  ? "bg-primary text-primary-foreground shadow-xs scale-100"
+                  : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <span>Unread</span>
+              {unreadCount > 0 && (
+                <span className="h-4 min-w-4 px-1 rounded-full bg-emerald-500 text-[10px] text-white font-bold grid place-items-center">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
           </div>
         </header>
 
         {/* Network Error Alert */}
         {networkError && (
-          <div className="bg-destructive/15 text-destructive text-xs px-4 py-2 border-b border-destructive/20 flex items-center justify-between">
+          <div className="bg-destructive/15 text-destructive text-xs px-4 py-2 border-b border-destructive/20 flex items-center justify-between animate-in slide-in-from-top-1">
             <span className="truncate">{networkError}</span>
             <button
               onClick={() => setNetworkError(null)}
@@ -608,16 +716,32 @@ function ChatApp() {
         {/* List of Conversations */}
         <div className="flex-1 overflow-y-auto py-2">
           {loadingConversations ? (
-            <div className="flex h-40 flex-col items-center justify-center gap-2 text-xs text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              <span>Loading conversations from MongoDB...</span>
+            <div className="space-y-2 p-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-card/60 border border-border/40">
+                  <div className="h-11 w-11 rounded-2xl shimmer-effect shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <div className="h-3.5 w-24 rounded-md shimmer-effect" />
+                      <div className="h-2.5 w-10 rounded-md shimmer-effect" />
+                    </div>
+                    <div className="h-3 w-36 rounded-md shimmer-effect" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="px-5 py-12 text-center text-sm text-muted-foreground">
-              <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-30 text-primary" />
-              <p className="font-semibold text-foreground">No conversations yet</p>
-              <p className="mt-1 text-xs">
-                Click the <strong>+</strong> button above to start a chat with another teammate.
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 grid place-items-center mx-auto mb-3 text-primary">
+                <MessageSquare className="h-6 w-6" />
+              </div>
+              <p className="font-semibold text-foreground">
+                {filterTab === "unread" ? "No unread messages" : "No conversations yet"}
+              </p>
+              <p className="mt-1 text-xs max-w-xs mx-auto">
+                {filterTab === "unread"
+                  ? "You are all caught up with your team!"
+                  : "Click the + button above to start a chat with another teammate."}
               </p>
             </div>
           ) : (
@@ -630,26 +754,31 @@ function ChatApp() {
                   key={t.id}
                   onClick={() => openThread(t.id)}
                   className={cn(
-                    "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors cursor-pointer",
-                    isActive ? "bg-primary/8" : "hover:bg-muted"
+                    "group relative flex w-[calc(100%-1rem)] items-center gap-3 mx-2 my-1 px-3.5 py-3 text-left transition-all duration-200 rounded-2xl cursor-pointer",
+                    isActive
+                      ? "bg-primary/10 border border-primary/25 shadow-xs"
+                      : "hover:bg-muted/70 hover:translate-x-0.5 border border-transparent"
                   )}
                 >
+                  {isActive && (
+                    <span className="absolute left-1 top-2.5 bottom-2.5 w-1 rounded-full bg-primary shadow-[0_0_8px_rgba(0,168,132,0.8)]" />
+                  )}
                   <Avatar initials={t.initials} online={t.online} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className="truncate font-display text-sm font-semibold">
+                      <span className={cn("truncate font-display text-sm", isActive ? "font-bold text-primary" : "font-semibold text-foreground")}>
                         {t.name}
                       </span>
-                      <span className="shrink-0 text-[11px] text-muted-foreground">
+                      <span className="shrink-0 text-[10px] text-muted-foreground font-medium">
                         {displayTime}
                       </span>
                     </div>
                     <div className="mt-0.5 flex items-center justify-between gap-2">
-                      <p className="truncate text-xs text-muted-foreground">
+                      <p className="truncate text-xs text-muted-foreground group-hover:text-foreground/90 transition-colors">
                         {t.lastMessageText || "Started a conversation"}
                       </p>
                       {t.unread > 0 && (
-                        <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground">
+                        <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-gradient-to-r from-primary to-emerald-600 px-1.5 text-[10px] font-bold text-primary-foreground shadow-xs animate-pulse-soft">
                           {t.unread}
                         </span>
                       )}
@@ -665,54 +794,83 @@ function ChatApp() {
       {/* Main Chat Thread Area */}
       <section
         className={cn(
-          "flex min-w-0 flex-1 flex-col bg-background",
+          "flex min-w-0 flex-1 flex-col bg-background relative overflow-hidden",
           !mobileOpen && "hidden md:flex"
         )}
       >
         {active ? (
           <>
             {/* Thread Header */}
-            <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card px-4 md:px-6">
-              <button
-                onClick={() => setMobileOpen(false)}
-                className="-ml-1 grid h-9 w-9 place-items-center rounded-full text-muted-foreground hover:bg-muted md:hidden cursor-pointer"
-                aria-label="Back to conversations"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
+            <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/80 bg-card/85 backdrop-blur-md px-4 md:px-6 shadow-2xs z-10">
+              <div className="flex items-center gap-3 min-w-0">
+                <button
+                  onClick={() => setMobileOpen(false)}
+                  className="-ml-1 grid h-9 w-9 place-items-center rounded-xl text-muted-foreground hover:bg-muted md:hidden cursor-pointer transition-colors"
+                  aria-label="Back to conversations"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
 
-              <Avatar initials={active.initials} online={active.online} size="lg" />
+                <Avatar initials={active.initials} online={active.online} size="lg" />
 
-              <div className="min-w-0">
-                <p className="truncate font-display text-sm font-semibold">{active.name}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {active.online ? (
-                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">Online</span>
-                  ) : (
-                    active.role
-                  )}
-                </p>
+                <div className="min-w-0">
+                  <p className="truncate font-display text-sm font-bold text-foreground tracking-tight">{active.name}</p>
+                  <p className="truncate text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                    {active.online ? (
+                      <>
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Active now</span>
+                      </>
+                    ) : (
+                      <span>{active.role}</span>
+                    )}
+                  </p>
+                </div>
               </div>
 
-              <div className="ml-auto flex items-center gap-2" />
+              {/* Thread Action Buttons with smooth hover */}
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <button
+                  type="button"
+                  className="grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 cursor-pointer"
+                  title="Voice Call (Mock)"
+                >
+                  <Phone className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  className="grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 cursor-pointer"
+                  title="Video Call (Mock)"
+                >
+                  <Video className="h-4 w-4" />
+                </button>
+                <div className="h-4 w-[1px] bg-border/60 mx-1" />
+                <button
+                  type="button"
+                  onClick={() => setIsNewChatModalOpen(true)}
+                  className="grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 cursor-pointer"
+                  title="New conversation"
+                >
+                  <UserPlus className="h-4 w-4" />
+                </button>
+              </div>
             </header>
 
             {/* Chat Messages Canvas */}
             <div ref={scrollRef} className="chat-canvas flex-1 overflow-y-auto px-4 py-6 md:px-10">
               <div className="mx-auto flex max-w-3xl flex-col gap-2.5">
-                <div className="mb-2 self-center rounded-full bg-card px-3 py-1 text-[11px] font-medium text-muted-foreground shadow-xs border border-border/50">
-                  Messages saved & delivered via Socket.IO
-                </div>
-
                 {loadingMessages ? (
-                  <div className="flex h-48 items-center justify-center text-sm text-muted-foreground gap-2">
-                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                    Loading message history...
+                  <div className="flex h-48 flex-col items-center justify-center text-xs text-muted-foreground gap-2.5">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    <span>Loading message history...</span>
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="py-20 text-center text-muted-foreground">
+                    <div className="h-12 w-12 rounded-2xl bg-primary/10 grid place-items-center mx-auto mb-3 text-primary animate-float">
+                      <MessageCircle className="h-6 w-6" />
+                    </div>
                     <p className="text-sm font-semibold text-foreground">No messages yet</p>
-                    <p className="mt-1 text-xs">Send a message below to start this conversation.</p>
+                    <p className="mt-1 text-xs">Say hello to start the conversation!</p>
                   </div>
                 ) : (
                   messages.map((m) => {
@@ -724,13 +882,38 @@ function ChatApp() {
                       <div
                         key={m.id}
                         className={cn(
-                          "group relative max-w-[82%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed shadow-xs md:max-w-[65%]",
+                          "group relative max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-xs md:max-w-[65%] transition-all duration-200 animate-pop-in",
                           isSender
-                            ? "bubble-tail-out self-end bg-bubble-out text-bubble-out-foreground"
-                            : "bubble-tail-in self-start bg-bubble-in text-bubble-in-foreground"
+                            ? "bubble-tail-out self-end bg-gradient-to-br from-bubble-out to-bubble-out/95 text-bubble-out-foreground hover:shadow-md"
+                            : "bubble-tail-in self-start bg-card text-bubble-in-foreground border border-border/60 hover:shadow-sm"
                         )}
                       >
-                        {/* Hover Action Menu Trigger (WhatsApp Chevron) */}
+                        {/* Quick Emoji Reaction Pill on Hover */}
+                        {!isDeleted && (
+                          <div
+                            className={cn(
+                              "absolute -top-3.5 z-20 flex items-center gap-0.5 rounded-full border border-border bg-card/95 backdrop-blur-md px-1.5 py-0.5 shadow-md opacity-0 group-hover:opacity-100 transition-all duration-200 scale-90 group-hover:scale-100 pointer-events-none group-hover:pointer-events-auto",
+                              isSender ? "right-8" : "left-8"
+                            )}
+                          >
+                            {["👍", "❤️", "😂", "🔥", "🎉"].map((emoji) => (
+                              <button
+                                key={emoji}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSendReaction(emoji);
+                                }}
+                                title={`React with ${emoji}`}
+                                className="grid h-6 w-6 place-items-center rounded-full text-xs hover:bg-muted hover:scale-125 transition-transform cursor-pointer"
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Hover Action Menu Trigger (WhatsApp 3-dots) */}
                         <div className="message-menu-container absolute top-1.5 right-1.5 z-10">
                           <button
                             type="button"
@@ -739,7 +922,7 @@ function ChatApp() {
                               setActiveMenuMessageId(isMenuOpen ? null : m.id);
                             }}
                             className={cn(
-                              "grid h-6 w-6 place-items-center rounded-full text-muted-foreground transition-opacity hover:bg-black/10 dark:hover:bg-white/10 hover:text-foreground cursor-pointer",
+                              "grid h-6 w-6 place-items-center rounded-full text-muted-foreground transition-all hover:bg-black/10 dark:hover:bg-white/10 hover:text-foreground cursor-pointer",
                               isMenuOpen ? "opacity-100 bg-black/10 dark:bg-white/10" : "opacity-0 group-hover:opacity-100"
                             )}
                             title="Message options"
@@ -752,7 +935,7 @@ function ChatApp() {
                             <div
                               onClick={(e) => e.stopPropagation()}
                               className={cn(
-                                "absolute z-30 mt-1 w-44 rounded-xl border border-border bg-card p-1 shadow-lg animate-in fade-in zoom-in-95",
+                                "absolute z-30 mt-1 w-44 rounded-2xl border border-border bg-card/95 backdrop-blur-md p-1.5 shadow-xl animate-pop-in",
                                 isSender ? "right-0" : "left-0"
                               )}
                             >
@@ -762,7 +945,7 @@ function ChatApp() {
                                   setActiveMenuMessageId(null);
                                   setInfoModalMessage(m);
                                 }}
-                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors cursor-pointer text-left"
+                                className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors cursor-pointer text-left font-medium"
                               >
                                 <Info className="h-3.5 w-3.5 text-primary" />
                                 <span>Message info</span>
@@ -772,7 +955,7 @@ function ChatApp() {
                               {isSender && !isDeleted && (
                                 <button
                                   onClick={() => handleStartEdit(m)}
-                                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors cursor-pointer text-left"
+                                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors cursor-pointer text-left font-medium"
                                 >
                                   <Pencil className="h-3.5 w-3.5 text-amber-500" />
                                   <span>Edit</span>
@@ -783,14 +966,14 @@ function ChatApp() {
                               {!isDeleted && (
                                 <button
                                   onClick={() => handleCopy(m)}
-                                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors cursor-pointer text-left"
+                                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors cursor-pointer text-left font-medium"
                                 >
                                   <Copy className="h-3.5 w-3.5 text-muted-foreground" />
                                   <span>{copiedId === m.id ? "Copied!" : "Copy"}</span>
                                 </button>
                               )}
 
-                              <div className="my-1 border-t border-border" />
+                              <div className="my-1 border-t border-border/60" />
 
                               {/* Delete Message */}
                               <button
@@ -798,7 +981,7 @@ function ChatApp() {
                                   setActiveMenuMessageId(null);
                                   setDeleteModalMessage(m);
                                 }}
-                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-destructive hover:bg-destructive/10 transition-colors cursor-pointer text-left"
+                                className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-destructive hover:bg-destructive/10 transition-colors cursor-pointer text-left font-medium"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                                 <span>Delete message</span>
@@ -820,7 +1003,7 @@ function ChatApp() {
                         )}
 
                         {/* Footer: Edited badge, timestamp, WhatsApp checkmarks */}
-                        <div className="mt-1 flex items-center justify-end gap-1 text-[10px] text-muted-foreground">
+                        <div className="mt-1 flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground select-none">
                           {m.isEdited && !isDeleted && (
                             <span className="italic font-medium text-muted-foreground/80">
                               edited •
@@ -848,18 +1031,20 @@ function ChatApp() {
               </div>
             </div>
 
-            {/* Message Input Footer with WhatsApp-style Edit Banner */}
-            <footer className="border-t border-border bg-card px-4 py-3 md:px-10">
+            {/* Message Input Footer with WhatsApp-style Edit Banner & Emoji Bar */}
+            <footer className="border-t border-border/80 bg-card/85 backdrop-blur-md px-4 py-3 md:px-10 shadow-lg">
               {/* WhatsApp Inline Edit Mode Banner */}
               {editingMessage && (
-                <div className="mx-auto mb-2 flex max-w-3xl items-center justify-between rounded-xl bg-amber-500/10 border border-amber-500/20 px-3.5 py-2 text-xs">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Pencil className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <div className="mx-auto mb-2 flex max-w-3xl items-center justify-between rounded-2xl bg-amber-500/10 border border-amber-500/25 px-4 py-2.5 text-xs shadow-xs animate-pop-in">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="p-1 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </div>
                     <div className="min-w-0">
                       <span className="font-semibold text-amber-700 dark:text-amber-300">
-                        Edit message
+                        Editing message
                       </span>
-                      <p className="truncate text-muted-foreground text-[11px] mt-0.5">
+                      <p className="truncate text-muted-foreground text-[11px] mt-0.5 italic">
                         "{editingMessage.text}"
                       </p>
                     </div>
@@ -869,7 +1054,7 @@ function ChatApp() {
                       setEditingMessage(null);
                       setDraft("");
                     }}
-                    className="ml-2 grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                    className="ml-2 grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer transition-colors"
                     title="Cancel edit"
                   >
                     <X className="h-4 w-4" />
@@ -882,22 +1067,64 @@ function ChatApp() {
                   e.preventDefault();
                   handleSend();
                 }}
-                className="mx-auto flex max-w-3xl items-end gap-2"
+                className="relative mx-auto flex max-w-3xl items-end gap-2"
               >
-                <button
-                  type="button"
-                  aria-label="Add emoji"
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
-                >
-                  <Smile className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Attach file"
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
-                >
-                  <Paperclip className="h-5 w-5" />
-                </button>
+                {/* Quick Emoji Picker Popover */}
+                {showEmojiPicker && (
+                  <div className="absolute bottom-full mb-3 left-0 z-30 flex flex-wrap gap-1 p-2.5 rounded-2xl border border-border bg-card/95 backdrop-blur-md shadow-2xl w-64 animate-pop-in">
+                    <div className="w-full text-[10px] font-semibold text-muted-foreground px-1 pb-1 border-b border-border/50 mb-1 flex justify-between items-center">
+                      <span>Quick Emojis</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowEmojiPicker(false)}
+                        className="hover:text-foreground cursor-pointer"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                    {QUICK_EMOJIS.map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => {
+                          setDraft((prev) => prev + emoji);
+                          setShowEmojiPicker(false);
+                          inputRef.current?.focus();
+                        }}
+                        className="grid h-8 w-8 place-items-center rounded-xl text-base hover:bg-muted hover:scale-125 transition-transform cursor-pointer"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-1 pb-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    aria-label="Add emoji"
+                    className={cn(
+                      "grid h-10 w-10 shrink-0 place-items-center rounded-2xl transition-all cursor-pointer",
+                      showEmojiPicker
+                        ? "bg-primary/20 text-primary shadow-xs"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95"
+                    )}
+                  >
+                    <Smile className="h-5 w-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDraft((prev) => prev + "📎 [file] ");
+                      inputRef.current?.focus();
+                    }}
+                    aria-label="Attach file"
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-muted-foreground transition-all hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 cursor-pointer"
+                  >
+                    <Paperclip className="h-5 w-5" />
+                  </button>
+                </div>
 
                 <textarea
                   ref={inputRef}
@@ -916,48 +1143,116 @@ function ChatApp() {
                   placeholder={
                     editingMessage
                       ? "Edit your message... (Esc to cancel)"
-                      : `Message ${active.name}`
+                      : `Message ${active.name}...`
                   }
                   disabled={sending}
-                  className="max-h-32 min-h-11 flex-1 resize-none rounded-2xl border border-transparent bg-muted px-4 py-3 text-sm outline-none transition placeholder:text-muted-foreground focus:border-primary/40 focus:bg-card disabled:opacity-50"
+                  className="max-h-32 min-h-12 flex-1 resize-none rounded-2xl border border-border/60 bg-muted/60 px-4 py-3.5 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary/50 focus:bg-card focus:shadow-xs disabled:opacity-50"
                 />
 
                 <button
                   type="submit"
                   disabled={!draft.trim() || sending}
-                  className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:opacity-40 cursor-pointer"
+                  className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-tr from-primary to-emerald-600 text-primary-foreground shadow-md transition-all duration-200 hover:from-primary/95 hover:to-emerald-500 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:hover:scale-100 cursor-pointer mb-0.5"
                   aria-label={editingMessage ? "Save edit" : "Send message"}
-                  title={editingMessage ? "Save edit" : "Send message"}
+                  title={editingMessage ? "Save edit (Enter)" : "Send message (Enter)"}
                 >
                   {sending ? (
-                    <Loader2 className="h-4.5 w-4.5 animate-spin" />
+                    <Loader2 className="h-5 w-5 animate-spin" />
                   ) : editingMessage ? (
-                    <Check className="h-5 w-5" />
+                    <Check className="h-5 w-5 stroke-[2.5]" />
                   ) : (
-                    <Send className="h-4.5 w-4.5" />
+                    <Send className="h-5 w-5 stroke-[2.5]" />
                   )}
                 </button>
               </form>
+
+              <div className="mx-auto max-w-3xl mt-1.5 flex justify-center items-center text-[10px] text-muted-foreground/75 px-3">
+                <span>
+                  Press <kbd className="font-mono bg-muted px-1 py-0.5 rounded border border-border/50">Enter ↵</kbd> to send, <kbd className="font-mono bg-muted px-1 py-0.5 rounded border border-border/50">Shift + Enter</kbd> for new line
+                </span>
+              </div>
             </footer>
           </>
         ) : (
-          <div className="flex h-full flex-col items-center justify-center p-6 text-center">
-            <div className="grid h-16 w-16 place-items-center rounded-2xl bg-primary/10 text-primary mb-4">
-              <MessageSquare className="h-8 w-8" />
+          /* Empty State: Modern Command Center Showcase */
+          <div className="flex h-full flex-col items-center justify-center p-6 text-center mesh-ambient overflow-y-auto">
+            <div className="relative mb-5">
+              <div className="absolute -inset-4 rounded-full bg-primary/20 blur-xl animate-pulse-soft" />
+              <div className="relative grid h-20 w-20 place-items-center rounded-3xl bg-gradient-to-tr from-primary to-emerald-600 text-primary-foreground shadow-2xl animate-float">
+                <MessageSquare className="h-10 w-10" />
+              </div>
+              <div className="absolute -top-1.5 -right-2 rounded-full bg-card p-1.5 shadow-md border border-border animate-bounce">
+                <Sparkles className="h-4 w-4 text-amber-500" />
+              </div>
             </div>
-            <h2 className="font-display text-xl font-bold text-foreground">
-              Your ActionFlow Messages
+
+            <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">
+              ActionFlow Workspace
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground max-w-sm">
-              Select an existing conversation from the list or click below to start a new chat with a teammate.
+            <p className="mt-2 text-sm text-muted-foreground max-w-md leading-relaxed">
+              Professional team messaging with WhatsApp-style delivery receipts, instant edits, message revoking, and real-time Socket.IO synchronization.
             </p>
-            <button
-              onClick={() => setIsNewChatModalOpen(true)}
-              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 transition-all cursor-pointer"
-            >
-              <Plus className="h-4 w-4" />
-              Start New Conversation
-            </button>
+
+            {/* Feature Badges Showcase */}
+            <div className="mt-4 flex flex-wrap justify-center gap-2 max-w-lg">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary shadow-xs">
+                <Zap className="h-3 w-3 text-primary" /> Real-Time Socket.IO
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/80 px-3 py-1 text-xs font-medium text-foreground shadow-xs">
+                <CheckCheck className="h-3.5 w-3.5 text-sky-500" /> Read & Delivered Receipts
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/80 px-3 py-1 text-xs font-medium text-foreground shadow-xs">
+                <Pencil className="h-3 w-3 text-amber-500" /> WhatsApp Inline Edits
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/80 px-3 py-1 text-xs font-medium text-foreground shadow-xs">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" /> MongoDB Atlas Cloud
+              </span>
+            </div>
+
+            {/* Quick Teammate Launcher Grid */}
+            <div className="mt-8 w-full max-w-xl text-left">
+              <div className="flex items-center justify-between mb-3 px-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Teammates Directory
+                  </span>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                    {teammates.length} members
+                  </span>
+                </div>
+                <button
+                  onClick={() => setIsNewChatModalOpen(true)}
+                  className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Start custom chat
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {teammates.map((tm) => (
+                  <div
+                    key={tm._id}
+                    className="flex items-center justify-between p-3 rounded-2xl border border-border/80 bg-card/75 backdrop-blur-md shadow-xs transition-all duration-200 hover:bg-card hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 group"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Avatar initials={tm.initials} online={tm.online} size="md" />
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm truncate text-foreground group-hover:text-primary transition-colors">
+                          {tm.displayName}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground truncate">{tm.role || "Team Member"}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleStartChatWithUser(tm._id)}
+                      className="shrink-0 ml-2 rounded-xl bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-all hover:bg-primary hover:text-primary-foreground active:scale-95 cursor-pointer shadow-xs"
+                    >
+                      Chat
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </section>

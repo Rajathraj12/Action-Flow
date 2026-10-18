@@ -193,14 +193,30 @@ router.get("/:id", requireAuth, async (req: AuthenticatedRequest, res: Response)
     }
 
     // Check membership authorization
-    const membership = await ConversationMembership.findOne({
+    let membership = await ConversationMembership.findOne({
       conversationId: id,
       userId: currentUserId,
     });
 
     if (!membership) {
-      res.status(403).json({ error: "Access denied. You are not a member of this conversation." });
-      return;
+      // Auto-heal membership if user is in conversation participants
+      const isParticipant = await Conversation.findOne({
+        _id: id,
+        participants: currentUserId,
+      });
+
+      if (isParticipant) {
+        membership = await ConversationMembership.create({
+          conversationId: id,
+          userId: currentUserId,
+          firebaseUid: req.firebaseUid || req.user?.firebaseUid,
+          unreadCount: 0,
+          lastReadAt: new Date(),
+        });
+      } else {
+        res.status(403).json({ error: "Access denied. You are not a member of this conversation." });
+        return;
+      }
     }
 
     const conversation = await Conversation.findById(id).populate<{ participants: IUser[] }>(
@@ -256,14 +272,30 @@ router.get("/:id/messages", requireAuth, async (req: AuthenticatedRequest, res: 
     }
 
     // Enforce membership on reading messages
-    const membership = await ConversationMembership.findOne({
+    let membership = await ConversationMembership.findOne({
       conversationId: id,
       userId: currentUserId,
     });
 
     if (!membership) {
-      res.status(403).json({ error: "Access denied. You are not a member of this conversation." });
-      return;
+      // Auto-heal membership if user is in conversation participants
+      const isParticipant = await Conversation.findOne({
+        _id: id,
+        participants: currentUserId,
+      });
+
+      if (isParticipant) {
+        membership = await ConversationMembership.create({
+          conversationId: id,
+          userId: currentUserId,
+          firebaseUid: req.firebaseUid || req.user?.firebaseUid,
+          unreadCount: 0,
+          lastReadAt: new Date(),
+        });
+      } else {
+        res.status(403).json({ error: "Access denied. You are not a member of this conversation." });
+        return;
+      }
     }
 
     // Reset unread count for current user

@@ -21,27 +21,30 @@ function SettingsPage() {
     <>
       <div className="flex flex-1 h-full w-full">
         {/* Settings List / Sidebar */}
-        <aside className="flex w-full flex-col border-r border-border bg-card md:w-[26rem]">
-          <header className="flex h-16 items-center gap-4 border-b border-border px-6">
-            <h1 className="font-display text-xl font-bold tracking-tight">Settings</h1>
+        <aside className="flex w-full flex-col border-r border-border bg-card/80 backdrop-blur-md md:w-[26rem] shrink-0">
+          <header className="flex h-16 items-center gap-3 border-b border-border/80 px-6">
+            <h1 className="font-display text-lg font-bold tracking-tight text-foreground">Settings</h1>
           </header>
 
-        <div className="flex-1 overflow-y-auto py-2">
+        <div className="flex-1 overflow-y-auto py-2 custom-scrollbar">
           {/* Profile Section */}
-          <div className="flex items-center gap-4 px-6 py-5 cursor-pointer hover:bg-muted/50 transition-colors">
-            <div className="grid h-16 w-16 place-items-center rounded-full bg-primary/12 font-display text-xl font-semibold text-primary">
-              {user?.initials || "U"}
+          <div className="group flex items-center gap-4 px-6 py-5 cursor-pointer hover:bg-muted/40 transition-colors">
+            <div className="relative">
+              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-primary/25 to-primary/5 font-display text-lg font-bold text-primary ring-1 ring-primary/20 shadow-xs group-hover:scale-105 transition-transform">
+                {user?.initials || "U"}
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-card bg-emerald-500 shadow-xs" />
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-lg font-semibold truncate">{user?.displayName || "User"}</h2>
-              <p className="text-sm text-muted-foreground truncate">{user?.email || "Connected"}</p>
+              <h2 className="text-base font-bold text-foreground truncate group-hover:text-primary transition-colors">{user?.displayName || "User"}</h2>
+              <p className="text-xs text-muted-foreground truncate">{user?.email || "Connected"}</p>
             </div>
           </div>
 
-          <div className="h-2 w-full bg-muted/30" />
+          <div className="h-px w-full bg-border/60 my-1" />
 
           {/* Settings Items */}
-          <div className="py-2">
+          <div className="py-2 space-y-0.5">
             <SettingsItem icon={<Key className="h-5 w-5" />} title="Account" description="Profile details, security, preferences" active={activeTab === "Account"} onClick={() => setActiveTab("Account")} />
             <SettingsItem icon={<Sparkles className="h-5 w-5" />} title="AI Extractions" description="LLM settings, auto-tagging, approvals" active={activeTab === "AI Extractions"} onClick={() => setActiveTab("AI Extractions")} />
             <SettingsItem icon={<CheckSquare className="h-5 w-5" />} title="Task Preferences" description="Custom statuses, default priorities" active={activeTab === "Task Preferences"} onClick={() => setActiveTab("Task Preferences")} />
@@ -224,17 +227,23 @@ function SettingsItem({ icon, title, description, active, onClick }: { icon: Rea
     <button 
       onClick={onClick}
       className={cn(
-        "flex w-full items-center gap-5 px-6 py-4 text-left transition-colors hover:bg-muted",
-        active && "bg-muted"
+        "group relative flex w-full items-center gap-4 px-6 py-3.5 text-left transition-all duration-200 hover:bg-muted/50 cursor-pointer",
+        active && "bg-primary/10 text-primary"
       )}
     >
-      <div className={cn("text-muted-foreground transition-colors", active && "text-primary")}>
+      {/* Active Left Indicator Pill */}
+      {active && (
+        <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-primary animate-in fade-in" />
+      )}
+      
+      <div className={cn("text-muted-foreground transition-all duration-200 group-hover:scale-110", active && "text-primary scale-105")}>
         {icon}
       </div>
-      <div className="flex-1 min-w-0 border-b border-border/40 pb-4 -mb-4">
-        <div className={cn("text-base font-medium transition-colors", active && "text-primary")}>{title}</div>
-        <div className="text-sm text-muted-foreground mt-0.5">{description}</div>
+      <div className="flex-1 min-w-0">
+        <div className={cn("text-sm font-semibold transition-colors", active ? "text-primary font-bold" : "text-foreground group-hover:text-primary")}>{title}</div>
+        <div className="text-xs text-muted-foreground mt-0.5 truncate">{description}</div>
       </div>
+      <ChevronRight className={cn("h-4 w-4 text-muted-foreground/30 transition-transform group-hover:translate-x-0.5", active && "text-primary/70 translate-x-0.5")} />
     </button>
   );
 }

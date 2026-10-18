@@ -44,23 +44,28 @@ export function DeleteMessageModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card border-border">
-        <DialogHeader className="gap-2">
-          <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-destructive/10 text-destructive sm:mx-0">
-            <Trash2 className="h-6 w-6" />
+      <DialogContent className="sm:max-w-md bg-card/95 border-border/80 shadow-2xl backdrop-blur-xl">
+        <DialogHeader className="gap-3">
+          <div className="relative mx-auto sm:mx-0">
+            <div className="absolute -inset-1 rounded-full bg-destructive/20 blur-sm animate-pulse-soft" />
+            <div className="relative grid h-12 w-12 place-items-center rounded-full bg-destructive/15 text-destructive border border-destructive/25 shadow-xs">
+              <Trash2 className="h-6 w-6" />
+            </div>
           </div>
-          <DialogTitle className="text-base font-display font-bold">
-            Delete message?
-          </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
-            {canDeleteForEveryone
-              ? "You can delete this message for everyone in this chat or only for yourself."
-              : "This message will be deleted from your view. Other participants will still be able to see it."}
-          </DialogDescription>
+          <div>
+            <DialogTitle className="text-base font-display font-bold">
+              Delete message?
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground mt-1">
+              {canDeleteForEveryone
+                ? "You can delete this message for everyone in this chat or only for yourself."
+                : "This message will be deleted from your view. Other participants will still be able to see it."}
+            </DialogDescription>
+          </div>
         </DialogHeader>
 
         {/* Message preview snippet */}
-        <div className="my-2 rounded-xl border border-border bg-muted/40 p-3 text-xs italic text-muted-foreground line-clamp-2">
+        <div className="my-2 rounded-xl border-l-4 border-l-destructive/60 border border-border bg-muted/30 p-3 text-xs italic text-muted-foreground line-clamp-3">
           "{message.text}"
         </div>
 
@@ -71,7 +76,7 @@ export function DeleteMessageModal({
               variant="destructive"
               disabled={deleting !== null}
               onClick={() => handleDelete("everyone")}
-              className="w-full sm:w-auto text-xs font-semibold cursor-pointer"
+              className="w-full sm:w-auto text-xs font-semibold cursor-pointer shadow-sm hover:shadow transition-all active:scale-95"
             >
               {deleting === "everyone" ? (
                 <>
@@ -89,7 +94,7 @@ export function DeleteMessageModal({
             variant="outline"
             disabled={deleting !== null}
             onClick={() => handleDelete("me")}
-            className="w-full sm:w-auto text-xs font-semibold cursor-pointer"
+            className="w-full sm:w-auto text-xs font-semibold cursor-pointer hover:bg-muted/80 transition-all active:scale-95"
           >
             {deleting === "me" ? (
               <>
@@ -106,7 +111,7 @@ export function DeleteMessageModal({
             variant="ghost"
             disabled={deleting !== null}
             onClick={() => onOpenChange(false)}
-            className="w-full sm:w-auto text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+            className="w-full sm:w-auto text-xs cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
           >
             Cancel
           </Button>
