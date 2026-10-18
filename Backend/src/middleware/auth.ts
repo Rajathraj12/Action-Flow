@@ -28,12 +28,19 @@ export async function requireAuth(
     // Verify token using Firebase Admin SDK
     const decoded = await verifyFirebaseIdToken(token);
 
-    // Find or upsert user in MongoDB based on verified firebaseUid
-    let user = await User.findOne({ firebaseUid: decoded.uid });
-    if (!user) {
+    // Find or upsert user in MongoDB based on verified firebaseUid or email
+    let user = await User.findOne({
+      $or: [{ firebaseUid: decoded.uid }, { email: decoded.email.toLowerCase() }],
+    });
+    if (user) {
+      if (user.firebaseUid !== decoded.uid) {
+        user.firebaseUid = decoded.uid;
+        await user.save();
+      }
+    } else {
       user = await User.create({
         firebaseUid: decoded.uid,
-        email: decoded.email,
+        email: decoded.email.toLowerCase(),
         displayName: decoded.displayName || decoded.email.split("@")[0] || "User",
         online: true,
         lastSeen: new Date(),

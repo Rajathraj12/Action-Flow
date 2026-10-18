@@ -122,6 +122,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { WorkspaceProvider } from "@/context/WorkspaceContext";
 import { AuthModal } from "@/components/auth/AuthModal";
 
 function RootContent() {
@@ -143,7 +144,9 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <RootContent />
+        <WorkspaceProvider>
+          <RootContent />
+        </WorkspaceProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

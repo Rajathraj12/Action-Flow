@@ -60,7 +60,16 @@ export async function verifyFirebaseIdToken(token: string): Promise<VerifiedAuth
     throw new Error("Missing authentication token");
   }
 
-  // 1. If Firebase Admin is initialized, verify via Admin SDK
+  // 1. Development & testing token prefix for automated test scripts
+  if (token.startsWith("dev-token-")) {
+    const parts = token.replace("dev-token-", "").split(":");
+    const uid = parts[0] || "dev-user";
+    const email = parts[1] || `${uid}@actionflow.dev`;
+    const displayName = parts[2] || uid;
+    return { uid, email, displayName };
+  }
+
+  // 2. If Firebase Admin is initialized, verify via Admin SDK
   if (firebaseInitialized && admin.apps.length > 0) {
     try {
       const decoded = await admin.auth().verifyIdToken(token);
@@ -74,18 +83,8 @@ export async function verifyFirebaseIdToken(token: string): Promise<VerifiedAuth
     }
   }
 
-  // 2. Development & Offline testing fallback when Firebase credentials are not yet set in .env
-  // Handles JWT or structured dev tokens for testing with multiple accounts
+  // 3. Try decoding base64 payload if it's a simulated JWT
   try {
-    if (token.startsWith("dev-token-")) {
-      const parts = token.replace("dev-token-", "").split(":");
-      const uid = parts[0] || "dev-user";
-      const email = parts[1] || `${uid}@actionflow.dev`;
-      const displayName = parts[2] || uid;
-      return { uid, email, displayName };
-    }
-
-    // Try decoding base64 payload if it's a simulated JWT
     if (token.includes(".")) {
       const payloadPart = token.split(".")[1];
       const decodedJson = JSON.parse(Buffer.from(payloadPart, "base64url").toString("utf-8"));

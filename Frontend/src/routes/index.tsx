@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
@@ -27,9 +27,13 @@ import {
   ShieldCheck,
   UserPlus,
   MessageCircle,
+  Users,
+  CheckSquare,
 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { useWorkspace } from "@/context/WorkspaceContext";
 import {
   api,
   type BackendConversation,
@@ -45,10 +49,16 @@ import {
 import { NewConversationModal } from "@/components/chat/NewConversationModal";
 import { MessageInfoModal } from "@/components/chat/MessageInfoModal";
 import { DeleteMessageModal } from "@/components/chat/DeleteMessageModal";
+import { GroupInfoModal } from "@/components/chat/GroupInfoModal";
+import { CreateTaskModal } from "@/components/tasks/CreateTaskModal";
 
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "🔥", "🎉", "🚀", "🙌", "✨", "😊", "👀", "💯", "👏"];
 
 export const Route = createFileRoute("/")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    conversationId: typeof search?.conversationId === "string" ? search.conversationId : undefined,
+    messageId: typeof search?.messageId === "string" ? search.messageId : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "ActionFlow — Team Messaging for Professionals" },
@@ -65,26 +75,36 @@ export const Route = createFileRoute("/")({
 function Avatar({
   initials,
   online,
+  isGroup,
   size = "md",
 }: {
   initials: string;
   online?: boolean;
+  isGroup?: boolean;
   size?: "md" | "lg" | "xl";
 }) {
   return (
     <div className="relative shrink-0">
       <div
         className={cn(
-          "grid place-items-center rounded-2xl bg-gradient-to-tr from-primary/25 via-primary/15 to-primary/5 font-display font-bold text-primary transition-all duration-200 hover:scale-105 border border-primary/20 shadow-xs",
+          "grid place-items-center rounded-2xl font-display font-bold transition-all duration-200 hover:scale-105 border shadow-xs",
+          isGroup
+            ? "bg-gradient-to-tr from-emerald-500/25 via-primary/20 to-teal-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+            : "bg-gradient-to-tr from-primary/25 via-primary/15 to-primary/5 text-primary border-primary/20",
           size === "md" ? "h-11 w-11 text-sm" : size === "lg" ? "h-12 w-12 text-base" : "h-14 w-14 text-lg"
         )}
       >
-        {initials || "U"}
+        {isGroup ? <Users className={size === "md" ? "h-5 w-5" : "h-5.5 w-5.5"} /> : initials || "U"}
       </div>
-      {online && (
+      {online && !isGroup && (
         <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
           <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-card" />
+        </span>
+      )}
+      {isGroup && (
+        <span className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-primary text-[9px] text-primary-foreground border-2 border-card">
+          <Users className="h-2.5 w-2.5" />
         </span>
       )}
     </div>
@@ -112,6 +132,9 @@ function formatDisplayTime(dateString?: string): string {
 
 function ChatApp() {
   const { user, token } = useAuth();
+  const { activeWorkspace } = useWorkspace();
+  const search = Route.useSearch();
+  const navigate = useNavigate();
   const [conversations, setConversations] = useState<BackendConversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<BackendMessage[]>([]);
@@ -122,6 +145,7 @@ function ChatApp() {
   const [draft, setDraft] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
+  const [isGroupInfoModalOpen, setIsGroupInfoModalOpen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<SocketConnectionStatus>("connecting");
   const [networkError, setNetworkError] = useState<string | null>(null);
 
@@ -137,6 +161,16 @@ function ChatApp() {
   const [activeMenuMessageId, setActiveMenuMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // Phase 4: Message-to-Task State
+  const [createTaskSourceMessage, setCreateTaskSourceMessage] = useState<{
+    id: string;
+    conversationId: string;
+    text: string;
+    senderName?: string;
+  } | null>(null);
+  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -151,27 +185,34 @@ function ChatApp() {
     return () => window.removeEventListener("click", handleClickOutside);
   }, []);
 
-  // Reset conversation state when switching users
+  // Reset conversation state when switching users or workspaces
   useEffect(() => {
     setActiveId(null);
     setMessages([]);
     setConversations([]);
     setNetworkError(null);
-  }, [user?._id]);
+  }, [user?._id, activeWorkspace?.id]);
 
-  // 1. Load Conversations from MongoDB
+  // 1. Load Conversations from MongoDB (Workspace Scoped)
   const loadConversations = async (selectConvId?: string) => {
     if (!token) return;
     try {
       setNetworkError(null);
-      const res = await api.getConversations();
-      setConversations(res.conversations);
+      let convs: BackendConversation[] = [];
+      if (activeWorkspace?.id) {
+        const res = await api.getWorkspaceConversations(activeWorkspace.id);
+        convs = res.conversations;
+      } else {
+        const res = await api.getConversations();
+        convs = res.conversations;
+      }
+      setConversations(convs);
 
-      if (res.conversations.length > 0) {
-        if (selectConvId && res.conversations.some((c) => c.id === selectConvId)) {
+      if (convs.length > 0) {
+        if (selectConvId && convs.some((c) => c.id === selectConvId)) {
           setActiveId(selectConvId);
-        } else if (!activeId || !res.conversations.some((c) => c.id === activeId)) {
-          setActiveId(res.conversations[0].id);
+        } else if (!activeId || !convs.some((c) => c.id === activeId)) {
+          setActiveId(convs[0].id);
         }
       } else {
         setActiveId(null);
@@ -187,9 +228,9 @@ function ChatApp() {
 
   useEffect(() => {
     if (token) {
-      loadConversations();
+      loadConversations(search?.conversationId);
     }
-  }, [token, user?._id]);
+  }, [token, user?._id, activeWorkspace?.id, search?.conversationId]);
 
   // 2. Real-Time Socket.IO Setup with WhatsApp Edit, Delete, Read & Delivered Events
   useEffect(() => {
@@ -347,17 +388,23 @@ function ChatApp() {
     };
 
     const handleConversationUpdated = (data: any) => {
-      setConversations((prev) =>
-        prev.map((c) =>
-          c.id === data.conversationId
-            ? {
-                ...c,
-                lastMessageText: data.lastMessageText,
-                lastMessageTime: data.lastMessageTime,
-              }
-            : c
-        )
-      );
+      if (data.isRemoved && data.conversationId === activeId) {
+        setActiveId(null);
+        setMessages([]);
+        loadConversations();
+        return;
+      }
+      loadConversations(activeId || undefined);
+    };
+
+    const handleGroupMemberEvent = (data: any) => {
+      if (data.conversationId === activeId && data.userId === user?._id) {
+        setActiveId(null);
+        setMessages([]);
+        loadConversations();
+        return;
+      }
+      loadConversations(activeId || undefined);
     };
 
     const handleUserStatusChanged = (data: { userId: string; online: boolean }) => {
@@ -370,23 +417,37 @@ function ChatApp() {
       );
     };
 
+    socket.on("message:new", handleMessageReceived);
     socket.on("message_received", handleMessageReceived);
     socket.on("message_edited", handleMessageEdited);
     socket.on("message_deleted", handleMessageDeleted);
     socket.on("message_deleted_for_me", handleMessageDeletedForMe);
+    socket.on("conversation:read-updated", handleMessagesRead);
     socket.on("messages_read", handleMessagesRead);
     socket.on("messages_delivered", handleMessagesDelivered);
+    socket.on("conversation:updated", handleConversationUpdated);
     socket.on("conversation_updated", handleConversationUpdated);
+    socket.on("group:member_added", handleGroupMemberEvent);
+    socket.on("group:member_removed", handleGroupMemberEvent);
+    socket.on("group:updated", handleConversationUpdated);
+    socket.on("presence:updated", (data: any) => handleUserStatusChanged({ userId: data.userId, online: data.online }));
     socket.on("user_status_changed", handleUserStatusChanged);
 
     return () => {
+      socket.off("message:new", handleMessageReceived);
       socket.off("message_received", handleMessageReceived);
       socket.off("message_edited", handleMessageEdited);
       socket.off("message_deleted", handleMessageDeleted);
       socket.off("message_deleted_for_me", handleMessageDeletedForMe);
+      socket.off("conversation:read-updated", handleMessagesRead);
       socket.off("messages_read", handleMessagesRead);
       socket.off("messages_delivered", handleMessagesDelivered);
+      socket.off("conversation:updated", handleConversationUpdated);
       socket.off("conversation_updated", handleConversationUpdated);
+      socket.off("group:member_added", handleGroupMemberEvent);
+      socket.off("group:member_removed", handleGroupMemberEvent);
+      socket.off("group:updated", handleConversationUpdated);
+      socket.off("presence:updated");
       socket.off("user_status_changed", handleUserStatusChanged);
     };
   }, [token, activeId, user?._id]);
@@ -402,24 +463,47 @@ function ChatApp() {
       return;
     }
 
-    joinConversationRoom(activeId);
+    joinConversationRoom(activeId, activeWorkspace?.id);
     setLoadingMessages(true);
     setEditingMessage(null);
     setActiveMenuMessageId(null);
 
-    api
-      .getMessages(activeId)
+    const fetchPromise = activeWorkspace?.id
+      ? api.getWorkspaceMessages(activeWorkspace.id, activeId)
+      : api.getMessages(activeId);
+
+    fetchPromise
       .then((res) => {
         setMessages(res.messages);
         setNetworkError(null);
         setConversations((prev) =>
           prev.map((c) => (c.id === activeId ? { ...c, unread: 0 } : c))
         );
+
+        if (search?.messageId && (search?.conversationId === activeId || !search?.conversationId)) {
+          const target = res.messages.find((m) => m.id === search.messageId);
+          if (target) {
+            setHighlightedMessageId(search.messageId);
+            setTimeout(() => {
+              const el = document.getElementById(`msg-${search.messageId}`);
+              if (el) {
+                el.scrollIntoView({ behavior: "smooth", block: "center" });
+              }
+            }, 300);
+            setTimeout(() => setHighlightedMessageId(null), 3500);
+          } else {
+            toast.info("Source message could not be found in recent conversation history.");
+          }
+        }
       })
       .catch((err) => {
         console.error("[ChatApp] Error loading messages:", err);
-        // If user is not authorized for this conversation (e.g. after switching accounts), cleanly deselect
-        if (err.message?.includes("Access denied") || err.message?.includes("403")) {
+        // If user is not authorized for this conversation (e.g. after switching accounts or workspaces), cleanly deselect
+        if (
+          err.message?.includes("Access denied") ||
+          err.message?.includes("403") ||
+          err.message?.includes("not a member")
+        ) {
           setActiveId(null);
           setMessages([]);
           setNetworkError(null);
@@ -434,7 +518,7 @@ function ChatApp() {
     return () => {
       leaveConversationRoom(activeId);
     };
-  }, [activeId, token]);
+  }, [activeId, token, activeWorkspace?.id]);
 
   // Auto-scroll to bottom of chat when new messages arrive
   useEffect(() => {
@@ -446,14 +530,17 @@ function ChatApp() {
   // Load teammates directory for quick launcher in empty state
   useEffect(() => {
     if (token) {
-      api
-        .getUsers()
+      const fetchPromise = activeWorkspace?.id
+        ? api.searchWorkspaceColleagues(activeWorkspace.id)
+        : api.getUsers();
+
+      fetchPromise
         .then((res) => {
           setTeammates(res.users);
         })
         .catch(() => {});
     }
-  }, [token, user?._id]);
+  }, [token, user?._id, activeWorkspace?.id]);
 
   const active = useMemo(
     () => conversations.find((t) => t.id === activeId),
@@ -490,7 +577,9 @@ function ChatApp() {
   // Quick Chat Launcher with teammate
   async function handleStartChatWithUser(userId: string) {
     try {
-      const res = await api.createConversation(userId);
+      const res = activeWorkspace?.id
+        ? await api.createDirectConversation(activeWorkspace.id, userId)
+        : await api.createConversation(userId);
       await loadConversations(res.conversation.id);
       setMobileOpen(true);
     } catch (err: any) {
@@ -503,7 +592,11 @@ function ChatApp() {
   async function handleSendReaction(emoji: string) {
     if (!activeId || sending) return;
     try {
-      await api.sendMessage(activeId, emoji);
+      if (activeWorkspace?.id) {
+        await api.sendWorkspaceMessage(activeWorkspace.id, activeId, emoji);
+      } else {
+        await api.sendMessage(activeId, emoji);
+      }
     } catch (err: any) {
       console.error("[ChatApp] Failed to send reaction:", err);
     }
@@ -548,7 +641,9 @@ function ChatApp() {
     // Normal message send
     setDraft("");
     try {
-      const res = await api.sendMessage(activeId, text);
+      const res = activeWorkspace?.id
+        ? await api.sendWorkspaceMessage(activeWorkspace.id, activeId, text)
+        : await api.sendMessage(activeId, text);
       const newMsg = res.message;
 
       setMessages((prev) => {
@@ -763,7 +858,7 @@ function ChatApp() {
                   {isActive && (
                     <span className="absolute left-1 top-2.5 bottom-2.5 w-1 rounded-full bg-primary shadow-[0_0_8px_rgba(0,168,132,0.8)]" />
                   )}
-                  <Avatar initials={t.initials} online={t.online} />
+                  <Avatar initials={t.initials} online={t.online} isGroup={t.type === "GROUP"} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <span className={cn("truncate font-display text-sm", isActive ? "font-bold text-primary" : "font-semibold text-foreground")}>
@@ -775,7 +870,7 @@ function ChatApp() {
                     </div>
                     <div className="mt-0.5 flex items-center justify-between gap-2">
                       <p className="truncate text-xs text-muted-foreground group-hover:text-foreground/90 transition-colors">
-                        {t.lastMessageText || "Started a conversation"}
+                        {t.lastMessageText || (t.type === "GROUP" ? "Created a group chat" : "Started a conversation")}
                       </p>
                       {t.unread > 0 && (
                         <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-gradient-to-r from-primary to-emerald-600 px-1.5 text-[10px] font-bold text-primary-foreground shadow-xs animate-pulse-soft">
@@ -802,21 +897,42 @@ function ChatApp() {
           <>
             {/* Thread Header */}
             <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/80 bg-card/85 backdrop-blur-md px-4 md:px-6 shadow-2xs z-10">
-              <div className="flex items-center gap-3 min-w-0">
+              <div
+                onClick={() => {
+                  if (active.type === "GROUP") setIsGroupInfoModalOpen(true);
+                }}
+                className={cn(
+                  "flex items-center gap-3 min-w-0",
+                  active.type === "GROUP" && "cursor-pointer group/header"
+                )}
+              >
                 <button
-                  onClick={() => setMobileOpen(false)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMobileOpen(false);
+                  }}
                   className="-ml-1 grid h-9 w-9 place-items-center rounded-xl text-muted-foreground hover:bg-muted md:hidden cursor-pointer transition-colors"
                   aria-label="Back to conversations"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
 
-                <Avatar initials={active.initials} online={active.online} size="lg" />
+                <Avatar initials={active.initials} online={active.online} isGroup={active.type === "GROUP"} size="lg" />
 
                 <div className="min-w-0">
-                  <p className="truncate font-display text-sm font-bold text-foreground tracking-tight">{active.name}</p>
+                  <p className={cn(
+                    "truncate font-display text-sm font-bold text-foreground tracking-tight",
+                    active.type === "GROUP" && "group-hover/header:text-primary transition-colors"
+                  )}>
+                    {active.name}
+                  </p>
                   <p className="truncate text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                    {active.online ? (
+                    {active.type === "GROUP" ? (
+                      <span className="text-primary font-semibold flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        {active.participantCount || active.participants?.length || 2} members • View info
+                      </span>
+                    ) : active.online ? (
                       <>
                         <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                         <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Active now</span>
@@ -830,6 +946,16 @@ function ChatApp() {
 
               {/* Thread Action Buttons with smooth hover */}
               <div className="flex items-center gap-1 text-muted-foreground">
+                {active.type === "GROUP" && (
+                  <button
+                    type="button"
+                    onClick={() => setIsGroupInfoModalOpen(true)}
+                    className="grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 hover:bg-primary/10 hover:text-primary hover:scale-105 active:scale-95 cursor-pointer text-primary"
+                    title="Group details & member management"
+                  >
+                    <Users className="h-4.5 w-4.5" />
+                  </button>
+                )}
                 <button
                   type="button"
                   className="grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 cursor-pointer"
@@ -881,11 +1007,13 @@ function ChatApp() {
                     return (
                       <div
                         key={m.id}
+                        id={`msg-${m.id}`}
                         className={cn(
-                          "group relative max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-xs md:max-w-[65%] transition-all duration-200 animate-pop-in",
+                          "group relative max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-xs md:max-w-[65%] transition-all duration-300 animate-pop-in",
                           isSender
                             ? "bubble-tail-out self-end bg-gradient-to-br from-bubble-out to-bubble-out/95 text-bubble-out-foreground hover:shadow-md"
-                            : "bubble-tail-in self-start bg-card text-bubble-in-foreground border border-border/60 hover:shadow-sm"
+                            : "bubble-tail-in self-start bg-card text-bubble-in-foreground border border-border/60 hover:shadow-sm",
+                          highlightedMessageId === m.id && "ring-2 ring-emerald-500 bg-emerald-500/20 shadow-lg scale-[1.02]"
                         )}
                       >
                         {/* Quick Emoji Reaction Pill on Hover */}
@@ -935,7 +1063,7 @@ function ChatApp() {
                             <div
                               onClick={(e) => e.stopPropagation()}
                               className={cn(
-                                "absolute z-30 mt-1 w-44 rounded-2xl border border-border bg-card/95 backdrop-blur-md p-1.5 shadow-xl animate-pop-in",
+                                "absolute z-30 mt-1 w-48 rounded-2xl border border-border bg-card/95 backdrop-blur-md p-1.5 shadow-xl animate-pop-in",
                                 isSender ? "right-0" : "left-0"
                               )}
                             >
@@ -950,6 +1078,26 @@ function ChatApp() {
                                 <Info className="h-3.5 w-3.5 text-primary" />
                                 <span>Message info</span>
                               </button>
+
+                              {/* Create Task from Message (Phase 4) */}
+                              {!isDeleted && (
+                                <button
+                                  onClick={() => {
+                                    setActiveMenuMessageId(null);
+                                    setCreateTaskSourceMessage({
+                                      id: m.id,
+                                      conversationId: activeId || "",
+                                      text: m.text,
+                                      senderName: m.sender?.displayName || (isSender ? "You" : "Teammate"),
+                                    });
+                                    setIsCreateTaskModalOpen(true);
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors cursor-pointer text-left font-medium"
+                                >
+                                  <CheckSquare className="h-3.5 w-3.5 text-emerald-500" />
+                                  <span>Create Task from Message</span>
+                                </button>
+                              )}
 
                               {/* Edit Message (Only for sender and not deleted) */}
                               {isSender && !isDeleted && (
@@ -989,6 +1137,13 @@ function ChatApp() {
                             </div>
                           )}
                         </div>
+
+                        {/* Group Sender Display Name (Phase 3) */}
+                        {!isSender && active.type === "GROUP" && m.sender?.displayName && (
+                          <p className="text-[11px] font-semibold text-primary mb-1 select-none">
+                            {m.sender.displayName}
+                          </p>
+                        )}
 
                         {/* Message Content */}
                         {isDeleted ? (
@@ -1261,6 +1416,7 @@ function ChatApp() {
       <NewConversationModal
         open={isNewChatModalOpen}
         onOpenChange={setIsNewChatModalOpen}
+        workspaceId={activeWorkspace?.id}
         onConversationCreated={(newConvId) => {
           loadConversations(newConvId);
           setMobileOpen(true);
@@ -1282,6 +1438,41 @@ function ChatApp() {
         onOpenChange={(open) => !open && setDeleteModalMessage(null)}
         message={deleteModalMessage}
         onConfirmDelete={handleConfirmDelete}
+      />
+
+      {/* Group Info & Management Modal (Phase 3) */}
+      <GroupInfoModal
+        open={isGroupInfoModalOpen}
+        onOpenChange={setIsGroupInfoModalOpen}
+        conversation={active}
+        workspaceId={activeWorkspace?.id}
+        currentUserId={user?._id}
+        onGroupUpdated={() => {
+          loadConversations(activeId || undefined);
+        }}
+        onGroupLeft={(leftConvId) => {
+          setActiveId(null);
+          setMessages([]);
+          loadConversations();
+        }}
+      />
+
+      {/* Create Task from Message Modal (Phase 4) */}
+      <CreateTaskModal
+        open={isCreateTaskModalOpen}
+        onOpenChange={setIsCreateTaskModalOpen}
+        workspaceId={activeWorkspace?.id}
+        currentUserId={user?._id}
+        sourceMessage={createTaskSourceMessage}
+        onTaskCreated={(task) => {
+          toast.success(`Task "${task.title}" created`, {
+            description: "Task has been created and added to workspace tasks.",
+            action: {
+              label: "View in My Tasks",
+              onClick: () => navigate({ to: "/tasks" }),
+            },
+          });
+        }}
       />
     </>
   );

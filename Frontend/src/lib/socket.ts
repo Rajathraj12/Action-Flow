@@ -62,14 +62,29 @@ export function disconnectSocketClient(): void {
   }
 }
 
-export function joinConversationRoom(conversationId: string): void {
+export function joinConversationRoom(conversationId: string, workspaceId?: string): void {
   if (socket?.connected) {
-    socket.emit("join_conversation", { conversationId });
+    socket.emit("conversation:join", { conversationId, workspaceId });
+    socket.emit("join_conversation", { conversationId, workspaceId });
   }
 }
 
 export function leaveConversationRoom(conversationId: string): void {
   if (socket?.connected) {
+    socket.emit("conversation:leave", { conversationId });
     socket.emit("leave_conversation", { conversationId });
   }
 }
+
+export function joinWorkspaceRoom(workspaceId: string): void {
+  if (socket?.connected) {
+    socket.emit("workspace:join", { workspaceId });
+  }
+}
+
+export function leaveWorkspaceRoom(workspaceId: string): void {
+  if (socket?.connected) {
+    socket.emit("workspace:leave", { workspaceId });
+  }
+}
+

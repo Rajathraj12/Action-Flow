@@ -1,12 +1,14 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { MessageSquare, CheckSquare, LayoutDashboard, Settings, LogOut, Sparkles } from "lucide-react";
+import { MessageSquare, CheckSquare, LayoutDashboard, Settings, LogOut, Sparkles, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { useWorkspace } from "@/context/WorkspaceContext";
 
 export function SidebarNav() {
   const location = useLocation();
   const currentPath = location.pathname;
   const { user, logout } = useAuth();
+  const { activeWorkspace, userRole } = useWorkspace();
 
   return (
     <nav className="hidden w-[4.25rem] shrink-0 flex-col items-center gap-2.5 bg-rail/95 backdrop-blur-md pb-5 text-rail-foreground md:flex border-r border-rail-foreground/10 select-none shadow-xl z-20">
@@ -24,6 +26,32 @@ export function SidebarNav() {
           />
         </Link>
       </div>
+
+      {/* Active Workspace Badge */}
+      <div className="relative group flex items-center justify-center w-full px-2 mb-1">
+        <Link
+          to="/settings"
+          className="relative grid h-10 w-10 place-items-center rounded-xl bg-card/60 border border-rail-foreground/15 text-xs font-bold text-rail-foreground transition-all duration-200 hover:scale-105 hover:border-primary/60 cursor-pointer shadow-xs"
+        >
+          {activeWorkspace ? (
+            <span className="uppercase text-[11px] font-black text-primary">
+              {activeWorkspace.name.slice(0, 2)}
+            </span>
+          ) : (
+            <Building2 className="h-4 w-4 text-rail-foreground/60" />
+          )}
+        </Link>
+
+        {/* Floating Tooltip */}
+        <div className="absolute left-full ml-3 px-3 py-2 rounded-xl bg-card border border-border text-foreground text-xs shadow-xl opacity-0 translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 pointer-events-none z-50 whitespace-nowrap">
+          <div className="font-bold">{activeWorkspace ? activeWorkspace.name : "Workspaces"}</div>
+          <div className="text-[10px] text-muted-foreground mt-0.5">
+            {userRole ? `Role: ${userRole}` : "Click to manage"}
+          </div>
+        </div>
+      </div>
+
+      <div className="h-px w-8 bg-rail-foreground/15 my-0.5" />
       
       {/* Navigation Links */}
       <div className="flex flex-col items-center gap-2 w-full px-2">

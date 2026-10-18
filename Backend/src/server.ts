@@ -10,6 +10,9 @@ import { initSocket } from "./socket/socketHandler.js";
 import authRoutes from "./routes/authRoutes.js";
 import conversationRoutes from "./routes/conversationRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
+import workspaceRoutes from "./routes/workspaceRoutes.js";
+import workspaceMessagingRoutes from "./routes/workspaceMessagingRoutes.js";
+import workspaceTaskRoutes from "./routes/workspaceTaskRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
@@ -22,7 +25,7 @@ app.use(
   cors({
     origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-workspace-id"],
   })
 );
 app.use(express.json());
@@ -38,6 +41,9 @@ app.get("/api/health", (req, res) => {
 
 // Mount API routes
 app.use("/api/auth", authRoutes);
+app.use("/api/workspaces", workspaceRoutes);
+app.use("/api/workspaces", workspaceMessagingRoutes);
+app.use("/api/workspaces", workspaceTaskRoutes);
 app.use("/api/conversations", conversationRoutes);
 app.use("/api/conversations", messageRoutes);
 

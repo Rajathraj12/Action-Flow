@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Bell, Key, Sparkles, CheckSquare, Users, HelpCircle, Monitor, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { TeamAndRolesTab } from "@/components/workspace/TeamAndRolesTab";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -14,7 +15,15 @@ export const Route = createFileRoute("/settings")({
 type SettingTab = "none" | "Account" | "AI Extractions" | "Task Preferences" | "Notifications" | "Team & Roles" | "Help";
 
 function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<SettingTab>("none");
+  const [activeTab, setActiveTab] = useState<SettingTab>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("token") || params.get("tab") === "Team & Roles") {
+        return "Team & Roles";
+      }
+    }
+    return "none";
+  });
   const { user } = useAuth();
 
   return (
@@ -117,13 +126,7 @@ function SettingsPage() {
 
         {activeTab === "Team & Roles" && (
           <SettingsDetail title="Team & Roles">
-            <h3 className="px-6 pt-4 pb-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider">Workspace</h3>
-            <ListOption title="Workspace Name" value="Acme Corp" />
-            <ListOption title="Members" value="8 active" />
-            
-            <h3 className="px-6 pt-6 pb-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider">Permissions</h3>
-            <ListOption title="Manager Dashboard Access" value="Admins only" />
-            <ToggleOption title="Allow guest invites" description="Team members can invite external guests to chats" />
+            <TeamAndRolesTab />
           </SettingsDetail>
         )}
 

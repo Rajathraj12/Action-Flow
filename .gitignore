@@ -34,3 +34,8 @@ Thumbs.db
 # IDE Files
 .vscode/
 .idea/
+
+# Test scripts
+Backend/scripts/
+scripts/
+

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Check,
@@ -13,8 +13,16 @@ import {
   Calendar,
   Clock,
   Zap,
+  AlertTriangle,
+  Layers,
+  BarChart3,
+  Loader2,
+  ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
+import { useWorkspace } from "@/context/WorkspaceContext";
+import { api, type TaskSummaryResponse } from "@/lib/api";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -68,15 +76,40 @@ const INITIAL_SUGGESTIONS: AISuggestion[] = [
 ];
 
 function DashboardPage() {
+  const { user, token } = useAuth();
+  const { activeWorkspace, role } = useWorkspace();
+
   const [aiSuggestions, setAiSuggestions] = useState<AISuggestion[]>(INITIAL_SUGGESTIONS);
   const [approvedCount, setApprovedCount] = useState(4);
-  const [activeTasksCount, setActiveTasksCount] = useState(12);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+
+  // Real Workspace Task Summary State
+  const [taskSummary, setTaskSummary] = useState<TaskSummaryResponse["summary"] | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState(true);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!token || !activeWorkspace?.id) return;
+    setLoadingSummary(true);
+    setSummaryError(null);
+
+    api
+      .getTaskSummary(activeWorkspace.id)
+      .then((res) => {
+        setTaskSummary(res.summary);
+      })
+      .catch((err) => {
+        console.warn("[DashboardPage] Task summary error:", err.message);
+        setSummaryError(err.message || "Failed to load workspace task summary");
+      })
+      .finally(() => {
+        setLoadingSummary(false);
+      });
+  }, [token, activeWorkspace?.id]);
 
   const handleApprove = (id: string, title: string) => {
     setAiSuggestions((prev) => prev.filter((s) => s.id !== id));
     setApprovedCount((c) => c + 1);
-    setActiveTasksCount((c) => c + 1);
     setActionNotice(`Approved task: "${title.slice(0, 32)}..."`);
     setTimeout(() => setActionNotice(null), 3500);
   };
@@ -86,6 +119,11 @@ function DashboardPage() {
     setActionNotice(`Dismissed AI suggestion`);
     setTimeout(() => setActionNotice(null), 3500);
   };
+
+  const totalTasks = taskSummary?.totalTasks ?? 0;
+  const activeTasks = taskSummary?.activeTasks ?? 0;
+  const completedTasks = taskSummary?.completedTasks ?? 0;
+  const overdueTasks = taskSummary?.overdueTasks ?? 0;
 
   return (
     <div className="flex flex-col flex-1 h-full w-full bg-background relative overflow-hidden">
@@ -104,7 +142,7 @@ function DashboardPage() {
               Manager Dashboard
             </h1>
             <p className="text-[11px] text-muted-foreground hidden sm:block">
-              AI-driven workflow analytics & task extractions
+              {activeWorkspace?.name || "Workspace"} • Task metrics & team workload
             </p>
           </div>
         </div>
@@ -112,7 +150,7 @@ function DashboardPage() {
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            AI Pipeline Live
+            Live Analytics
           </span>
         </div>
       </header>
@@ -127,48 +165,220 @@ function DashboardPage() {
 
       <main className="flex-1 overflow-y-auto p-6 md:p-8 z-10 custom-scrollbar">
         <div className="mx-auto max-w-5xl space-y-8">
-          {/* Overview Stats */}
+          {/* Permission / RBAC notice if restricted */}
+          {summaryError && summaryError.includes("Forbidden") && (
+            <div className="flex items-center gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-700 dark:text-amber-400">
+              <ShieldAlert className="h-5 w-5 shrink-0" />
+              <span>
+                Workspace-wide task summary is restricted to workspace Managers, Admins, and Owners. You are currently viewing with Member permissions.
+              </span>
+            </div>
+          )}
+
+          {/* Real Workspace Task Stats */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
             <StatCard
               icon={<LayoutDashboard className="h-5 w-5" />}
               title="Active Tasks"
-              value={activeTasksCount.toString()}
-              change="+2 this week"
+              value={loadingSummary ? "..." : activeTasks.toString()}
+              change={totalTasks > 0 ? `${Math.round((activeTasks / totalTasks) * 100)}% of total` : "0%"}
               accent="primary"
             />
             <StatCard
-              icon={<Users className="h-5 w-5" />}
-              title="Team Members"
-              value="5"
-              change="All seeded active"
-              accent="blue"
-            />
-            <StatCard
-              icon={<Sparkles className="h-5 w-5" />}
-              title="AI Extractions Pending"
-              value={aiSuggestions.length.toString()}
-              change="From live chats"
-              accent="purple"
-              highlight={aiSuggestions.length > 0}
-            />
-            <StatCard
               icon={<CheckCircle2 className="h-5 w-5" />}
-              title="Tasks Approved"
-              value={approvedCount.toString()}
-              change="100% resolution"
+              title="Tasks Completed"
+              value={loadingSummary ? "..." : completedTasks.toString()}
+              change={totalTasks > 0 ? `${Math.round((completedTasks / totalTasks) * 100)}% completion` : "0%"}
               accent="emerald"
+            />
+            <StatCard
+              icon={<AlertTriangle className="h-5 w-5" />}
+              title="Overdue Tasks"
+              value={loadingSummary ? "..." : overdueTasks.toString()}
+              change={overdueTasks > 0 ? "Requires attention" : "All on schedule"}
+              accent="rose"
+              highlight={overdueTasks > 0}
+            />
+            <StatCard
+              icon={<Layers className="h-5 w-5" />}
+              title="Total Tasks"
+              value={loadingSummary ? "..." : totalTasks.toString()}
+              change={`${activeWorkspace?.name || "Workspace"} scope`}
+              accent="blue"
             />
           </div>
 
+          {/* Real Workspace Task Breakdown: Status & Priority */}
+          {taskSummary && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Grouped by Status */}
+              <div className="rounded-2xl border border-border/80 bg-card/80 p-5 shadow-xs backdrop-blur-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-bold text-foreground font-display">
+                      Tasks Grouped by Status
+                    </h3>
+                  </div>
+                  <span className="text-xs text-muted-foreground font-semibold">
+                    {totalTasks} total
+                  </span>
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  {[
+                    { key: "TODO", label: "To Do", count: taskSummary.statusBreakdown.TODO, color: "bg-slate-500", text: "text-slate-500" },
+                    { key: "IN_PROGRESS", label: "In Progress", count: taskSummary.statusBreakdown.IN_PROGRESS, color: "bg-amber-500", text: "text-amber-500" },
+                    { key: "IN_REVIEW", label: "In Review", count: taskSummary.statusBreakdown.IN_REVIEW, color: "bg-purple-500", text: "text-purple-500" },
+                    { key: "DONE", label: "Done", count: taskSummary.statusBreakdown.DONE, color: "bg-emerald-500", text: "text-emerald-500" },
+                  ].map((item) => {
+                    const pct = totalTasks > 0 ? Math.round((item.count / totalTasks) * 100) : 0;
+                    return (
+                      <div key={item.key} className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-semibold text-foreground flex items-center gap-1.5">
+                            <span className={cn("h-2 w-2 rounded-full", item.color)} />
+                            {item.label}
+                          </span>
+                          <span className="text-muted-foreground">
+                            <strong className="text-foreground">{item.count}</strong> ({pct}%)
+                          </span>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-muted/60 overflow-hidden">
+                          <div
+                            className={cn("h-full rounded-full transition-all duration-500", item.color)}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Grouped by Priority */}
+              <div className="rounded-2xl border border-border/80 bg-card/80 p-5 shadow-xs backdrop-blur-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-bold text-foreground font-display">
+                      Tasks Grouped by Priority
+                    </h3>
+                  </div>
+                  <span className="text-xs text-muted-foreground font-semibold">
+                    {totalTasks} total
+                  </span>
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  {[
+                    { key: "URGENT", label: "Urgent", count: taskSummary.priorityBreakdown.URGENT, color: "bg-rose-500", text: "text-rose-500" },
+                    { key: "HIGH", label: "High", count: taskSummary.priorityBreakdown.HIGH, color: "bg-amber-500", text: "text-amber-500" },
+                    { key: "MEDIUM", label: "Medium", count: taskSummary.priorityBreakdown.MEDIUM, color: "bg-sky-500", text: "text-sky-500" },
+                    { key: "LOW", label: "Low", count: taskSummary.priorityBreakdown.LOW, color: "bg-slate-400", text: "text-slate-400" },
+                  ].map((item) => {
+                    const pct = totalTasks > 0 ? Math.round((item.count / totalTasks) * 100) : 0;
+                    return (
+                      <div key={item.key} className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-semibold text-foreground flex items-center gap-1.5">
+                            <span className={cn("h-2 w-2 rounded-full", item.color)} />
+                            {item.label}
+                          </span>
+                          <span className="text-muted-foreground">
+                            <strong className="text-foreground">{item.count}</strong> ({pct}%)
+                          </span>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-muted/60 overflow-hidden">
+                          <div
+                            className={cn("h-full rounded-full transition-all duration-500", item.color)}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Workload Grouped by Assignee */}
+          {taskSummary && taskSummary.assigneeWorkload.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary/15 text-primary">
+                    <Users className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold font-display text-foreground">
+                      Team Workload by Assignee
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      Real-time distribution of active and completed tasks across workspace members.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                {taskSummary.assigneeWorkload.map((w) => {
+                  const totalMemberTasks = w.activeTasks + w.completedTasks;
+                  const memberPct = totalMemberTasks > 0 ? Math.round((w.completedTasks / totalMemberTasks) * 100) : 0;
+                  return (
+                    <div
+                      key={w.assignee?.id || "unassigned"}
+                      className="rounded-2xl border border-border/80 bg-card/90 p-4 shadow-xs backdrop-blur-sm space-y-3"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/20 text-xs font-bold text-primary">
+                          {w.assignee?.displayName?.charAt(0) || "U"}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-xs font-bold text-foreground truncate">
+                            {w.assignee?.displayName || "Unassigned"}
+                          </h4>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            {w.assignee?.email || "No email"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-border/50">
+                        <span className="text-muted-foreground">Active Tasks:</span>
+                        <span className="font-bold text-primary">{w.activeTasks}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Completed:</span>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                          {w.completedTasks}
+                        </span>
+                      </div>
+
+                      <div className="h-1.5 w-full rounded-full bg-muted/60 overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-primary to-emerald-500 rounded-full"
+                          style={{ width: `${memberPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* AI Task Approvals Section */}
-          <div className="space-y-4">
+          <div className="space-y-4 pt-2">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="grid h-8 w-8 place-items-center rounded-lg bg-purple-500/15 text-purple-600 dark:text-purple-400">
                   <Sparkles className="h-4 w-4" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold font-display text-foreground">
+                  <h2 className="text-base font-bold font-display text-foreground">
                     ActionFlow AI Extractions
                   </h2>
                   <p className="text-xs text-muted-foreground">
@@ -236,7 +446,7 @@ function StatCard({
   title: string;
   value: string;
   change: string;
-  accent: "primary" | "blue" | "purple" | "emerald";
+  accent: "primary" | "blue" | "purple" | "emerald" | "rose";
   highlight?: boolean;
 }) {
   const accentClasses = {
@@ -244,13 +454,14 @@ function StatCard({
     blue: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20",
     purple: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/20",
     emerald: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+    rose: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/20",
   }[accent];
 
   return (
     <div
       className={cn(
         "group relative flex flex-col justify-between rounded-2xl border border-border/80 bg-card/80 p-5 shadow-xs backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/40",
-        highlight && "ring-1 ring-purple-500/30"
+        highlight && "ring-1 ring-rose-500/30"
       )}
     >
       <div className="flex items-center justify-between">
@@ -349,4 +560,3 @@ function ApprovalCard({
     </div>
   );
 }
-

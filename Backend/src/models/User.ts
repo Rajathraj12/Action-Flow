@@ -4,8 +4,9 @@ export interface IUser extends Document {
   firebaseUid: string;
   email: string;
   displayName: string;
+  avatarUrl?: string;
   initials: string;
-  role: string;
+  role?: string; // Kept for backward compatibility with existing chat components; do NOT use for RBAC
   online: boolean;
   lastSeen: Date;
   createdAt: Date;
@@ -32,6 +33,10 @@ const UserSchema = new Schema<IUser>(
       type: String,
       required: true,
       trim: true,
+    },
+    avatarUrl: {
+      type: String,
+      default: "",
     },
     initials: {
       type: String,
