@@ -65,7 +65,12 @@ export async function verifyFirebaseIdToken(token: string): Promise<VerifiedAuth
     const parts = token.replace("dev-token-", "").split(":");
     const uid = parts[0] || "dev-user";
     const email = parts[1] || `${uid}@actionflow.dev`;
-    const displayName = parts[2] || uid;
+    let displayName = parts[2] || uid;
+    try {
+      displayName = decodeURIComponent(displayName);
+    } catch {
+      // ignore
+    }
     return { uid, email, displayName };
   }
 

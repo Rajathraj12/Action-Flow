@@ -29,6 +29,10 @@ import {
   MessageCircle,
   Users,
   CheckSquare,
+  ChevronUp,
+  ChevronDown,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -51,6 +55,8 @@ import { MessageInfoModal } from "@/components/chat/MessageInfoModal";
 import { DeleteMessageModal } from "@/components/chat/DeleteMessageModal";
 import { GroupInfoModal } from "@/components/chat/GroupInfoModal";
 import { CreateTaskModal } from "@/components/tasks/CreateTaskModal";
+import { AiTaskReviewModal } from "@/components/tasks/AiTaskReviewModal";
+import type { AiDetectionResponse } from "@/lib/api";
 
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "🔥", "🎉", "🚀", "🙌", "✨", "😊", "👀", "💯", "👏"];
 
@@ -159,6 +165,7 @@ function ChatApp() {
   const [deleteModalMessage, setDeleteModalMessage] = useState<BackendMessage | null>(null);
   const [infoModalMessage, setInfoModalMessage] = useState<BackendMessage | null>(null);
   const [activeMenuMessageId, setActiveMenuMessageId] = useState<string | null>(null);
+  const [menuPlacement, setMenuPlacement] = useState<"up" | "down">("down");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Phase 4: Message-to-Task State
@@ -169,7 +176,39 @@ function ChatApp() {
     senderName?: string;
   } | null>(null);
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
+  const [isAiTaskReviewModalOpen, setIsAiTaskReviewModalOpen] = useState(false);
+  const [aiDetectionData, setAiDetectionData] = useState<AiDetectionResponse | null>(null);
+  const [aiDetectingMessageId, setAiDetectingMessageId] = useState<string | null>(null);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+  const [isChatSidebarCollapsed, setIsChatSidebarCollapsed] = useState(false);
+
+  // Phase 6: In-chat message search
+  const [inChatSearchOpen, setInChatSearchOpen] = useState(false);
+  const [inChatSearchQuery, setInChatSearchQuery] = useState("");
+  const [inChatMatchIndex, setInChatMatchIndex] = useState(0);
+
+  // Compute matching message IDs in current conversation
+  const matchingMessageIds = useMemo(() => {
+    if (!inChatSearchQuery.trim()) return [];
+    const q = inChatSearchQuery.trim().toLowerCase();
+    return messages
+      .filter((m) => m.text && m.text.toLowerCase().includes(q))
+      .map((m) => m.id);
+  }, [messages, inChatSearchQuery]);
+
+  const jumpToMatch = (index: number) => {
+    if (matchingMessageIds.length === 0) return;
+    const targetIndex = (index + matchingMessageIds.length) % matchingMessageIds.length;
+    setInChatMatchIndex(targetIndex);
+    const targetId = matchingMessageIds[targetIndex];
+    setHighlightedMessageId(targetId);
+    setTimeout(() => {
+      const el = document.getElementById(`msg-${targetId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 50);
+  };
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -679,6 +718,30 @@ function ChatApp() {
     }, 50);
   }
 
+  // Handle AI Detect Task from Dropdown Menu
+  async function handleAiDetectTask(msg: BackendMessage) {
+    if (!activeWorkspace?.id || !activeId) {
+      toast.error("Active workspace and conversation are required.");
+      return;
+    }
+
+    setAiDetectingMessageId(msg.id);
+    setActiveMenuMessageId(null);
+    const toastId = toast.loading("Analyzing message with trained AI model...");
+
+    try {
+      const res = await api.aiDetectTask(activeWorkspace.id, activeId, msg.id);
+      toast.dismiss(toastId);
+      setAiDetectionData(res);
+      setIsAiTaskReviewModalOpen(true);
+    } catch (err: any) {
+      toast.dismiss(toastId);
+      toast.error(err?.message || "Failed to analyze message with AI");
+    } finally {
+      setAiDetectingMessageId(null);
+    }
+  }
+
   // Handle Delete Confirmation from Modal
   async function handleConfirmDelete(deleteType: "everyone" | "me") {
     if (!deleteModalMessage || !activeId) return;
@@ -718,8 +781,9 @@ function ChatApp() {
       {/* Sidebar: Conversation List */}
       <aside
         className={cn(
-          "flex w-full flex-col border-r border-border bg-card md:w-[22rem]",
-          mobileOpen && "hidden md:flex"
+          "flex w-full flex-col border-r border-border bg-card transition-all duration-300 ease-in-out md:w-[22rem]",
+          mobileOpen && "hidden md:flex",
+          isChatSidebarCollapsed && "md:w-0 md:border-r-0 md:overflow-hidden md:opacity-0 pointer-events-none"
         )}
       >
         <header className="border-b border-border/80 px-5 pb-3 bg-card/60 backdrop-blur-md">
@@ -728,7 +792,7 @@ function ChatApp() {
               <img src="/logo.png" alt="ActionFlow" className="h-6 object-contain" />
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               {/* Start New Conversation Button */}
               <button
                 onClick={() => setIsNewChatModalOpen(true)}
@@ -737,6 +801,17 @@ function ChatApp() {
                 title="Start new conversation"
               >
                 <Plus className="h-5 w-5" />
+              </button>
+
+              {/* Collapse conversation list button */}
+              <button
+                type="button"
+                onClick={() => setIsChatSidebarCollapsed(true)}
+                className="hidden md:grid h-9 w-9 place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                title="Collapse conversation list"
+                aria-label="Collapse conversation list"
+              >
+                <PanelLeftClose className="h-4.5 w-4.5" />
               </button>
             </div>
           </div>
@@ -917,6 +992,24 @@ function ChatApp() {
                   <ArrowLeft className="h-5 w-5" />
                 </button>
 
+                {/* Desktop Toggle Conversations Sidebar Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsChatSidebarCollapsed(!isChatSidebarCollapsed);
+                  }}
+                  className="hidden md:grid h-9 w-9 place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer transition-colors"
+                  title={isChatSidebarCollapsed ? "Show conversation list" : "Hide conversation list"}
+                  aria-label={isChatSidebarCollapsed ? "Show conversation list" : "Hide conversation list"}
+                >
+                  {isChatSidebarCollapsed ? (
+                    <PanelLeftOpen className="h-5 w-5 text-primary" />
+                  ) : (
+                    <PanelLeftClose className="h-5 w-5" />
+                  )}
+                </button>
+
                 <Avatar initials={active.initials} online={active.online} isGroup={active.type === "GROUP"} size="lg" />
 
                 <div className="min-w-0">
@@ -956,6 +1049,24 @@ function ChatApp() {
                     <Users className="h-4.5 w-4.5" />
                   </button>
                 )}
+                {/* Search in this chat */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInChatSearchOpen(!inChatSearchOpen);
+                    if (inChatSearchOpen) setInChatSearchQuery("");
+                  }}
+                  className={cn(
+                    "grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 cursor-pointer",
+                    inChatSearchOpen
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95"
+                  )}
+                  title="Search messages in conversation"
+                >
+                  <Search className="h-4 w-4" />
+                </button>
+
                 <button
                   type="button"
                   className="grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 cursor-pointer"
@@ -982,8 +1093,74 @@ function ChatApp() {
               </div>
             </header>
 
+            {/* In-chat Search Bar Banner */}
+            {inChatSearchOpen && (
+              <div className="flex items-center gap-2 px-6 py-2.5 border-b border-border/80 bg-card/95 backdrop-blur-md animate-in slide-in-from-top-2 shrink-0 z-10">
+                <Search className="h-4 w-4 text-primary shrink-0" />
+                <input
+                  type="text"
+                  value={inChatSearchQuery}
+                  onChange={(e) => {
+                    setInChatSearchQuery(e.target.value);
+                    setInChatMatchIndex(0);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      if (e.shiftKey) jumpToMatch(inChatMatchIndex - 1);
+                      else jumpToMatch(inChatMatchIndex + 1);
+                    } else if (e.key === "Escape") {
+                      setInChatSearchOpen(false);
+                      setInChatSearchQuery("");
+                    }
+                  }}
+                  placeholder="Search in this conversation... (Press Enter to cycle matches)"
+                  className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                  autoFocus
+                />
+                {inChatSearchQuery && (
+                  <span className="text-[11px] text-muted-foreground font-medium shrink-0">
+                    {matchingMessageIds.length > 0
+                      ? `${inChatMatchIndex + 1} of ${matchingMessageIds.length} matches`
+                      : "No matches"}
+                  </span>
+                )}
+                {matchingMessageIds.length > 0 && (
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => jumpToMatch(inChatMatchIndex - 1)}
+                      className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+                      title="Previous match (Shift+Enter)"
+                    >
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => jumpToMatch(inChatMatchIndex + 1)}
+                      className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+                      title="Next match (Enter)"
+                    >
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInChatSearchOpen(false);
+                    setInChatSearchQuery("");
+                  }}
+                  className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer shrink-0"
+                  title="Close search"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+
             {/* Chat Messages Canvas */}
-            <div ref={scrollRef} className="chat-canvas flex-1 overflow-y-auto px-4 py-6 md:px-10">
+            <div ref={scrollRef} className="chat-canvas flex-1 overflow-y-auto px-4 pt-6 pb-12 md:px-10">
               <div className="mx-auto flex max-w-3xl flex-col gap-2.5">
                 {loadingMessages ? (
                   <div className="flex h-48 flex-col items-center justify-center text-xs text-muted-foreground gap-2.5">
@@ -1009,61 +1186,121 @@ function ChatApp() {
                         key={m.id}
                         id={`msg-${m.id}`}
                         className={cn(
-                          "group relative max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-xs md:max-w-[65%] transition-all duration-300 animate-pop-in",
-                          isSender
-                            ? "bubble-tail-out self-end bg-gradient-to-br from-bubble-out to-bubble-out/95 text-bubble-out-foreground hover:shadow-md"
-                            : "bubble-tail-in self-start bg-card text-bubble-in-foreground border border-border/60 hover:shadow-sm",
-                          highlightedMessageId === m.id && "ring-2 ring-emerald-500 bg-emerald-500/20 shadow-lg scale-[1.02]"
+                          "group flex items-center gap-1.5 max-w-[88%] md:max-w-[75%]",
+                          isSender ? "self-end flex-row-reverse" : "self-start flex-row"
                         )}
                       >
-                        {/* Quick Emoji Reaction Pill on Hover */}
-                        {!isDeleted && (
-                          <div
-                            className={cn(
-                              "absolute -top-3.5 z-20 flex items-center gap-0.5 rounded-full border border-border bg-card/95 backdrop-blur-md px-1.5 py-0.5 shadow-md opacity-0 group-hover:opacity-100 transition-all duration-200 scale-90 group-hover:scale-100 pointer-events-none group-hover:pointer-events-auto",
-                              isSender ? "right-8" : "left-8"
+                        {/* Message Bubble */}
+                        <div
+                          className={cn(
+                            "relative rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-xs transition-all duration-300 animate-pop-in break-words",
+                            isMenuOpen ? "z-40" : "z-0",
+                            isSender
+                              ? "bubble-tail-out bg-gradient-to-br from-bubble-out to-bubble-out/95 text-bubble-out-foreground hover:shadow-md"
+                              : "bubble-tail-in bg-card text-bubble-in-foreground border border-border/60 hover:shadow-sm",
+                            highlightedMessageId === m.id && "ring-2 ring-emerald-500 bg-emerald-500/20 shadow-lg scale-[1.02]"
+                          )}
+                        >
+                          {/* Group Sender Display Name (Phase 3) */}
+                          {!isSender && active.type === "GROUP" && m.sender?.displayName && (
+                            <p className="text-[11px] font-semibold text-primary mb-1 select-none">
+                              {m.sender.displayName}
+                            </p>
+                          )}
+
+                          {/* Message Content */}
+                          {isDeleted ? (
+                            <div className="flex items-center gap-1.5 italic text-muted-foreground text-xs py-0.5">
+                              <Ban className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                              <span>
+                                {isSender ? "You deleted this message" : "This message was deleted"}
+                              </span>
+                            </div>
+                          ) : (
+                            <p className="whitespace-pre-wrap break-words">{m.text}</p>
+                          )}
+
+                          {/* Footer: Edited badge, timestamp, WhatsApp checkmarks */}
+                          <div className="mt-1 flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground select-none">
+                            {m.isEdited && !isDeleted && (
+                              <span className="italic font-medium text-muted-foreground/80">
+                                edited •
+                              </span>
                             )}
-                          >
-                            {["👍", "❤️", "😂", "🔥", "🎉"].map((emoji) => (
+                            <span>{m.time}</span>
+                            {isSender && (
                               <button
-                                key={emoji}
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleSendReaction(emoji);
+                                  setInfoModalMessage(m);
                                 }}
-                                title={`React with ${emoji}`}
-                                className="grid h-6 w-6 place-items-center rounded-full text-xs hover:bg-muted hover:scale-125 transition-transform cursor-pointer"
+                                className="ml-0.5 cursor-pointer hover:opacity-80 transition-opacity"
+                                title="Click for message info & delivery receipts"
                               >
-                                {emoji}
+                                <Ticks status={m.status} />
                               </button>
-                            ))}
+                            )}
                           </div>
-                        )}
+                        </div>
 
-                        {/* Hover Action Menu Trigger (WhatsApp 3-dots) */}
-                        <div className="message-menu-container absolute top-1.5 right-1.5 z-10">
+                        {/* Hover Action Bar: Sits in gutter beside bubble to prevent any text overlap */}
+                        <div
+                          className={cn(
+                            "message-menu-container relative z-20 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-card/95 border border-border/80 shadow-md backdrop-blur-md transition-all duration-200 shrink-0",
+                            isMenuOpen
+                              ? "opacity-100 scale-100 pointer-events-auto"
+                              : "opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 pointer-events-none group-hover:pointer-events-auto"
+                          )}
+                        >
+                          {!isDeleted && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAiDetectTask(m);
+                              }}
+                              disabled={aiDetectingMessageId === m.id}
+                              className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold text-primary hover:bg-primary/15 transition-all cursor-pointer hover:scale-105 active:scale-95"
+                              title="Convert to Task using AI"
+                            >
+                              {aiDetectingMessageId === m.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                              ) : (
+                                <Sparkles className="h-3 w-3 text-primary" />
+                              )}
+                              <span>AI Detect</span>
+                            </button>
+                          )}
+
+                          <div className="h-3 w-px bg-border/70 my-auto mx-0.5" />
+
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setActiveMenuMessageId(isMenuOpen ? null : m.id);
+                              if (isMenuOpen) {
+                                setActiveMenuMessageId(null);
+                              } else {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const spaceBelow = window.innerHeight - rect.bottom;
+                                setMenuPlacement(spaceBelow < 250 ? "up" : "down");
+                                setActiveMenuMessageId(m.id);
+                              }
                             }}
-                            className={cn(
-                              "grid h-6 w-6 place-items-center rounded-full text-muted-foreground transition-all hover:bg-black/10 dark:hover:bg-white/10 hover:text-foreground cursor-pointer",
-                              isMenuOpen ? "opacity-100 bg-black/10 dark:bg-white/10" : "opacity-0 group-hover:opacity-100"
-                            )}
-                            title="Message options"
+                            className="grid h-5 w-5 place-items-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                            title="More options"
                           >
                             <MoreVertical className="h-3.5 w-3.5" />
                           </button>
 
-                          {/* WhatsApp Context Menu Dropdown */}
+                          {/* Context Menu Dropdown */}
                           {isMenuOpen && (
                             <div
                               onClick={(e) => e.stopPropagation()}
                               className={cn(
-                                "absolute z-30 mt-1 w-48 rounded-2xl border border-border bg-card/95 backdrop-blur-md p-1.5 shadow-xl animate-pop-in",
+                                "absolute z-50 w-52 rounded-2xl border border-border bg-card shadow-2xl p-1.5 animate-pop-in pointer-events-auto",
+                                menuPlacement === "up" ? "bottom-full mb-1.5" : "top-full mt-1.5",
                                 isSender ? "right-0" : "left-0"
                               )}
                             >
@@ -1078,6 +1315,22 @@ function ChatApp() {
                                 <Info className="h-3.5 w-3.5 text-primary" />
                                 <span>Message info</span>
                               </button>
+
+                              {/* AI Detect Task */}
+                              {!isDeleted && (
+                                <button
+                                  onClick={() => handleAiDetectTask(m)}
+                                  disabled={aiDetectingMessageId === m.id}
+                                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors cursor-pointer text-left font-medium group/ai"
+                                >
+                                  {aiDetectingMessageId === m.id ? (
+                                    <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
+                                  ) : (
+                                    <Sparkles className="h-3.5 w-3.5 text-primary group-hover/ai:scale-110 transition-transform" />
+                                  )}
+                                  <span className="font-semibold text-primary">AI Detect Task</span>
+                                </button>
+                              )}
 
                               {/* Create Task from Message (Phase 4) */}
                               {!isDeleted && (
@@ -1135,48 +1388,6 @@ function ChatApp() {
                                 <span>Delete message</span>
                               </button>
                             </div>
-                          )}
-                        </div>
-
-                        {/* Group Sender Display Name (Phase 3) */}
-                        {!isSender && active.type === "GROUP" && m.sender?.displayName && (
-                          <p className="text-[11px] font-semibold text-primary mb-1 select-none">
-                            {m.sender.displayName}
-                          </p>
-                        )}
-
-                        {/* Message Content */}
-                        {isDeleted ? (
-                          <div className="flex items-center gap-1.5 italic text-muted-foreground pr-6 text-xs py-0.5">
-                            <Ban className="h-3.5 w-3.5 shrink-0 opacity-70" />
-                            <span>
-                              {isSender ? "You deleted this message" : "This message was deleted"}
-                            </span>
-                          </div>
-                        ) : (
-                          <p className="whitespace-pre-wrap break-words pr-5">{m.text}</p>
-                        )}
-
-                        {/* Footer: Edited badge, timestamp, WhatsApp checkmarks */}
-                        <div className="mt-1 flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground select-none">
-                          {m.isEdited && !isDeleted && (
-                            <span className="italic font-medium text-muted-foreground/80">
-                              edited •
-                            </span>
-                          )}
-                          <span>{m.time}</span>
-                          {isSender && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setInfoModalMessage(m);
-                              }}
-                              className="ml-0.5 cursor-pointer hover:opacity-80 transition-opacity"
-                              title="Click for message info & delivery receipts"
-                            >
-                              <Ticks status={m.status} />
-                            </button>
                           )}
                         </div>
                       </div>
@@ -1333,36 +1544,17 @@ function ChatApp() {
           <div className="flex h-full flex-col items-center justify-center p-6 text-center mesh-ambient overflow-y-auto">
             <div className="relative mb-5">
               <div className="absolute -inset-4 rounded-full bg-primary/20 blur-xl animate-pulse-soft" />
-              <div className="relative grid h-20 w-20 place-items-center rounded-3xl bg-gradient-to-tr from-primary to-emerald-600 text-primary-foreground shadow-2xl animate-float">
-                <MessageSquare className="h-10 w-10" />
-              </div>
-              <div className="absolute -top-1.5 -right-2 rounded-full bg-card p-1.5 shadow-md border border-border animate-bounce">
-                <Sparkles className="h-4 w-4 text-amber-500" />
+              <div className="relative grid h-16 w-16 place-items-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-md">
+                <MessageSquare className="h-8 w-8" />
               </div>
             </div>
 
             <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">
-              ActionFlow Workspace
+              {activeWorkspace?.name || "Soul Business Solutions"}
             </h2>
-            <p className="mt-2 text-sm text-muted-foreground max-w-md leading-relaxed">
-              Professional team messaging with WhatsApp-style delivery receipts, instant edits, message revoking, and real-time Socket.IO synchronization.
+            <p className="mt-1.5 text-sm text-muted-foreground max-w-md leading-relaxed">
+              Select a conversation from the sidebar to start messaging, or reach out to a colleague below.
             </p>
-
-            {/* Feature Badges Showcase */}
-            <div className="mt-4 flex flex-wrap justify-center gap-2 max-w-lg">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary shadow-xs">
-                <Zap className="h-3 w-3 text-primary" /> Real-Time Socket.IO
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/80 px-3 py-1 text-xs font-medium text-foreground shadow-xs">
-                <CheckCheck className="h-3.5 w-3.5 text-sky-500" /> Read & Delivered Receipts
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/80 px-3 py-1 text-xs font-medium text-foreground shadow-xs">
-                <Pencil className="h-3 w-3 text-amber-500" /> WhatsApp Inline Edits
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/80 px-3 py-1 text-xs font-medium text-foreground shadow-xs">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" /> MongoDB Atlas Cloud
-              </span>
-            </div>
 
             {/* Quick Teammate Launcher Grid */}
             <div className="mt-8 w-full max-w-xl text-left">
@@ -1472,6 +1664,39 @@ function ChatApp() {
               onClick: () => navigate({ to: "/tasks" }),
             },
           });
+        }}
+      />
+
+      {/* AI Task Suggestion Review Modal */}
+      <AiTaskReviewModal
+        open={isAiTaskReviewModalOpen}
+        onOpenChange={setIsAiTaskReviewModalOpen}
+        workspaceId={activeWorkspace?.id}
+        currentUserId={user?._id}
+        detectionData={aiDetectionData}
+        onTasksCreated={(createdTasks) => {
+          const count = createdTasks.length;
+          toast.success(
+            count > 1 ? `${count} Tasks Created Successfully` : `Task "${createdTasks[0]?.title}" created`,
+            {
+              description: "AI suggested task(s) added to workspace tasks.",
+              action: {
+                label: "View in My Tasks",
+                onClick: () => navigate({ to: "/tasks" }),
+              },
+            }
+          );
+        }}
+        onManualCreateRequested={() => {
+          if (aiDetectionData) {
+            setCreateTaskSourceMessage({
+              id: aiDetectionData.sourceMessage.id,
+              conversationId: aiDetectionData.sourceMessage.conversationId,
+              text: aiDetectionData.sourceMessage.text,
+              senderName: aiDetectionData.sourceMessage.senderName,
+            });
+            setIsCreateTaskModalOpen(true);
+          }
         }}
       />
     </>

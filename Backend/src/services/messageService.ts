@@ -5,6 +5,7 @@ import { Message, IMessage } from "../models/Message.js";
 import { WorkspaceMember } from "../models/WorkspaceMember.js";
 import { User, IUser } from "../models/User.js";
 import { getIO, isUserOnline, isUserInRoom } from "../socket/socketHandler.js";
+import { createNotification } from "./notificationService.js";
 
 export interface SendMessageParams {
   conversationId: string | Types.ObjectId;
@@ -250,6 +251,44 @@ export async function sendMessageService(params: SendMessageParams): Promise<For
       for (const recipientId of recipientIds) {
         io.to(`user:${recipientId}`).emit("conversation:updated", conversationUpdatePayload);
         io.to(`user:${recipientId}`).emit("conversation_updated", conversationUpdatePayload);
+      }
+
+      // Generate persistent notifications for recipients
+      const textSnippet = trimmedText.length > 70 ? trimmedText.slice(0, 70) + "..." : trimmedText;
+      if (isGroup) {
+        for (const recId of recipientIds) {
+          createNotification({
+            recipientId: recId,
+            workspaceId,
+            actorId: senderId,
+            conversationId: conversation._id,
+            messageId: savedMessage._id,
+            type: "GROUP_MESSAGE_RECEIVED",
+            title: `New message in ${conversation.name || "Group"}`,
+            description: `${senderName || "Colleague"}: "${textSnippet}"`,
+            destination: {
+              type: "conversation",
+              id: conversation._id.toString(),
+              extraId: savedMessage._id.toString(),
+            },
+          }).catch(() => {});
+        }
+      } else if (recipientIds.length > 0) {
+        createNotification({
+          recipientId: recipientIds[0],
+          workspaceId,
+          actorId: senderId,
+          conversationId: conversation._id,
+          messageId: savedMessage._id,
+          type: "MESSAGE_RECEIVED",
+          title: `New message from ${senderName || "Colleague"}`,
+          description: `"${textSnippet}"`,
+          destination: {
+            type: "conversation",
+            id: conversation._id.toString(),
+            extraId: savedMessage._id.toString(),
+          },
+        }).catch(() => {});
       }
     }
   } catch (socketError) {

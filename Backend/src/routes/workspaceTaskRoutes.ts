@@ -11,6 +11,8 @@ import { Conversation } from "../models/Conversation.js";
 import { Message } from "../models/Message.js";
 import { User, IUser } from "../models/User.js";
 import { getIO } from "../socket/socketHandler.js";
+import { createNotification } from "../services/notificationService.js";
+import { escapeRegex } from "../utils/regex.js";
 
 const router = Router();
 
@@ -229,6 +231,23 @@ router.post(
         // Socket emission failure handled gracefully
       }
 
+      // Generate persistent notification for assignee if not self
+      if (targetAssigneeId.toString() !== currentUserId.toString()) {
+        createNotification({
+          recipientId: targetAssigneeId,
+          workspaceId,
+          actorId: currentUserId,
+          taskId: newTask._id,
+          type: "TASK_ASSIGNED",
+          title: "New Task Assigned",
+          description: `${req.user?.displayName || "A colleague"} assigned you: "${newTask.title}"`,
+          destination: {
+            type: "task",
+            id: newTask._id.toString(),
+          },
+        }).catch(() => {});
+      }
+
       res.status(201).json({ task: formatted });
     } catch (error: any) {
       console.error("[WorkspaceTask] Error creating task:", error);
@@ -383,6 +402,23 @@ router.post(
         }
       } catch {}
 
+      // Generate persistent notification for assignee if not self
+      if (targetAssigneeId.toString() !== currentUserId.toString()) {
+        createNotification({
+          recipientId: targetAssigneeId,
+          workspaceId,
+          actorId: currentUserId,
+          taskId: newTask._id,
+          type: "TASK_ASSIGNED",
+          title: "New Task Assigned",
+          description: `${req.user?.displayName || "A colleague"} assigned you: "${newTask.title}"`,
+          destination: {
+            type: "task",
+            id: newTask._id.toString(),
+          },
+        }).catch(() => {});
+      }
+
       res.status(201).json({ task: formatted });
     } catch (error: any) {
       console.error("[WorkspaceTask] Error creating task from message:", error);
@@ -403,7 +439,17 @@ router.get(
     try {
       const workspaceId = req.workspace!._id;
       const currentUserId = req.user!._id;
-      const { filter, status, priority, assigneeId, search } = req.query;
+      const {
+        filter,
+        status,
+        priority,
+        assigneeId,
+        createdById,
+        search,
+        dueBefore,
+        dueAfter,
+        isOverdue,
+      } = req.query;
 
       const queryFilter: any = { workspaceId };
 
@@ -420,23 +466,62 @@ router.get(
       }
 
       // Explicit status filter
-      if (status && typeof status === "string") {
+      if (status && typeof status === "string" && status.toUpperCase() !== "ALL") {
         queryFilter.status = status.toUpperCase();
       }
 
       // Explicit priority filter
-      if (priority && typeof priority === "string") {
+      if (priority && typeof priority === "string" && priority.toUpperCase() !== "ALL") {
         queryFilter.priority = priority.toUpperCase();
       }
 
       // Explicit assignee filter
-      if (assigneeId && typeof assigneeId === "string" && mongoose.Types.ObjectId.isValid(assigneeId)) {
-        queryFilter.assigneeId = new Types.ObjectId(assigneeId);
+      if (assigneeId && typeof assigneeId === "string" && assigneeId.toUpperCase() !== "ALL") {
+        if (mongoose.Types.ObjectId.isValid(assigneeId)) {
+          queryFilter.assigneeId = new Types.ObjectId(assigneeId);
+        }
       }
 
-      // Search filter on title
+      // Explicit creator filter
+      if (createdById && typeof createdById === "string" && createdById.toUpperCase() !== "ALL") {
+        if (mongoose.Types.ObjectId.isValid(createdById)) {
+          queryFilter.createdBy = new Types.ObjectId(createdById);
+        }
+      }
+
+      // Due date range filtering
+      if (dueBefore || dueAfter) {
+        queryFilter.dueDate = queryFilter.dueDate || {};
+        if (dueBefore && typeof dueBefore === "string") {
+          const d = new Date(dueBefore);
+          if (!isNaN(d.getTime())) {
+            queryFilter.dueDate.$lte = d;
+          }
+        }
+        if (dueAfter && typeof dueAfter === "string") {
+          const d = new Date(dueAfter);
+          if (!isNaN(d.getTime())) {
+            queryFilter.dueDate.$gte = d;
+          }
+        }
+      }
+
+      // Explicit overdue filter
+      if (isOverdue === "true" || isOverdue === true) {
+        queryFilter.dueDate = queryFilter.dueDate || {};
+        queryFilter.dueDate.$lt = new Date();
+        if (!queryFilter.status) {
+          queryFilter.status = { $ne: "DONE" };
+        }
+      }
+
+      // Safe search filter on title and description
       if (search && typeof search === "string" && search.trim()) {
-        queryFilter.title = { $regex: search.trim(), $options: "i" };
+        const safeQuery = escapeRegex(search.trim());
+        queryFilter.$or = [
+          { title: { $regex: safeQuery, $options: "i" } },
+          { description: { $regex: safeQuery, $options: "i" } },
+        ];
       }
 
       const tasks = await Task.find(queryFilter)
@@ -795,6 +880,62 @@ router.patch(
         }
       } catch {}
 
+      // Generate persistent notification for status change
+      if (resolvedStatus === "DONE") {
+        if (task.createdBy.toString() !== currentUserId.toString()) {
+          createNotification({
+            recipientId: task.createdBy,
+            workspaceId,
+            actorId: currentUserId,
+            taskId: task._id,
+            type: "TASK_COMPLETED",
+            title: "Task Completed",
+            description: `${req.user?.displayName || "A colleague"} completed: "${task.title}"`,
+            destination: { type: "task", id: task._id.toString() },
+          }).catch(() => {});
+        }
+        if (task.assigneeId && task.assigneeId.toString() !== currentUserId.toString()) {
+          createNotification({
+            recipientId: task.assigneeId,
+            workspaceId,
+            actorId: currentUserId,
+            taskId: task._id,
+            type: "TASK_COMPLETED",
+            title: "Task Completed",
+            description: `${req.user?.displayName || "A colleague"} marked completed: "${task.title}"`,
+            destination: { type: "task", id: task._id.toString() },
+          }).catch(() => {});
+        }
+      } else {
+        if (task.assigneeId && task.assigneeId.toString() !== currentUserId.toString()) {
+          createNotification({
+            recipientId: task.assigneeId,
+            workspaceId,
+            actorId: currentUserId,
+            taskId: task._id,
+            type: "TASK_STATUS_CHANGED",
+            title: "Task Status Updated",
+            description: `${req.user?.displayName || "A colleague"} updated status to ${resolvedStatus.replace("_", " ")}: "${task.title}"`,
+            destination: { type: "task", id: task._id.toString() },
+          }).catch(() => {});
+        }
+        if (
+          task.createdBy.toString() !== currentUserId.toString() &&
+          task.createdBy.toString() !== task.assigneeId?.toString()
+        ) {
+          createNotification({
+            recipientId: task.createdBy,
+            workspaceId,
+            actorId: currentUserId,
+            taskId: task._id,
+            type: "TASK_STATUS_CHANGED",
+            title: "Task Status Updated",
+            description: `${req.user?.displayName || "A colleague"} updated status to ${resolvedStatus.replace("_", " ")}: "${task.title}"`,
+            destination: { type: "task", id: task._id.toString() },
+          }).catch(() => {});
+        }
+      }
+
       res.json({
         message: `Task status updated to ${resolvedStatus}`,
         task: formatted,
@@ -870,6 +1011,20 @@ router.patch(
           io.to(`user:${assigneeId}`).emit("task:assigned", formatted);
         }
       } catch {}
+
+      // Generate persistent notification for new assignee
+      if (assigneeId.toString() !== currentUserId.toString()) {
+        createNotification({
+          recipientId: assigneeId,
+          workspaceId,
+          actorId: currentUserId,
+          taskId: task._id,
+          type: "TASK_REASSIGNED",
+          title: "Task Assigned to You",
+          description: `${req.user?.displayName || "A colleague"} reassigned task: "${task.title}" to you`,
+          destination: { type: "task", id: task._id.toString() },
+        }).catch(() => {});
+      }
 
       res.json({
         message: "Task reassigned successfully",

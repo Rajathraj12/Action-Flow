@@ -13,7 +13,12 @@ import messageRoutes from "./routes/messageRoutes.js";
 import workspaceRoutes from "./routes/workspaceRoutes.js";
 import workspaceMessagingRoutes from "./routes/workspaceMessagingRoutes.js";
 import workspaceTaskRoutes from "./routes/workspaceTaskRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import searchRoutes from "./routes/searchRoutes.js";
+import aiRoutes from "./routes/aiRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { startReminderScheduler } from "./services/reminderScheduler.js";
+import { seedDemoTeam } from "./services/seedDemoTeam.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -44,8 +49,12 @@ app.use("/api/auth", authRoutes);
 app.use("/api/workspaces", workspaceRoutes);
 app.use("/api/workspaces", workspaceMessagingRoutes);
 app.use("/api/workspaces", workspaceTaskRoutes);
+app.use("/api/workspaces", searchRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.use("/api/conversations", conversationRoutes);
 app.use("/api/conversations", messageRoutes);
+app.use("/api/ai", aiRoutes);
+app.use("/api/workspaces", aiRoutes);
 
 // Global Error Handler
 app.use(errorHandler);
@@ -57,6 +66,8 @@ initSocket(server);
 async function startServer() {
   await connectDB();
   initFirebase();
+  await seedDemoTeam();
+  startReminderScheduler();
 
   server.listen(PORT, () => {
     console.log(`[ActionFlow Backend] Server running on http://localhost:${PORT}`);

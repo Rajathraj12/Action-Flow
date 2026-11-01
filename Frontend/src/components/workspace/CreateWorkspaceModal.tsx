@@ -77,7 +77,7 @@ export function CreateWorkspaceModal({
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Acme Corp, Engineering, Product Lab"
+                placeholder="e.g. Soul Business Solutions, Engineering, Product Lab"
                 className="text-sm rounded-xl"
                 autoFocus
                 disabled={loading}

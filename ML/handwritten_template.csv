@@ -1,3 +1,0 @@
-team,date,time,sender,message,language,category,needs_confirmation,t1_title,t1_assignee,t1_deadline_text,t1_deadline_date,t1_priority,t2_title,t2_assignee,t2_deadline_text,t2_deadline_date,t2_priority,t3_title,t3_assignee,t3_deadline_text,t3_deadline_date,t3_priority
-startup,2026-10-26,10:30,Vikram,"Rahul, complete the payment integration by Friday. Neha, send Rahul the updated UI tomorrow.",en,multi_task,,Complete payment integration,Rahul,by Friday,2026-10-30,,Send updated UI to Rahul,Neha,tomorrow,2026-10-27,,,,,,
-startup,2026-10-26,12:40,Amit,Lunch at 1?,en,not_task,,,,,,,,,,,,,,,,

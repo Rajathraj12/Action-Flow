@@ -16,6 +16,7 @@ export interface ITask extends Document {
   sourceMessageId?: Types.ObjectId;
   sourceConversationId?: Types.ObjectId;
   sourceSnippet?: string;
+  remindersSent?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -84,6 +85,10 @@ const TaskSchema = new Schema<ITask>(
     sourceSnippet: {
       type: String,
       maxlength: 500,
+    },
+    remindersSent: {
+      type: [String],
+      default: [],
     },
   },
   {

@@ -59,6 +59,8 @@ function TasksPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [priorityFilter, setPriorityFilter] = useState<string>("ALL");
+  const [assigneeFilter, setAssigneeFilter] = useState<string>("ALL");
+  const [members, setMembers] = useState<any[]>([]);
 
   // Modals
   const [selectedTask, setSelectedTask] = useState<BackendTask | null>(null);
@@ -74,8 +76,9 @@ function TasksPage() {
       const res = await api.getTasks(activeWorkspace.id, {
         filter: activeTab,
         search: searchQuery.trim() || undefined,
-        status: statusFilter !== "ALL" ? statusFilter : undefined,
-        priority: priorityFilter !== "ALL" ? priorityFilter : undefined,
+        status: statusFilter !== "ALL" ? (statusFilter as any) : undefined,
+        priority: priorityFilter !== "ALL" ? (priorityFilter as any) : undefined,
+        assigneeId: assigneeFilter !== "ALL" ? assigneeFilter : undefined,
       });
       setTasks(res.tasks);
     } catch (err: any) {
@@ -84,12 +87,50 @@ function TasksPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, activeWorkspace?.id, activeTab, searchQuery, statusFilter, priorityFilter]);
+  }, [token, activeWorkspace?.id, activeTab, searchQuery, statusFilter, priorityFilter, assigneeFilter]);
+
+  // Load workspace members for assignee filter
+  useEffect(() => {
+    if (token && activeWorkspace?.id) {
+      api
+        .getWorkspaceMembers(activeWorkspace.id)
+        .then((res) => setMembers(res.members))
+        .catch(console.error);
+    }
+  }, [token, activeWorkspace?.id]);
 
   // Load tasks on filter changes
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
+
+  // Deep linking: open task detail modal if ?taskId= is in URL
+  useEffect(() => {
+    if (typeof window === "undefined" || !token || !activeWorkspace?.id) return;
+    const params = new URLSearchParams(window.location.search);
+    const queryTaskId = params.get("taskId");
+    if (!queryTaskId) return;
+
+    // Check if already in tasks list
+    const found = tasks.find((t) => t.id === queryTaskId);
+    if (found) {
+      setSelectedTask(found);
+      setIsDetailOpen(true);
+    } else {
+      // Fetch directly from API
+      api
+        .getTask(activeWorkspace.id, queryTaskId)
+        .then((res) => {
+          if (res.task) {
+            setSelectedTask(res.task);
+            setIsDetailOpen(true);
+          }
+        })
+        .catch((err) => {
+          console.warn("[TasksPage] Deep linked task not found or not accessible:", err.message);
+        });
+    }
+  }, [tasks, token, activeWorkspace?.id]);
 
   // Socket.IO Real-time task listener
   useEffect(() => {
@@ -202,12 +243,14 @@ function TasksPage() {
   const hasActiveFilters =
     searchQuery.trim() !== "" ||
     statusFilter !== "ALL" ||
-    priorityFilter !== "ALL";
+    priorityFilter !== "ALL" ||
+    assigneeFilter !== "ALL";
 
   const clearFilters = () => {
     setSearchQuery("");
     setStatusFilter("ALL");
     setPriorityFilter("ALL");
+    setAssigneeFilter("ALL");
   };
 
   return (
@@ -343,7 +386,7 @@ function TasksPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search tasks by title..."
+                placeholder="Search tasks by title or description..."
                 className="w-full rounded-xl border border-border bg-background/80 pl-9 pr-8 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
               {searchQuery && (
@@ -357,8 +400,8 @@ function TasksPage() {
               )}
             </div>
 
-            {/* Status & Priority dropdowns */}
-            <div className="flex items-center gap-2">
+            {/* Status, Priority & Assignee dropdowns */}
+            <div className="flex flex-wrap items-center gap-2">
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -381,6 +424,19 @@ function TasksPage() {
                 <option value="HIGH">High</option>
                 <option value="MEDIUM">Medium</option>
                 <option value="LOW">Low</option>
+              </select>
+
+              <select
+                value={assigneeFilter}
+                onChange={(e) => setAssigneeFilter(e.target.value)}
+                className="rounded-xl border border-border bg-background px-3 py-1.5 text-xs text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="ALL">All Assignees</option>
+                {members.map((m) => (
+                  <option key={m.userId} value={m.userId}>
+                    {m.displayName}
+                  </option>
+                ))}
               </select>
 
               {hasActiveFilters && (

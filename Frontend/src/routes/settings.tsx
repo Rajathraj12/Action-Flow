@@ -4,6 +4,7 @@ import { Bell, Key, Sparkles, CheckSquare, Users, HelpCircle, Monitor, ChevronRi
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { TeamAndRolesTab } from "@/components/workspace/TeamAndRolesTab";
+import { NotificationPreferencesTab } from "@/components/notifications/NotificationPreferencesTab";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -20,6 +21,9 @@ function SettingsPage() {
       const params = new URLSearchParams(window.location.search);
       if (params.get("token") || params.get("tab") === "Team & Roles") {
         return "Team & Roles";
+      }
+      if (params.get("tab") === "Notifications") {
+        return "Notifications";
       }
     }
     return "none";
@@ -113,14 +117,8 @@ function SettingsPage() {
         )}
 
         {activeTab === "Notifications" && (
-          <SettingsDetail title="Notifications">
-            <h3 className="px-6 pt-4 pb-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider">Tasks & Deadlines</h3>
-            <ToggleOption title="New assignments" description="Notify me when I am assigned a new task" defaultChecked />
-            <ListOption title="Deadline reminders" value="24 hours before" />
-            
-            <h3 className="px-6 pt-6 pb-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider">Manager Alerts</h3>
-            <ToggleOption title="Pending AI Approvals" description="Notify when new AI extractions need review" defaultChecked />
-            <ToggleOption title="Overdue tasks" description="Weekly digest of team's overdue tasks" defaultChecked />
+          <SettingsDetail title="Notification Preferences">
+            <NotificationPreferencesTab />
           </SettingsDetail>
         )}
 

@@ -155,6 +155,41 @@ export interface MessageInfoResponse {
   } | null;
 }
 
+export interface AiTaskSuggestion {
+  title: string;
+  assigneeName: string | null;
+  assigneeId: string | null;
+  assigneeUser: {
+    id: string;
+    displayName: string;
+    email: string;
+    initials: string;
+    avatarUrl?: string;
+  } | null;
+  deadlineText: string | null;
+  deadlineDate: string | null;
+  priority: TaskPriority;
+  confidence: number;
+}
+
+export interface AiDetectionResponse {
+  category: string;
+  isTaskCandidate: boolean;
+  needsConfirmation: boolean;
+  confidence: number;
+  tasks: AiTaskSuggestion[];
+  warnings: string[];
+  extractionStatus: string;
+  sourceMessage: {
+    id: string;
+    conversationId: string;
+    text: string;
+    senderId: string;
+    senderName: string;
+    timestamp: string;
+  };
+}
+
 export const api = {
   getMe: () => request<{ user: BackendUser }>("/api/auth/me"),
   getUsers: () => request<{ users: BackendUser[] }>("/api/auth/users"),
@@ -367,7 +402,11 @@ export const api = {
       status?: TaskStatus;
       priority?: TaskPriority;
       assigneeId?: string;
+      createdById?: string;
       search?: string;
+      dueBefore?: string;
+      dueAfter?: string;
+      isOverdue?: boolean;
     }
   ) => {
     const query = new URLSearchParams();
@@ -375,7 +414,11 @@ export const api = {
     if (params?.status) query.set("status", params.status);
     if (params?.priority) query.set("priority", params.priority);
     if (params?.assigneeId) query.set("assigneeId", params.assigneeId);
+    if (params?.createdById) query.set("createdById", params.createdById);
     if (params?.search) query.set("search", params.search);
+    if (params?.dueBefore) query.set("dueBefore", params.dueBefore);
+    if (params?.dueAfter) query.set("dueAfter", params.dueAfter);
+    if (params?.isOverdue !== undefined) query.set("isOverdue", String(params.isOverdue));
     const qs = query.toString();
     return request<{ tasks: BackendTask[]; total: number }>(
       `/api/workspaces/${workspaceId}/tasks${qs ? `?${qs}` : ""}`
@@ -414,6 +457,11 @@ export const api = {
     request<{ task: BackendTask }>(`/api/workspaces/${workspaceId}/tasks/from-message`, {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+  aiDetectTask: (workspaceId: string, conversationId: string, messageId: string) =>
+    request<AiDetectionResponse>(`/api/workspaces/${workspaceId}/ai/detect-task`, {
+      method: "POST",
+      body: JSON.stringify({ conversationId, messageId }),
     }),
   updateTask: (
     workspaceId: string,
@@ -454,6 +502,121 @@ export const api = {
     }),
   getTaskSummary: (workspaceId: string) =>
     request<{ summary: TaskSummaryResponse }>(`/api/workspaces/${workspaceId}/tasks/summary`),
+
+  // ==========================================
+  // Notification & Activity APIs (Phase 5)
+  // ==========================================
+  getNotifications: (params?: {
+    unreadOnly?: boolean;
+    limit?: number;
+    skip?: number;
+    workspaceId?: string;
+  }) => {
+    const query = new URLSearchParams();
+    if (params?.unreadOnly) query.set("unreadOnly", "true");
+    if (params?.limit) query.set("limit", params.limit.toString());
+    if (params?.skip) query.set("skip", params.skip.toString());
+    if (params?.workspaceId) query.set("workspaceId", params.workspaceId);
+    const qs = query.toString();
+    return request<{
+      notifications: BackendNotification[];
+      total: number;
+      unreadCount: number;
+    }>(`/api/notifications${qs ? `?${qs}` : ""}`);
+  },
+
+  getUnreadNotificationCount: (workspaceId?: string) => {
+    const qs = workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : "";
+    return request<{ count: number }>(`/api/notifications/unread-count${qs}`);
+  },
+
+  markNotificationRead: (notificationId: string) =>
+    request<{
+      message: string;
+      notification: BackendNotification;
+      unreadCount: number;
+    }>(`/api/notifications/${notificationId}/read`, {
+      method: "PATCH",
+    }),
+
+  markAllNotificationsRead: (workspaceId?: string) =>
+    request<{ message: string; count: number }>(`/api/notifications/read-all`, {
+      method: "PATCH",
+      body: JSON.stringify({ workspaceId }),
+    }),
+
+  deleteNotification: (notificationId: string) =>
+    request<{ message: string }>(`/api/notifications/${notificationId}`, {
+      method: "DELETE",
+    }),
+
+  getNotificationPreferences: () =>
+    request<{ preferences: NotificationPreferences }>(`/api/notifications/preferences`),
+
+  updateNotificationPreferences: (prefs: Partial<NotificationPreferences>) =>
+    request<{
+      message: string;
+      preferences: NotificationPreferences;
+    }>(`/api/notifications/preferences`, {
+      method: "PATCH",
+      body: JSON.stringify(prefs),
+    }),
+
+  getActivityFeed: (workspaceId: string, limit?: number) => {
+    const query = new URLSearchParams();
+    query.set("workspaceId", workspaceId);
+    if (limit) query.set("limit", limit.toString());
+    return request<{ activities: ActivityItem[] }>(`/api/notifications/activity?${query.toString()}`);
+  },
+
+  runDueTaskReminders: () =>
+    request<{
+      message: string;
+      scannedCount: number;
+      dueSoonReminded: number;
+      overdueReminded: number;
+    }>(`/api/notifications/run-reminders`, {
+      method: "POST",
+    }),
+
+  // ==========================================
+  // Global & Message Search APIs (Phase 6)
+  // ==========================================
+  globalSearch: (
+    workspaceId: string,
+    q: string,
+    type: "all" | "messages" | "tasks" | "conversations" | "people" = "all",
+    limit = 10
+  ) => {
+    const query = new URLSearchParams();
+    query.set("q", q);
+    query.set("type", type);
+    query.set("limit", limit.toString());
+    return request<GlobalSearchResponse>(
+      `/api/workspaces/${workspaceId}/search?${query.toString()}`
+    );
+  },
+
+  searchMessages: (
+    workspaceId: string,
+    q: string,
+    conversationId?: string,
+    limit = 20,
+    skip = 0
+  ) => {
+    const query = new URLSearchParams();
+    query.set("q", q);
+    if (conversationId) query.set("conversationId", conversationId);
+    query.set("limit", limit.toString());
+    query.set("skip", skip.toString());
+    return request<{
+      query: string;
+      messages: MessageSearchResult[];
+      total: number;
+      limit: number;
+      skip: number;
+    }>(`/api/workspaces/${workspaceId}/messages/search?${query.toString()}`);
+  },
 };
 
 export type WorkspaceRole = "OWNER" | "ADMIN" | "MANAGER" | "MEMBER";
@@ -556,4 +719,121 @@ export interface TaskSummaryResponse {
     completedCount: number;
   }>;
 }
+
+export type NotificationType =
+  | "TASK_ASSIGNED"
+  | "TASK_REASSIGNED"
+  | "TASK_STATUS_CHANGED"
+  | "TASK_COMPLETED"
+  | "TASK_DUE_SOON"
+  | "TASK_OVERDUE"
+  | "MESSAGE_RECEIVED"
+  | "GROUP_MESSAGE_RECEIVED"
+  | "MENTION";
+
+export interface BackendNotification {
+  id: string;
+  recipientId: string;
+  workspaceId?: string;
+  type: NotificationType;
+  title: string;
+  description: string;
+  read: boolean;
+  readAt?: string | null;
+  actor?: {
+    id: string;
+    displayName: string;
+    email?: string;
+    initials: string;
+  } | null;
+  taskId?: string | null;
+  conversationId?: string | null;
+  messageId?: string | null;
+  navigationUrl?: string | null;
+  metadata?: Record<string, any>;
+  createdAt: string;
+}
+
+export interface NotificationPreferences {
+  taskAssigned: boolean;
+  taskStatusChanged: boolean;
+  taskCompleted: boolean;
+  dueDateReminders: boolean;
+  directMessages: boolean;
+  groupMessages: boolean;
+  emailNotifications: boolean;
+  browserNotifications: boolean;
+}
+
+export interface ActivityItem {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  actor: {
+    id: string;
+    displayName: string;
+    initials: string;
+  } | null;
+  workspaceId: string;
+  taskId?: string | null;
+  conversationId?: string | null;
+  createdAt: string;
+  navigationUrl?: string | null;
+}
+
+export interface SearchResultItem {
+  id: string;
+  type: "message" | "task" | "conversation" | "person";
+  title: string;
+  snippet?: string;
+  conversationId?: string;
+  conversationName?: string;
+  conversationType?: string;
+  sender?: {
+    id: string;
+    displayName: string;
+    initials: string;
+  } | null;
+  status?: string;
+  priority?: string;
+  dueDate?: string | null;
+  assignee?: {
+    id: string;
+    displayName: string;
+    initials: string;
+  } | null;
+  role?: string;
+  initials?: string;
+  online?: boolean;
+  createdAt?: string;
+  navigationUrl: string;
+}
+
+export interface GlobalSearchResponse {
+  query: string;
+  results: {
+    messages: SearchResultItem[];
+    tasks: SearchResultItem[];
+    conversations: SearchResultItem[];
+    people: SearchResultItem[];
+  };
+  total: number;
+}
+
+export interface MessageSearchResult {
+  id: string;
+  text: string;
+  conversationId: string;
+  conversationName: string;
+  conversationType: string;
+  sender: {
+    id: string;
+    displayName: string;
+    initials: string;
+  } | null;
+  createdAt: string;
+  navigationUrl: string;
+}
+
 

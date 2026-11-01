@@ -18,11 +18,23 @@ import {
   BarChart3,
   Loader2,
   ShieldAlert,
+  ShieldCheck,
+  Pencil,
+  Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { api, type TaskSummaryResponse } from "@/lib/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -45,7 +57,7 @@ interface AISuggestion {
 const INITIAL_SUGGESTIONS: AISuggestion[] = [
   {
     id: "sug-1",
-    title: "Verify Firebase session persistence across browser refreshes",
+    title: "Verify session persistence across browser refreshes",
     assignee: "Rajath",
     assigneeInitials: "R",
     deadline: "Tomorrow at 5:00 PM",
@@ -55,33 +67,46 @@ const INITIAL_SUGGESTIONS: AISuggestion[] = [
   },
   {
     id: "sug-2",
-    title: "Configure MongoDB Atlas automatic connection retries in production",
+    title: "Configure automatic connection retries in production",
     assignee: "Ankit",
     assigneeInitials: "A",
     deadline: "Friday, 6:00 PM",
     source: "Sprint Planning",
-    context: "We should increase the Atlas connection timeout to 15s to handle cold starts smoothly.",
+    context: "We should increase the connection timeout to 15s to handle cold starts smoothly.",
     confidence: 92,
   },
   {
     id: "sug-3",
-    title: "Design glassmorphic chat thread reaction picker and animations",
-    assignee: "Chirag",
-    assigneeInitials: "C",
+    title: "Design chat thread reaction picker and animations",
+    assignee: "Harsha",
+    assigneeInitials: "H",
     deadline: "Monday, 12:00 PM",
     source: "UI/UX Review",
-    context: "Let's add quick emoji reaction pills on message hover like WhatsApp and Slack.",
+    context: "Let's add quick emoji reaction pills on message hover.",
     confidence: 89,
   },
 ];
 
+const DEMO_TEAM_MEMBERS = [
+  { name: "Rajath", role: "Owner", initials: "R" },
+  { name: "Harsha", role: "Manager", initials: "H" },
+  { name: "Ankit", role: "Admin", initials: "A" },
+  { name: "Chirag", role: "Member", initials: "C" },
+  { name: "Harsh", role: "Member", initials: "H" },
+];
+
 function DashboardPage() {
   const { user, token } = useAuth();
-  const { activeWorkspace, role } = useWorkspace();
+  const { activeWorkspace, userRole, isOwner, isAdmin, isManager } = useWorkspace();
+  const canManageAI = isOwner || isAdmin || isManager;
 
   const [aiSuggestions, setAiSuggestions] = useState<AISuggestion[]>(INITIAL_SUGGESTIONS);
   const [approvedCount, setApprovedCount] = useState(4);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+
+  // Edit AI Suggestion Modal State
+  const [editingSuggestion, setEditingSuggestion] = useState<AISuggestion | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Real Workspace Task Summary State
   const [taskSummary, setTaskSummary] = useState<TaskSummaryResponse["summary"] | null>(null);
@@ -117,6 +142,28 @@ function DashboardPage() {
   const handleReject = (id: string, title: string) => {
     setAiSuggestions((prev) => prev.filter((s) => s.id !== id));
     setActionNotice(`Dismissed AI suggestion`);
+    setTimeout(() => setActionNotice(null), 3500);
+  };
+
+  const handleOpenEdit = (suggestion: AISuggestion) => {
+    setEditingSuggestion({ ...suggestion });
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = (updated: AISuggestion) => {
+    setAiSuggestions((prev) =>
+      prev.map((s) => (s.id === updated.id ? updated : s))
+    );
+    setIsEditModalOpen(false);
+    setActionNotice(`Updated AI task: "${updated.title.slice(0, 32)}..."`);
+    setTimeout(() => setActionNotice(null), 3500);
+  };
+
+  const handleSaveAndApprove = (updated: AISuggestion) => {
+    setAiSuggestions((prev) => prev.filter((s) => s.id !== updated.id));
+    setApprovedCount((c) => c + 1);
+    setIsEditModalOpen(false);
+    setActionNotice(`Saved & approved task: "${updated.title.slice(0, 32)}..."`);
     setTimeout(() => setActionNotice(null), 3500);
   };
 
@@ -388,9 +435,17 @@ function DashboardPage() {
               </div>
 
               {aiSuggestions.length > 0 && (
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 self-start sm:self-auto">
-                  {aiSuggestions.length} pending review
-                </span>
+                canManageAI ? (
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 self-start sm:self-auto flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-purple-500 animate-pulse" />
+                    {userRole ? `${userRole} Access` : "Manager Access"} • {aiSuggestions.length} pending review
+                  </span>
+                ) : (
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-muted text-muted-foreground self-start sm:self-auto flex items-center gap-1">
+                    <Lock className="h-3 w-3" />
+                    Read-only (Manager Role Required)
+                  </span>
+                )
               )}
             </div>
 
@@ -399,6 +454,8 @@ function DashboardPage() {
                 <ApprovalCard
                   key={suggestion.id}
                   suggestion={suggestion}
+                  canManage={canManageAI}
+                  onEdit={() => handleOpenEdit(suggestion)}
                   onApprove={() => handleApprove(suggestion.id, suggestion.title)}
                   onReject={() => handleReject(suggestion.id, suggestion.title)}
                 />
@@ -430,6 +487,16 @@ function DashboardPage() {
           </div>
         </div>
       </main>
+
+      {/* Edit AI Suggestion Modal */}
+      <EditAISuggestionModal
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        suggestion={editingSuggestion}
+        userRole={userRole}
+        onSave={handleSaveEdit}
+        onSaveAndApprove={handleSaveAndApprove}
+      />
     </div>
   );
 }
@@ -491,10 +558,14 @@ function StatCard({
 
 function ApprovalCard({
   suggestion,
+  canManage,
+  onEdit,
   onApprove,
   onReject,
 }: {
   suggestion: AISuggestion;
+  canManage: boolean;
+  onEdit: () => void;
   onApprove: () => void;
   onReject: () => void;
 }) {
@@ -540,23 +611,224 @@ function ApprovalCard({
       </div>
 
       <div className="flex shrink-0 items-center gap-2 md:flex-col md:w-32 pt-2 md:pt-0">
-        <button
-          type="button"
-          onClick={onApprove}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition-all active:scale-95 md:w-full cursor-pointer"
-        >
-          <Check className="h-3.5 w-3.5" />
-          Approve
-        </button>
-        <button
-          type="button"
-          onClick={onReject}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all active:scale-95 md:w-full cursor-pointer"
-        >
-          <X className="h-3.5 w-3.5" />
-          Reject
-        </button>
+        {canManage ? (
+          <>
+            <button
+              type="button"
+              onClick={onApprove}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition-all active:scale-95 md:w-full cursor-pointer"
+              title="Approve and create task"
+            >
+              <Check className="h-3.5 w-3.5" />
+              Approve
+            </button>
+            <button
+              type="button"
+              onClick={onEdit}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted hover:border-primary/40 transition-all active:scale-95 md:w-full cursor-pointer"
+              title="Edit task parameters according to RBAC permissions"
+            >
+              <Pencil className="h-3.5 w-3.5 text-amber-500" />
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={onReject}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all active:scale-95 md:w-full cursor-pointer"
+              title="Dismiss suggestion"
+            >
+              <X className="h-3.5 w-3.5" />
+              Reject
+            </button>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-2 text-center md:w-full">
+            <span className="inline-flex items-center gap-1 rounded-xl bg-muted/80 px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground border border-border/60">
+              <Lock className="h-3 w-3" />
+              Manager Only
+            </span>
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+function EditAISuggestionModal({
+  open,
+  onOpenChange,
+  suggestion,
+  userRole,
+  onSave,
+  onSaveAndApprove,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  suggestion: AISuggestion | null;
+  userRole: string | null;
+  onSave: (updated: AISuggestion) => void;
+  onSaveAndApprove: (updated: AISuggestion) => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [assignee, setAssignee] = useState("");
+  const [deadline, setDeadline] = useState("");
+
+  useEffect(() => {
+    if (suggestion) {
+      setTitle(suggestion.title);
+      setAssignee(suggestion.assignee);
+      setDeadline(suggestion.deadline);
+    }
+  }, [suggestion, open]);
+
+  if (!suggestion) return null;
+
+  const handleSubmit = (e: React.FormEvent, andApprove = false) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+
+    const memberInitials =
+      DEMO_TEAM_MEMBERS.find((m) => m.name.toLowerCase() === assignee.toLowerCase())?.initials ||
+      assignee.charAt(0).toUpperCase() ||
+      "T";
+
+    const updated: AISuggestion = {
+      ...suggestion,
+      title: title.trim(),
+      assignee: assignee.trim() || suggestion.assignee,
+      assigneeInitials: memberInitials,
+      deadline: deadline.trim() || suggestion.deadline,
+    };
+
+    if (andApprove) {
+      onSaveAndApprove(updated);
+    } else {
+      onSave(updated);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg p-0 overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+        <DialogHeader className="p-5 pb-4 border-b border-border/70 bg-muted/20">
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-8 w-8 place-items-center rounded-xl bg-purple-500/15 text-purple-600 dark:text-purple-400">
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <div>
+              <DialogTitle className="text-base font-bold font-display text-foreground">
+                Edit AI-Extracted Task
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Review and modify parameters before approving into workspace board.
+              </p>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <form onSubmit={(e) => handleSubmit(e, false)} className="p-5 space-y-4">
+          {/* RBAC Notice */}
+          <div className="flex items-center justify-between rounded-xl bg-primary/10 border border-primary/20 px-3.5 py-2 text-xs">
+            <span className="font-semibold text-primary flex items-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+              Role Authorization
+            </span>
+            <span className="font-medium text-foreground">
+              {userRole ? `${userRole} Access` : "Manager Access"} (Edit Authorized)
+            </span>
+          </div>
+
+          {/* Title */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+              <span>Task Title</span>
+              <span className="text-[10px] text-muted-foreground">{suggestion.confidence}% confidence</span>
+            </label>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Verify session persistence"
+              required
+              className="rounded-xl border-border bg-muted/40 text-sm focus:bg-card"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Assignee */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                Assignee
+              </label>
+              <select
+                value={assignee}
+                onChange={(e) => setAssignee(e.target.value)}
+                className="w-full h-9 rounded-xl border border-border bg-muted/40 px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:bg-card cursor-pointer"
+              >
+                {DEMO_TEAM_MEMBERS.map((m) => (
+                  <option key={m.name} value={m.name}>
+                    {m.name} ({m.role})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Deadline */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                Target Deadline
+              </label>
+              <Input
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+                placeholder="e.g. Tomorrow at 5:00 PM"
+                className="rounded-xl border-border bg-muted/40 text-xs focus:bg-card"
+              />
+            </div>
+          </div>
+
+          {/* Context Snippet */}
+          <div className="space-y-1.5 pt-1">
+            <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
+              Source Context ({suggestion.source})
+            </label>
+            <div className="rounded-xl bg-muted/30 p-2.5 text-xs text-muted-foreground italic border border-border/60">
+              "{suggestion.context}"
+            </div>
+          </div>
+
+          <DialogFooter className="pt-2 flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onOpenChange(false)}
+              className="rounded-xl cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="secondary"
+              size="sm"
+              className="rounded-xl cursor-pointer"
+            >
+              Save Changes
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={(e) => handleSubmit(e, true)}
+              className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+            >
+              <Check className="h-3.5 w-3.5 mr-1" />
+              Save & Approve
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
