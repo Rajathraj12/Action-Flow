@@ -6,6 +6,7 @@ import { WorkspaceMember } from "../models/WorkspaceMember.js";
 import { User, IUser } from "../models/User.js";
 import { getIO, isUserOnline, isUserInRoom } from "../socket/socketHandler.js";
 import { createNotification } from "./notificationService.js";
+import { fastAutoDetectTask } from "./aiTaskService.js";
 
 export interface SendMessageParams {
   conversationId: string | Types.ObjectId;
@@ -32,6 +33,7 @@ export interface FormattedMessagePayload {
   isDeletedForEveryone: boolean;
   deliveredAt?: Date;
   readAt?: Date;
+  aiTaskDetection?: any;
 }
 
 /**
@@ -148,6 +150,32 @@ export async function sendMessageService(params: SendMessageParams): Promise<For
     }
   }
 
+  // Run real-time AI task detection
+  let aiTaskDetection: any = undefined;
+  try {
+    let teamMemberNames: string[] = [];
+    if (conversation.workspaceId) {
+      const members = await WorkspaceMember.find({
+        workspaceId: conversation.workspaceId,
+        status: "ACTIVE",
+      }).populate<{ userId: IUser }>("userId", "displayName");
+      teamMemberNames = members
+        .filter((m) => m.userId && (m.userId as any).displayName)
+        .map((m) => (m.userId as any).displayName.trim());
+    } else if (conversation.participants?.length) {
+      const users = await User.find({ _id: { $in: conversation.participants } }).select("displayName");
+      teamMemberNames = users.map((u) => u.displayName.trim());
+    }
+
+    const detected = await fastAutoDetectTask(trimmedText, senderName || "Teammate", teamMemberNames);
+    aiTaskDetection = {
+      ...detected,
+      detectedAt: new Date(),
+    };
+  } catch {
+    // Non-blocking
+  }
+
   // 5. Persist message in MongoDB before broadcasting
   const savedMessage = await Message.create({
     conversationId: conversation._id,
@@ -161,6 +189,7 @@ export async function sendMessageService(params: SendMessageParams): Promise<For
     deletedForUsers: [],
     deliveredAt,
     readAt,
+    aiTaskDetection,
   });
 
   // 6. Update conversation metadata
@@ -223,6 +252,7 @@ export async function sendMessageService(params: SendMessageParams): Promise<For
     isDeletedForEveryone: false,
     deliveredAt: savedMessage.deliveredAt,
     readAt: savedMessage.readAt,
+    aiTaskDetection: savedMessage.aiTaskDetection,
   };
 
   // 8. Broadcast to conversation room and user rooms via Socket.IO

@@ -123,6 +123,18 @@ export interface BackendMessage {
   isDeletedForEveryone?: boolean;
   deliveredAt?: string;
   readAt?: string;
+  aiTaskDetection?: {
+    isTaskCandidate: boolean;
+    category: string;
+    confidence?: number;
+    tasks?: Array<{
+      title: string;
+      assigneeName?: string | null;
+      priority?: string | null;
+      deadlineText?: string | null;
+      deadlineDate?: string | null;
+    }>;
+  };
   sender?: {
     id: string;
     displayName: string;
@@ -463,6 +475,15 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ conversationId, messageId }),
     }),
+  scanConversationTasks: (workspaceId: string, conversationId: string) =>
+    request<{ success: boolean; detections: Record<string, any> }>(
+      `/api/ai/${workspaceId}/conversations/${conversationId}/scan`,
+      {
+        method: "POST",
+      }
+    ),
+  getAiExtractions: (workspaceId: string) =>
+    request<{ extractions: any[] }>(`/api/workspaces/${workspaceId}/extractions`),
   updateTask: (
     workspaceId: string,
     taskId: string,

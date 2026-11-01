@@ -5,7 +5,9 @@ import { Conversation } from "../models/Conversation.js";
 import { ConversationMembership } from "../models/ConversationMembership.js";
 import { Message } from "../models/Message.js";
 import { User, IUser } from "../models/User.js";
+import { WorkspaceMember } from "../models/WorkspaceMember.js";
 import { getIO, isUserOnline, isUserInRoom } from "../socket/socketHandler.js";
+import { fastAutoDetectTask } from "../services/aiTaskService.js";
 
 const router = Router();
 
@@ -72,6 +74,32 @@ router.post("/:id/messages", requireAuth, async (req: AuthenticatedRequest, res:
       // If socket not initialized, fallback to "sent"
     }
 
+    // Run real-time AI task detection
+    let aiTaskDetection: any = undefined;
+    try {
+      let teamMemberNames: string[] = [];
+      if (conversation.workspaceId) {
+        const members = await WorkspaceMember.find({
+          workspaceId: conversation.workspaceId,
+          status: "ACTIVE",
+        }).populate<{ userId: IUser }>("userId", "displayName");
+        teamMemberNames = members
+          .filter((m) => m.userId && (m.userId as any).displayName)
+          .map((m) => (m.userId as any).displayName.trim());
+      } else if (conversation.participants?.length) {
+        const users = await User.find({ _id: { $in: conversation.participants } }).select("displayName");
+        teamMemberNames = users.map((u) => u.displayName.trim());
+      }
+
+      const detected = await fastAutoDetectTask(trimmedText, req.user!.displayName, teamMemberNames);
+      aiTaskDetection = {
+        ...detected,
+        detectedAt: new Date(),
+      };
+    } catch {
+      // Non-blocking
+    }
+
     // 1. Save message in MongoDB before broadcasting
     const savedMessage = await Message.create({
       conversationId,
@@ -84,6 +112,7 @@ router.post("/:id/messages", requireAuth, async (req: AuthenticatedRequest, res:
       deletedForUsers: [],
       deliveredAt,
       readAt,
+      aiTaskDetection,
     });
 
     // 2. Update conversation's last message info
@@ -120,6 +149,7 @@ router.post("/:id/messages", requireAuth, async (req: AuthenticatedRequest, res:
       isDeletedForEveryone: false,
       deliveredAt: savedMessage.deliveredAt,
       readAt: savedMessage.readAt,
+      aiTaskDetection: savedMessage.aiTaskDetection,
     };
 
     // 4. Real-time delivery via Socket.IO

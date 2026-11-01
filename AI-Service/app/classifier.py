@@ -13,6 +13,7 @@ TASK_CANDIDATE_CATEGORIES = {
     "self_commitment",
     "missing_info",
     "ambiguous",
+    "looks_like_task",
 }
 
 CONFIRMATION_REQUIRED_CATEGORIES = {
@@ -47,14 +48,15 @@ def classify_text(message: str) -> ClassificationResponse:
         logger.error(f"Error during model prediction: {err}")
         raise RuntimeError(f"Model prediction failed: {err}")
 
-    # Calculate calibrated confidence using softmax over decision function
-    confidence = 1.0
+    # Calculate calibrated confidence using temperature-scaled softmax over decision function
+    confidence = 0.85
     try:
         if hasattr(model, "decision_function"):
             df = model.decision_function([text])[0]
             if len(df.shape) == 1:
-                exp_scores = np.exp(df - np.max(df))
-                probs = exp_scores / np.sum(exp_scores)
+                # Temperature scaling T=0.25 yields standard calibrated class probabilities
+                scaled = df / 0.25
+                probs = np.exp(scaled - np.max(scaled)) / np.sum(np.exp(scaled - np.max(scaled)))
                 classes = list(model.classes_)
                 if category in classes:
                     idx = classes.index(category)

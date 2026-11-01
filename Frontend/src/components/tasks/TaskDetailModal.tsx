@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import { useAuth } from "../../context/AuthContext";
+import { useWorkspace } from "../../context/WorkspaceContext";
 import {
   api,
   type BackendTask,
@@ -36,6 +38,7 @@ interface TaskDetailModalProps {
   task: BackendTask | null;
   workspaceId?: string;
   currentUserId?: string;
+  userRole?: string | null;
   onTaskUpdated: () => void;
   onTaskDeleted?: () => void;
   onNavigateToSourceMessage?: (conversationId: string, messageId: string) => void;
@@ -47,10 +50,14 @@ export function TaskDetailModal({
   task,
   workspaceId,
   currentUserId,
+  userRole,
   onTaskUpdated,
   onTaskDeleted,
   onNavigateToSourceMessage,
 }: TaskDetailModalProps) {
+  const { user: authUser } = useAuth();
+  const { userRole: ctxUserRole } = useWorkspace();
+
   const [currentTask, setCurrentTask] = useState<BackendTask | null>(task);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
@@ -62,6 +69,26 @@ export function TaskDetailModal({
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const effectiveUserId = currentUserId || authUser?._id;
+  const effectiveRole = userRole || ctxUserRole;
+
+  // RBAC permissions check:
+  // - Delete: Creator, Owner, or Admin
+  // - Edit (definition): Creator, Owner, Admin, or Manager
+  // - Reassign: Creator, Owner, Admin, or Manager
+  // - Status change: Assignee, Creator, Owner, Admin, or Manager
+  const isCreator = Boolean(
+    effectiveUserId &&
+    currentTask?.createdBy?.id &&
+    effectiveUserId.toString() === currentTask.createdBy.id.toString()
+  );
+  const isPrivileged = ["OWNER", "ADMIN", "MANAGER"].includes(effectiveRole || "");
+  const isOwnerOrAdmin = ["OWNER", "ADMIN"].includes(effectiveRole || "");
+
+  const canDelete = isCreator || isOwnerOrAdmin;
+  const canReassign = isCreator || isPrivileged;
+  const canEdit = isCreator || isPrivileged;
+
   useEffect(() => {
     if (open && task) {
       setCurrentTask(task);
@@ -72,13 +99,20 @@ export function TaskDetailModal({
       setIsEditing(false);
       setError(null);
 
-      if (workspaceId) {
+      const creatorMatch = Boolean(
+        effectiveUserId &&
+        task.createdBy?.id &&
+        effectiveUserId.toString() === task.createdBy.id.toString()
+      );
+      const privileged = ["OWNER", "ADMIN", "MANAGER"].includes(effectiveRole || "");
+
+      if (workspaceId && (creatorMatch || privileged)) {
         api.searchWorkspaceColleagues(workspaceId).then((res) => {
           setColleagues(res.users);
         });
       }
     }
-  }, [open, task, workspaceId]);
+  }, [open, task, workspaceId, effectiveUserId, effectiveRole]);
 
   if (!currentTask) return null;
 
@@ -97,6 +131,10 @@ export function TaskDetailModal({
 
   // Handle Reassignment
   const handleReassign = async (newAssigneeId: string) => {
+    if (!canReassign) {
+      setError("Only the task creator, manager, or admin can reassign this task");
+      return;
+    }
     if (!workspaceId || newAssigneeId === currentTask.assignee?.id) return;
     setError(null);
     try {
@@ -110,6 +148,10 @@ export function TaskDetailModal({
 
   // Handle Save Edit
   const handleSaveEdit = async () => {
+    if (!canEdit) {
+      setError("Only the task creator, manager, or admin can edit this task");
+      return;
+    }
     if (!workspaceId) return;
     const trimmed = editTitle.trim();
     if (!trimmed || trimmed.length < 2) {
@@ -138,6 +180,10 @@ export function TaskDetailModal({
 
   // Handle Delete
   const handleDelete = async () => {
+    if (!canDelete) {
+      setError("Only the task creator or workspace admin can delete this task");
+      return;
+    }
     if (!workspaceId) return;
     if (!confirm("Are you sure you want to delete this task?")) return;
 
@@ -187,7 +233,7 @@ export function TaskDetailModal({
               <span className="truncate max-w-xs">{isEditing ? "Edit Task" : "Task Details"}</span>
             </DialogTitle>
 
-            {!isEditing && (
+            {!isEditing && canEdit && (
               <Button
                 size="sm"
                 variant="outline"
@@ -411,40 +457,78 @@ export function TaskDetailModal({
                     <UserCheck className="h-4 w-4 text-primary" />
                     Assigned To
                   </span>
-                  <span className="text-[10px] text-muted-foreground">Change assignee:</span>
+                  {canReassign ? (
+                    <span className="text-[10px] text-muted-foreground">Change assignee:</span>
+                  ) : (
+                    <span className="text-[10px] text-muted-foreground font-medium">Assignee</span>
+                  )}
                 </div>
 
-                <select
-                  value={currentTask.assignee?.id || ""}
-                  onChange={(e) => handleReassign(e.target.value)}
-                  className="w-full h-9 px-2.5 text-xs bg-muted/40 border border-border/80 rounded-xl outline-none focus:border-primary/50 text-foreground cursor-pointer font-medium"
-                >
-                  {colleagues.map((u) => (
-                    <option key={u._id} value={u._id}>
-                      {u.displayName} ({u.email})
-                    </option>
-                  ))}
-                </select>
+                {canReassign ? (
+                  <select
+                    value={currentTask.assignee?.id || ""}
+                    onChange={(e) => handleReassign(e.target.value)}
+                    className="w-full h-9 px-2.5 text-xs bg-muted/40 border border-border/80 rounded-xl outline-none focus:border-primary/50 text-foreground cursor-pointer font-medium"
+                  >
+                    {colleagues.map((u) => (
+                      <option key={u._id} value={u._id}>
+                        {u.displayName} ({u.email})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/30 border border-border/50">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/15 text-xs font-bold text-primary">
+                        {currentTask.assignee?.initials ||
+                          currentTask.assignee?.displayName?.charAt(0) ||
+                          "U"}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-foreground truncate">
+                          {currentTask.assignee?.displayName || "Unassigned"}
+                        </p>
+                        {currentTask.assignee?.email && (
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            {currentTask.assignee.email}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {currentTask.assignee?.id === effectiveUserId && (
+                      <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25">
+                        Assigned to you
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
         </div>
 
-        <DialogFooter className="flex sm:justify-between items-center gap-2 pt-2 border-t border-border/50">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={handleDelete}
-            disabled={deleting}
-            className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5 h-8"
-          >
-            {deleting ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Trash2 className="h-3.5 w-3.5" />
-            )}
-            Delete Task
-          </Button>
+        <DialogFooter
+          className={cn(
+            "flex items-center gap-2 pt-2 border-t border-border/50",
+            canDelete ? "sm:justify-between" : "sm:justify-end"
+          )}
+        >
+          {canDelete && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5 h-8"
+            >
+              {deleting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="h-3.5 w-3.5" />
+              )}
+              Delete Task
+            </Button>
+          )}
 
           <Button
             type="button"

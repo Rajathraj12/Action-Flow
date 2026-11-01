@@ -1,5 +1,19 @@
 import mongoose, { Document, Schema, Types } from "mongoose";
 
+export interface IMessageAiTask {
+  isTaskCandidate: boolean;
+  category: string;
+  confidence: number;
+  detectedAt?: Date;
+  tasks?: Array<{
+    title: string;
+    assigneeName?: string | null;
+    priority?: string | null;
+    deadlineText?: string | null;
+    deadlineDate?: string | null;
+  }>;
+}
+
 export interface IMessage extends Document {
   conversationId: Types.ObjectId;
   workspaceId?: Types.ObjectId;
@@ -15,6 +29,7 @@ export interface IMessage extends Document {
   deliveredAt?: Date;
   readAt?: Date;
   deletedAt?: Date;
+  aiTaskDetection?: IMessageAiTask;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -81,6 +96,21 @@ const MessageSchema = new Schema<IMessage>(
     },
     deletedAt: {
       type: Date,
+    },
+    aiTaskDetection: {
+      isTaskCandidate: { type: Boolean, default: false },
+      category: { type: String, default: "not_task" },
+      confidence: { type: Number, default: 0 },
+      detectedAt: { type: Date },
+      tasks: [
+        {
+          title: String,
+          assigneeName: String,
+          priority: String,
+          deadlineText: String,
+          deadlineDate: String,
+        },
+      ],
     },
   },
   {

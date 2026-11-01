@@ -47,7 +47,7 @@ type TaskTab = "all" | "assigned" | "created" | "completed" | "overdue";
 
 function TasksPage() {
   const { user, token } = useAuth();
-  const { activeWorkspace } = useWorkspace();
+  const { activeWorkspace, userRole } = useWorkspace();
   const navigate = useNavigate();
 
   const [tasks, setTasks] = useState<BackendTask[]>([]);
@@ -531,19 +531,36 @@ function TasksPage() {
                   >
                     {/* Left: Quick Checkbox + Title + Description */}
                     <div className="flex items-start gap-3.5 min-w-0 flex-1">
-                      <button
-                        type="button"
-                        onClick={(e) => handleQuickToggleStatus(task, e)}
-                        className={cn(
-                          "mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-lg border transition-all cursor-pointer",
-                          isDone
-                            ? "bg-emerald-500 text-white border-emerald-500 shadow-xs"
-                            : "border-border bg-background hover:border-primary text-transparent hover:text-muted-foreground"
-                        )}
-                        title={isDone ? "Mark as In Progress" : "Mark as Done"}
-                      >
-                        <CheckCircle2 className="h-4 w-4" />
-                      </button>
+                      {(() => {
+                        const canToggle =
+                          task.assignee?.id === user?._id ||
+                          task.createdBy?.id === user?._id ||
+                          ["OWNER", "ADMIN", "MANAGER"].includes(userRole || "");
+
+                        return (
+                          <button
+                            type="button"
+                            disabled={!canToggle}
+                            onClick={(e) => canToggle && handleQuickToggleStatus(task, e)}
+                            className={cn(
+                              "mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-lg border transition-all",
+                              canToggle ? "cursor-pointer" : "opacity-40 cursor-not-allowed",
+                              isDone
+                                ? "bg-emerald-500 text-white border-emerald-500 shadow-xs"
+                                : "border-border bg-background hover:border-primary text-transparent hover:text-muted-foreground"
+                            )}
+                            title={
+                              !canToggle
+                                ? "Only assignee, creator, or workspace managers can update status"
+                                : isDone
+                                ? "Mark as In Progress"
+                                : "Mark as Done"
+                            }
+                          >
+                            <CheckCircle2 className="h-4 w-4" />
+                          </button>
+                        );
+                      })()}
 
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -703,6 +720,7 @@ function TasksPage() {
         task={selectedTask}
         workspaceId={activeWorkspace?.id}
         currentUserId={user?._id}
+        userRole={userRole}
         onTaskUpdated={fetchTasks}
         onTaskDeleted={fetchTasks}
         onNavigateToSourceMessage={handleNavigateToSource}

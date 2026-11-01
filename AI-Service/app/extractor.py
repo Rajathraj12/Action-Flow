@@ -122,6 +122,7 @@ def extract_tasks_deterministic(
     sender: Optional[str] = None,
     timestamp: Optional[str] = None,
     team_members: Optional[List[str]] = None,
+    base_confidence: float = 0.88,
 ) -> Tuple[List[TaskSuggestion], List[str], bool]:
     """
     Rule-based extraction engine crafted strictly against ActionFlow dataset annotations.
@@ -129,9 +130,9 @@ def extract_tasks_deterministic(
     members = team_members or []
     tasks: List[TaskSuggestion] = []
     warnings: List[str] = []
-    needs_confirmation = category in {"ambiguous", "missing_info"}
+    needs_confirmation = category in {"ambiguous", "missing_info", "looks_like_task"}
 
-    if category in {"not_task", "looks_like_task"}:
+    if category == "not_task":
         return [], warnings, False
 
     # Multi-task handling
@@ -170,6 +171,14 @@ def extract_tasks_deterministic(
         # 5. Extract Clean Imperative Title
         title = clean_task_title(clause, candidate_name or resolved_assignee)
 
+        task_conf = base_confidence
+        if resolved_assignee:
+            task_conf = min(0.98, max(task_conf, 0.88))
+            if prio == "urgent":
+                task_conf = min(0.98, max(task_conf, 0.94))
+        else:
+            task_conf = min(0.85, max(task_conf, 0.76))
+
         tasks.append(
             TaskSuggestion(
                 title=title,
@@ -177,7 +186,7 @@ def extract_tasks_deterministic(
                 deadline_text=d_text,
                 deadline_date=d_date,
                 priority=prio,
-                confidence=0.9 if resolved_assignee else 0.75,
+                confidence=round(task_conf, 2),
             )
         )
 
@@ -282,6 +291,7 @@ def detect_and_extract_tasks(req: DetectionRequest) -> DetectionResponse:
             sender=req.sender,
             timestamp=req.timestamp,
             team_members=req.team_members or [],
+            base_confidence=cls_result.confidence,
         )
 
     status = "needs_clarification" if needs_confirmation else "success"

@@ -71,8 +71,9 @@ function SettingsPage() {
       {/* Main Content Area */}
       <section className="hidden flex-1 flex-col bg-muted/10 md:flex overflow-y-auto">
         {activeTab === "none" && (
-          <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
-            <img src="/logo.png" alt="ActionFlow" className="h-10 mb-4 object-contain" />
+          <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+            <img src="/logo.png" alt="ActionFlow" className="h-16 w-16 rounded-2xl mb-1 object-cover shadow-md border border-border/40" />
+            <h2 className="text-lg font-bold font-display text-foreground">ActionFlow</h2>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
               Personalize your workspace. Select a setting from the menu to customize your preferences, notifications, and security.
             </p>

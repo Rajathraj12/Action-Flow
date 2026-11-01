@@ -357,6 +357,25 @@ router.get("/:id/messages", requireAuth, async (req: AuthenticatedRequest, res: 
       const status = isNewlyRead ? "read" : m.status;
       const readAt = isNewlyRead ? now : m.readAt;
 
+      // Fallback detection if message was created before auto-detection or was false-negatived
+      let aiDetection = (m as any).aiTaskDetection;
+      const isTaskLike = /\b(please|can you|could you|schedule|meeting|call|fix|update|prepare|send|review|deploy|by tomorrow|by monday|by friday|urgent|asap|verify|check|test|implement|create|finish)\b/i.test(
+        m.text
+      );
+
+      if ((!aiDetection || !aiDetection.isTaskCandidate) && !m.isDeletedForEveryone && isTaskLike) {
+        aiDetection = {
+          isTaskCandidate: true,
+          category: "looks_like_task",
+          confidence: 0.88,
+          tasks: aiDetection?.tasks?.length ? aiDetection.tasks : [{
+            title: m.text.slice(0, 60),
+            priority: /asap|urgent/i.test(m.text) ? "URGENT" : "MEDIUM",
+            confidence: 0.88,
+          }],
+        };
+      }
+
       return {
         id: m._id.toString(),
         from: isMe ? ("me" as const) : ("them" as const),
@@ -369,6 +388,7 @@ router.get("/:id/messages", requireAuth, async (req: AuthenticatedRequest, res: 
         isDeletedForEveryone: !!m.isDeletedForEveryone,
         deliveredAt: m.deliveredAt,
         readAt: readAt,
+        aiTaskDetection: aiDetection,
         sender: {
           id: m.sender._id.toString(),
           displayName: m.sender.displayName,

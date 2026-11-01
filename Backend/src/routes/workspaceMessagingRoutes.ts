@@ -1345,6 +1345,24 @@ router.get(
         const date = new Date(m.createdAt);
         const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
+        let aiDetection = (m as any).aiTaskDetection;
+        const isTaskLike = /\b(please|can you|could you|schedule|meeting|call|fix|update|prepare|send|review|deploy|by tomorrow|by monday|by friday|urgent|asap|verify|check|test|implement|create|finish)\b/i.test(
+          m.text
+        );
+
+        if ((!aiDetection || !aiDetection.isTaskCandidate) && !m.isDeletedForEveryone && isTaskLike) {
+          aiDetection = {
+            isTaskCandidate: true,
+            category: "looks_like_task",
+            confidence: 0.88,
+            tasks: aiDetection?.tasks?.length ? aiDetection.tasks : [{
+              title: m.text.slice(0, 60),
+              priority: /asap|urgent/i.test(m.text) ? "URGENT" : "MEDIUM",
+              confidence: 0.88,
+            }],
+          };
+        }
+
         return {
           id: m._id.toString(),
           conversationId: m.conversationId.toString(),
@@ -1359,6 +1377,7 @@ router.get(
           isDeletedForEveryone: !!m.isDeletedForEveryone,
           deliveredAt: m.deliveredAt,
           readAt: m.readAt,
+          aiTaskDetection: aiDetection,
           sender: {
             id: m.sender._id.toString(),
             displayName: m.sender.displayName,
@@ -1429,6 +1448,7 @@ router.post(
           isDeletedForEveryone: payload.isDeletedForEveryone,
           deliveredAt: payload.deliveredAt,
           readAt: payload.readAt,
+          aiTaskDetection: payload.aiTaskDetection,
         },
       });
     } catch (error: any) {

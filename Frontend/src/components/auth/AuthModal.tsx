@@ -57,8 +57,8 @@ export function AuthModal() {
       <div className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card shadow-2xl transition-all">
         {/* Header Banner */}
         <div className="border-b border-border bg-muted/30 px-6 py-6 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            <img src="/icon.png" alt="ActionFlow" className="h-7 w-7 object-contain" />
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl overflow-hidden shadow-xs border border-primary/20">
+            <img src="/icon.png" alt="ActionFlow" className="h-full w-full object-cover" />
           </div>
           <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">
             {isSignUp ? "Create ActionFlow Account" : "Welcome to ActionFlow"}

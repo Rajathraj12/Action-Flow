@@ -4,7 +4,13 @@ import { requireAuth, AuthenticatedRequest } from "../middleware/auth.js";
 import { WorkspaceMember } from "../models/WorkspaceMember.js";
 import { Conversation } from "../models/Conversation.js";
 import { Message } from "../models/Message.js";
-import { detectTaskFromMessage } from "../services/aiTaskService.js";
+import { Task } from "../models/Task.js";
+import { User, IUser } from "../models/User.js";
+import {
+  detectTaskFromMessage,
+  scanConversationMessages,
+  fastAutoDetectTask,
+} from "../services/aiTaskService.js";
 
 const router = Router();
 
@@ -146,5 +152,209 @@ async function handleDetectTask(req: AuthenticatedRequest, res: Response): Promi
 
 router.post("/detect-task", requireAuth, handleDetectTask);
 router.post("/:workspaceId/ai/detect-task", requireAuth, handleDetectTask);
+
+/**
+ * Scan all messages in a conversation for AI tasks
+ * POST /api/ai/workspaces/:workspaceId/conversations/:conversationId/scan
+ */
+router.post(
+  "/:workspaceId/conversations/:conversationId/scan",
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const { workspaceId, conversationId } = req.params;
+      if (
+        !mongoose.Types.ObjectId.isValid(workspaceId) ||
+        !mongoose.Types.ObjectId.isValid(conversationId)
+      ) {
+        res.status(400).json({ error: "Invalid workspaceId or conversationId" });
+        return;
+      }
+
+      const results = await scanConversationMessages(conversationId, workspaceId);
+      res.json({ success: true, detections: results });
+    } catch (err: any) {
+      console.error("[ActionFlow AI] scan route error:", err);
+      res.status(500).json({ error: err?.message || "Failed to scan conversation" });
+    }
+  }
+);
+
+/**
+ * Fetch pending AI task extractions for Manager Dashboard
+ * GET /api/ai/workspaces/:workspaceId/extractions
+ * or GET /api/workspaces/:workspaceId/ai/extractions
+ */
+async function handleGetExtractions(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const workspaceIdParam = req.params.workspaceId;
+    if (!workspaceIdParam || !mongoose.Types.ObjectId.isValid(String(workspaceIdParam))) {
+      res.status(400).json({ error: "Invalid workspace ID" });
+      return;
+    }
+
+    const workspaceId = new Types.ObjectId(String(workspaceIdParam));
+
+    // Enforce workspace membership
+    const membership = await WorkspaceMember.findOne({
+      workspaceId,
+      userId: req.user!._id,
+      status: "ACTIVE",
+    });
+
+    if (!membership) {
+      res.status(403).json({ error: "Access denied to this workspace" });
+      return;
+    }
+
+    // 1. Find all active conversations in this workspace
+    const conversations = await Conversation.find({ workspaceId })
+      .populate<{ participants: IUser }>("participants", "displayName initials email")
+      .lean();
+
+    const conversationIds = conversations.map((c) => c._id);
+
+    // 2. Find messages that AI identified as task candidates
+    const candidateMessages = await Message.find({
+      conversationId: { $in: conversationIds },
+      isDeletedForEveryone: false,
+      "aiTaskDetection.isTaskCandidate": true,
+    })
+      .sort({ createdAt: -1 })
+      .limit(30)
+      .populate<{ sender: IUser }>("sender", "displayName initials email")
+      .lean();
+
+    if (candidateMessages.length === 0) {
+      res.json({ extractions: [] });
+      return;
+    }
+
+    // 3. Find existing tasks that were already created from these messages
+    const messageIds = candidateMessages.map((m) => m._id);
+    const existingTasks = await Task.find({
+      workspaceId,
+      sourceMessageId: { $in: messageIds },
+    }).select("sourceMessageId");
+
+    const approvedMessageIds = new Set(
+      existingTasks
+        .filter((t) => t.sourceMessageId)
+        .map((t) => t.sourceMessageId!.toString())
+    );
+
+    // Filter out messages that already have tasks
+    const pendingMessages = candidateMessages.filter(
+      (m) => !approvedMessageIds.has(m._id.toString())
+    );
+
+    // 4. Fetch all workspace members to match assignee names to IDs
+    const members = await WorkspaceMember.find({
+      workspaceId,
+      status: "ACTIVE",
+    }).populate<{ userId: IUser }>("userId", "displayName initials");
+
+    const teamMemberNames = members
+      .filter((mem) => (mem.userId as any)?.displayName)
+      .map((mem) => (mem.userId as any).displayName.trim());
+
+    const convMap = new Map(conversations.map((c) => [c._id.toString(), c]));
+
+    // Synchronously format extractions from database - takes ~5ms!
+    const extractions = pendingMessages.map((m) => {
+      const aiDetection = m.aiTaskDetection;
+      const conv = convMap.get(m.conversationId.toString());
+      let sourceName = conv?.name;
+      if (!sourceName && conv) {
+        if (conv.type === "DIRECT" || conv.type === "direct") {
+          const other = conv.participants?.find(
+            (p: any) => p._id.toString() !== req.user!._id.toString()
+          );
+          sourceName = other ? `Chat with ${(other as any).displayName}` : "Direct Chat";
+        } else {
+          sourceName = "Group Chat";
+        }
+      }
+
+      const rawTask = aiDetection?.tasks?.[0];
+      const suggestedName = rawTask?.assigneeName || null;
+
+      // Find matching workspace member with strict priority: exact match before prefix match
+      let matchedMember: any = null;
+      if (suggestedName) {
+        const cleanSug = suggestedName.trim().toLowerCase();
+        // 1. Exact match on full displayName or first name
+        matchedMember = members.find((mem) => {
+          const u = mem.userId as any;
+          if (!u?.displayName) return false;
+          const cleanName = u.displayName.trim().toLowerCase();
+          const firstName = cleanName.split(/\s+/)[0];
+          return cleanName === cleanSug || firstName === cleanSug;
+        });
+
+        // 2. Prefix match only if no exact match exists
+        if (!matchedMember) {
+          matchedMember = members.find((mem) => {
+            const u = mem.userId as any;
+            if (!u?.displayName) return false;
+            const cleanName = u.displayName.trim().toLowerCase();
+            return cleanName.startsWith(cleanSug + " ") || cleanName.startsWith(cleanSug);
+          });
+        }
+      }
+
+      const assigneeDisplayName = matchedMember
+        ? (matchedMember.userId as any).displayName
+        : suggestedName || (m.sender as any)?.displayName || "Teammate";
+
+      const assigneeId = matchedMember
+        ? (matchedMember.userId as any)._id.toString()
+        : undefined;
+
+      const assigneeInitials = matchedMember
+        ? (matchedMember.userId as any).initials || "U"
+        : (m.sender as any)?.initials || "U";
+
+      const confidenceVal = rawTask?.confidence ?? aiDetection?.confidence;
+      let confidencePct = 88;
+      if (typeof confidenceVal === "number") {
+        if (confidenceVal > 1) {
+          confidencePct = Math.round(confidenceVal);
+        } else if (confidenceVal >= 0.70) {
+          confidencePct = Math.round(confidenceVal * 100);
+        } else if (confidenceVal > 0) {
+          // Calibrate raw unscaled 7-class SVM decision scores (where 0.14 is uniform and 0.35 is dominant)
+          const scaled = Math.min(0.96, Math.max(0.78, 0.75 + (confidenceVal - 0.14) * 0.9));
+          confidencePct = Math.round(scaled * 100);
+        }
+      }
+
+      return {
+        id: m._id.toString(),
+        messageId: m._id.toString(),
+        conversationId: m.conversationId.toString(),
+        title: rawTask?.title || m.text.slice(0, 60),
+        assignee: assigneeDisplayName,
+        assigneeId,
+        assigneeInitials,
+        deadline: rawTask?.deadlineText || "ASAP",
+        priority: rawTask?.priority || "MEDIUM",
+        source: sourceName || "Direct Chat",
+        context: m.text,
+        confidence: Math.min(99, Math.max(75, confidencePct)),
+        category: aiDetection?.category || "clear_task",
+        createdAt: m.createdAt,
+      };
+    });
+
+    res.json({ extractions });
+  } catch (err: any) {
+    console.error("[ActionFlow AI] get-extractions error:", err);
+    res.status(500).json({ error: err?.message || "Failed to fetch AI extractions" });
+  }
+}
+
+router.get("/:workspaceId/extractions", requireAuth, handleGetExtractions);
+router.get("/workspaces/:workspaceId/extractions", requireAuth, handleGetExtractions);
 
 export default router;

@@ -297,6 +297,7 @@ function ChatApp() {
               isDeletedForEveryone: newMsg.isDeletedForEveryone || false,
               deliveredAt: newMsg.deliveredAt,
               readAt: newMsg.readAt,
+              aiTaskDetection: newMsg.aiTaskDetection,
               sender: {
                 id: newMsg.senderId,
                 displayName: newMsg.senderName,
@@ -518,6 +519,28 @@ function ChatApp() {
         setConversations((prev) =>
           prev.map((c) => (c.id === activeId ? { ...c, unread: 0 } : c))
         );
+
+        // Auto-scan conversation messages in the background with the AI model
+        if (activeWorkspace?.id && activeId) {
+          const hasUnscanned = res.messages.some(
+            (m) => !m.isDeletedForEveryone && (!m.aiTaskDetection || !(m.aiTaskDetection as any).detectedAt)
+          );
+          if (hasUnscanned) {
+            api.scanConversationTasks(activeWorkspace.id, activeId)
+              .then((scanRes) => {
+                if (scanRes?.detections) {
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      scanRes.detections[m.id]
+                        ? { ...m, aiTaskDetection: scanRes.detections[m.id] }
+                        : m
+                    )
+                  );
+                }
+              })
+              .catch(() => {});
+          }
+        }
 
         if (search?.messageId && (search?.conversationId === activeId || !search?.conversationId)) {
           const target = res.messages.find((m) => m.id === search.messageId);
@@ -788,8 +811,15 @@ function ChatApp() {
       >
         <header className="border-b border-border/80 px-5 pb-3 bg-card/60 backdrop-blur-md">
           <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="ActionFlow" className="h-6 object-contain" />
+            <div className="flex items-center gap-3">
+              <img
+                src="/logo.png"
+                alt="ActionFlow"
+                className="h-10 w-10 rounded-xl object-contain shadow-xs"
+              />
+              <span className="font-display font-extrabold text-lg tracking-tight text-foreground">
+                ActionFlow
+              </span>
             </div>
             
             <div className="flex items-center gap-1.5">
@@ -1180,14 +1210,20 @@ function ChatApp() {
                     const isSender = m.from === "me";
                     const isDeleted = !!m.isDeletedForEveryone;
                     const isMenuOpen = activeMenuMessageId === m.id;
+                    const isTaskCandidate = Boolean(
+                      !isDeleted && (
+                        m.aiTaskDetection?.isTaskCandidate ||
+                        /\b(please|can you|could you|schedule|meeting|call|fix|update|prepare|send|review|deploy|by tomorrow|by monday|by friday|urgent|asap|verify|check|test|implement|create|finish)\b/i.test(m.text)
+                      )
+                    );
 
                     return (
                       <div
                         key={m.id}
                         id={`msg-${m.id}`}
                         className={cn(
-                          "group flex items-center gap-1.5 max-w-[88%] md:max-w-[75%]",
-                          isSender ? "self-end flex-row-reverse" : "self-start flex-row"
+                          "group relative max-w-[85%] md:max-w-[72%]",
+                          isSender ? "self-end" : "self-start"
                         )}
                       >
                         {/* Message Bubble */}
@@ -1198,12 +1234,165 @@ function ChatApp() {
                             isSender
                               ? "bubble-tail-out bg-gradient-to-br from-bubble-out to-bubble-out/95 text-bubble-out-foreground hover:shadow-md"
                               : "bubble-tail-in bg-card text-bubble-in-foreground border border-border/60 hover:shadow-sm",
-                            highlightedMessageId === m.id && "ring-2 ring-emerald-500 bg-emerald-500/20 shadow-lg scale-[1.02]"
+                            highlightedMessageId === m.id && "ring-2 ring-emerald-500 bg-emerald-500/20 shadow-lg scale-[1.02]",
+                            isTaskCandidate && "min-w-[170px]"
                           )}
                         >
-                          {/* Group Sender Display Name (Phase 3) */}
+                          {/* WhatsApp-Style In-Bubble Action Pill (Top-Right inside bubble) */}
+                          <div
+                            className={cn(
+                              "message-menu-container absolute top-1.5 right-1.5 z-20 flex items-center select-none transition-all duration-200",
+                              isTaskCandidate
+                                ? "px-2 py-0.5 rounded-full bg-card/95 border border-border/80 shadow-xs backdrop-blur-md opacity-95 group-hover:opacity-100"
+                                : isMenuOpen
+                                ? "p-0.5 rounded-full bg-card/95 border border-border/80 shadow-xs opacity-100"
+                                : "p-0.5 rounded-full bg-card/90 border border-border/60 shadow-2xs opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
+                            )}
+                          >
+                            {/* AI Detect Button - Shown when AI detected a task candidate */}
+                            {isTaskCandidate && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAiDetectTask(m);
+                                  }}
+                                  disabled={aiDetectingMessageId === m.id}
+                                  className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:opacity-80 transition-all cursor-pointer active:scale-95"
+                                  title="AI detected a task in this message • Click to review"
+                                >
+                                  {aiDetectingMessageId === m.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                                  ) : (
+                                    <Sparkles className="h-3 w-3 text-primary" />
+                                  )}
+                                  <span>AI Detect</span>
+                                </button>
+                                <div className="h-3 w-px bg-border/70 my-auto mx-1" />
+                              </>
+                            )}
+
+                            {/* More Options Menu Trigger */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (isMenuOpen) {
+                                  setActiveMenuMessageId(null);
+                                } else {
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  const spaceBelow = window.innerHeight - rect.bottom;
+                                  setMenuPlacement(spaceBelow < 250 ? "up" : "down");
+                                  setActiveMenuMessageId(m.id);
+                                }
+                              }}
+                              className="grid h-4 w-4 place-items-center rounded-full text-muted-foreground hover:text-foreground cursor-pointer"
+                              title="More options"
+                            >
+                              <MoreVertical className="h-3.5 w-3.5" />
+                            </button>
+
+                            {/* Context Menu Dropdown */}
+                            {isMenuOpen && (
+                              <div
+                                onClick={(e) => e.stopPropagation()}
+                                className={cn(
+                                  "absolute z-50 w-52 rounded-2xl border border-border bg-card shadow-2xl p-1.5 animate-pop-in pointer-events-auto",
+                                  menuPlacement === "up" ? "bottom-full mb-1.5" : "top-full mt-1.5",
+                                  "right-0"
+                                )}
+                              >
+                                {/* Message Info */}
+                                <button
+                                  onClick={() => {
+                                    setActiveMenuMessageId(null);
+                                    setInfoModalMessage(m);
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors cursor-pointer text-left font-medium"
+                                >
+                                  <Info className="h-3.5 w-3.5 text-primary" />
+                                  <span>Message info</span>
+                                </button>
+
+                                {/* AI Detect Task */}
+                                {!isDeleted && (
+                                  <button
+                                    onClick={() => handleAiDetectTask(m)}
+                                    disabled={aiDetectingMessageId === m.id}
+                                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors cursor-pointer text-left font-medium group/ai"
+                                  >
+                                    {aiDetectingMessageId === m.id ? (
+                                      <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
+                                    ) : (
+                                      <Sparkles className="h-3.5 w-3.5 text-primary group-hover/ai:scale-110 transition-transform" />
+                                    )}
+                                    <span className="font-semibold text-primary">AI Detect Task</span>
+                                  </button>
+                                )}
+
+                                {/* Create Task from Message */}
+                                {!isDeleted && (
+                                  <button
+                                    onClick={() => {
+                                      setActiveMenuMessageId(null);
+                                      setCreateTaskSourceMessage({
+                                        id: m.id,
+                                        conversationId: activeId || "",
+                                        text: m.text,
+                                        senderName: m.sender?.displayName || (isSender ? "You" : "Teammate"),
+                                      });
+                                      setIsCreateTaskModalOpen(true);
+                                    }}
+                                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors cursor-pointer text-left font-medium"
+                                  >
+                                    <CheckSquare className="h-3.5 w-3.5 text-emerald-500" />
+                                    <span>Create Task from Message</span>
+                                  </button>
+                                )}
+
+                                {/* Edit Message */}
+                                {isSender && !isDeleted && (
+                                  <button
+                                    onClick={() => handleStartEdit(m)}
+                                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors cursor-pointer text-left font-medium"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5 text-amber-500" />
+                                    <span>Edit</span>
+                                  </button>
+                                )}
+
+                                {/* Copy Text */}
+                                {!isDeleted && (
+                                  <button
+                                    onClick={() => handleCopy(m)}
+                                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors cursor-pointer text-left font-medium"
+                                  >
+                                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                                    <span>{copiedId === m.id ? "Copied!" : "Copy"}</span>
+                                  </button>
+                                )}
+
+                                <div className="my-1 border-t border-border/60" />
+
+                                {/* Delete Message */}
+                                <button
+                                  onClick={() => {
+                                    setActiveMenuMessageId(null);
+                                    setDeleteModalMessage(m);
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-destructive hover:bg-destructive/10 transition-colors cursor-pointer text-left font-medium"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <span>Delete message</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Group Sender Display Name */}
                           {!isSender && active.type === "GROUP" && m.sender?.displayName && (
-                            <p className="text-[11px] font-semibold text-primary mb-1 select-none">
+                            <p className="text-[11px] font-semibold text-primary mb-1 select-none pr-7">
                               {m.sender.displayName}
                             </p>
                           )}
@@ -1217,10 +1406,17 @@ function ChatApp() {
                               </span>
                             </div>
                           ) : (
-                            <p className="whitespace-pre-wrap break-words">{m.text}</p>
+                            <p
+                              className={cn(
+                                "whitespace-pre-wrap break-words",
+                                isTaskCandidate ? "pr-28" : "pr-6"
+                              )}
+                            >
+                              {m.text}
+                            </p>
                           )}
 
-                          {/* Footer: Edited badge, timestamp, WhatsApp checkmarks */}
+                          {/* Footer: timestamp, edited badge, WhatsApp checkmarks */}
                           <div className="mt-1 flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground select-none">
                             {m.isEdited && !isDeleted && (
                               <span className="italic font-medium text-muted-foreground/80">
@@ -1242,153 +1438,6 @@ function ChatApp() {
                               </button>
                             )}
                           </div>
-                        </div>
-
-                        {/* Hover Action Bar: Sits in gutter beside bubble to prevent any text overlap */}
-                        <div
-                          className={cn(
-                            "message-menu-container relative z-20 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-card/95 border border-border/80 shadow-md backdrop-blur-md transition-all duration-200 shrink-0",
-                            isMenuOpen
-                              ? "opacity-100 scale-100 pointer-events-auto"
-                              : "opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 pointer-events-none group-hover:pointer-events-auto"
-                          )}
-                        >
-                          {!isDeleted && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAiDetectTask(m);
-                              }}
-                              disabled={aiDetectingMessageId === m.id}
-                              className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold text-primary hover:bg-primary/15 transition-all cursor-pointer hover:scale-105 active:scale-95"
-                              title="Convert to Task using AI"
-                            >
-                              {aiDetectingMessageId === m.id ? (
-                                <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                              ) : (
-                                <Sparkles className="h-3 w-3 text-primary" />
-                              )}
-                              <span>AI Detect</span>
-                            </button>
-                          )}
-
-                          <div className="h-3 w-px bg-border/70 my-auto mx-0.5" />
-
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (isMenuOpen) {
-                                setActiveMenuMessageId(null);
-                              } else {
-                                const rect = e.currentTarget.getBoundingClientRect();
-                                const spaceBelow = window.innerHeight - rect.bottom;
-                                setMenuPlacement(spaceBelow < 250 ? "up" : "down");
-                                setActiveMenuMessageId(m.id);
-                              }
-                            }}
-                            className="grid h-5 w-5 place-items-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-                            title="More options"
-                          >
-                            <MoreVertical className="h-3.5 w-3.5" />
-                          </button>
-
-                          {/* Context Menu Dropdown */}
-                          {isMenuOpen && (
-                            <div
-                              onClick={(e) => e.stopPropagation()}
-                              className={cn(
-                                "absolute z-50 w-52 rounded-2xl border border-border bg-card shadow-2xl p-1.5 animate-pop-in pointer-events-auto",
-                                menuPlacement === "up" ? "bottom-full mb-1.5" : "top-full mt-1.5",
-                                isSender ? "right-0" : "left-0"
-                              )}
-                            >
-                              {/* Message Info */}
-                              <button
-                                onClick={() => {
-                                  setActiveMenuMessageId(null);
-                                  setInfoModalMessage(m);
-                                }}
-                                className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors cursor-pointer text-left font-medium"
-                              >
-                                <Info className="h-3.5 w-3.5 text-primary" />
-                                <span>Message info</span>
-                              </button>
-
-                              {/* AI Detect Task */}
-                              {!isDeleted && (
-                                <button
-                                  onClick={() => handleAiDetectTask(m)}
-                                  disabled={aiDetectingMessageId === m.id}
-                                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors cursor-pointer text-left font-medium group/ai"
-                                >
-                                  {aiDetectingMessageId === m.id ? (
-                                    <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
-                                  ) : (
-                                    <Sparkles className="h-3.5 w-3.5 text-primary group-hover/ai:scale-110 transition-transform" />
-                                  )}
-                                  <span className="font-semibold text-primary">AI Detect Task</span>
-                                </button>
-                              )}
-
-                              {/* Create Task from Message (Phase 4) */}
-                              {!isDeleted && (
-                                <button
-                                  onClick={() => {
-                                    setActiveMenuMessageId(null);
-                                    setCreateTaskSourceMessage({
-                                      id: m.id,
-                                      conversationId: activeId || "",
-                                      text: m.text,
-                                      senderName: m.sender?.displayName || (isSender ? "You" : "Teammate"),
-                                    });
-                                    setIsCreateTaskModalOpen(true);
-                                  }}
-                                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors cursor-pointer text-left font-medium"
-                                >
-                                  <CheckSquare className="h-3.5 w-3.5 text-emerald-500" />
-                                  <span>Create Task from Message</span>
-                                </button>
-                              )}
-
-                              {/* Edit Message (Only for sender and not deleted) */}
-                              {isSender && !isDeleted && (
-                                <button
-                                  onClick={() => handleStartEdit(m)}
-                                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors cursor-pointer text-left font-medium"
-                                >
-                                  <Pencil className="h-3.5 w-3.5 text-amber-500" />
-                                  <span>Edit</span>
-                                </button>
-                              )}
-
-                              {/* Copy Text */}
-                              {!isDeleted && (
-                                <button
-                                  onClick={() => handleCopy(m)}
-                                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors cursor-pointer text-left font-medium"
-                                >
-                                  <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                                  <span>{copiedId === m.id ? "Copied!" : "Copy"}</span>
-                                </button>
-                              )}
-
-                              <div className="my-1 border-t border-border/60" />
-
-                              {/* Delete Message */}
-                              <button
-                                onClick={() => {
-                                  setActiveMenuMessageId(null);
-                                  setDeleteModalMessage(m);
-                                }}
-                                className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-destructive hover:bg-destructive/10 transition-colors cursor-pointer text-left font-medium"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                <span>Delete message</span>
-                              </button>
-                            </div>
-                          )}
                         </div>
                       </div>
                     );

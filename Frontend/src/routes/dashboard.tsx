@@ -47,45 +47,16 @@ interface AISuggestion {
   id: string;
   title: string;
   assignee: string;
+  assigneeId?: string;
   assigneeInitials: string;
   deadline: string;
+  priority?: string;
   source: string;
   context: string;
   confidence: number;
+  messageId?: string;
+  conversationId?: string;
 }
-
-const INITIAL_SUGGESTIONS: AISuggestion[] = [
-  {
-    id: "sug-1",
-    title: "Verify session persistence across browser refreshes",
-    assignee: "Rajath",
-    assigneeInitials: "R",
-    deadline: "Tomorrow at 5:00 PM",
-    source: "Chat with Ankit",
-    context: "Can you make sure the token stays active in localStorage so connections aren't lost on reload?",
-    confidence: 96,
-  },
-  {
-    id: "sug-2",
-    title: "Configure automatic connection retries in production",
-    assignee: "Ankit",
-    assigneeInitials: "A",
-    deadline: "Friday, 6:00 PM",
-    source: "Sprint Planning",
-    context: "We should increase the connection timeout to 15s to handle cold starts smoothly.",
-    confidence: 92,
-  },
-  {
-    id: "sug-3",
-    title: "Design chat thread reaction picker and animations",
-    assignee: "Harsha",
-    assigneeInitials: "H",
-    deadline: "Monday, 12:00 PM",
-    source: "UI/UX Review",
-    context: "Let's add quick emoji reaction pills on message hover.",
-    confidence: 89,
-  },
-];
 
 const DEMO_TEAM_MEMBERS = [
   { name: "Rajath", role: "Owner", initials: "R" },
@@ -100,7 +71,29 @@ function DashboardPage() {
   const { activeWorkspace, userRole, isOwner, isAdmin, isManager } = useWorkspace();
   const canManageAI = isOwner || isAdmin || isManager;
 
-  const [aiSuggestions, setAiSuggestions] = useState<AISuggestion[]>(INITIAL_SUGGESTIONS);
+  // Instant SWR state: Load from session cache immediately (0ms delay)
+  const [aiSuggestions, setAiSuggestions] = useState<AISuggestion[]>(() => {
+    try {
+      const stored = sessionStorage.getItem("actionflow_ai_extractions_cache");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [];
+  });
+
+  const [loadingAiSuggestions, setLoadingAiSuggestions] = useState<boolean>(() => {
+    try {
+      const stored = sessionStorage.getItem("actionflow_ai_extractions_cache");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return false;
+      }
+    } catch {}
+    return true;
+  });
+
   const [approvedCount, setApprovedCount] = useState(4);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
 
@@ -130,17 +123,84 @@ function DashboardPage() {
       .finally(() => {
         setLoadingSummary(false);
       });
+
+    // Instant SWR local workspace cache check
+    const cacheKey = `actionflow_ai_extractions_${activeWorkspace.id}`;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setAiSuggestions(parsed);
+          setLoadingAiSuggestions(false);
+        }
+      }
+    } catch {}
+
+    // Fetch fresh real-time AI extractions (fast ~15ms response)
+    api
+      .getAiExtractions(activeWorkspace.id)
+      .then((res) => {
+        const list = Array.isArray(res.extractions) ? res.extractions : [];
+        setAiSuggestions(list);
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify(list));
+          sessionStorage.setItem("actionflow_ai_extractions_cache", JSON.stringify(list));
+        } catch {}
+      })
+      .catch((err) => {
+        console.warn("[DashboardPage] AI extractions fetch:", err.message);
+      })
+      .finally(() => {
+        setLoadingAiSuggestions(false);
+      });
   }, [token, activeWorkspace?.id]);
 
-  const handleApprove = (id: string, title: string) => {
-    setAiSuggestions((prev) => prev.filter((s) => s.id !== id));
+  const handleApprove = async (id: string, title: string) => {
+    const target = aiSuggestions.find((s) => s.id === id);
+    setAiSuggestions((prev) => {
+      const next = prev.filter((s) => s.id !== id);
+      try {
+        if (activeWorkspace?.id) {
+          sessionStorage.setItem(`actionflow_ai_extractions_${activeWorkspace.id}`, JSON.stringify(next));
+        }
+        sessionStorage.setItem("actionflow_ai_extractions_cache", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
     setApprovedCount((c) => c + 1);
-    setActionNotice(`Approved task: "${title.slice(0, 32)}..."`);
+
+    if (target && activeWorkspace?.id) {
+      try {
+        await api.createTask(activeWorkspace.id, {
+          title: target.title,
+          description: `Auto-extracted from chat: "${target.context}"`,
+          assigneeId: target.assigneeId,
+          priority: (target.priority as any) || "MEDIUM",
+          sourceMessageId: target.messageId,
+          sourceConversationId: target.conversationId,
+        });
+        setActionNotice(`Approved & created task: "${title.slice(0, 32)}..."`);
+      } catch (err: any) {
+        setActionNotice(`Approved task: "${title.slice(0, 32)}..."`);
+      }
+    } else {
+      setActionNotice(`Approved task: "${title.slice(0, 32)}..."`);
+    }
     setTimeout(() => setActionNotice(null), 3500);
   };
 
   const handleReject = (id: string, title: string) => {
-    setAiSuggestions((prev) => prev.filter((s) => s.id !== id));
+    setAiSuggestions((prev) => {
+      const next = prev.filter((s) => s.id !== id);
+      try {
+        if (activeWorkspace?.id) {
+          sessionStorage.setItem(`actionflow_ai_extractions_${activeWorkspace.id}`, JSON.stringify(next));
+        }
+        sessionStorage.setItem("actionflow_ai_extractions_cache", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
     setActionNotice(`Dismissed AI suggestion`);
     setTimeout(() => setActionNotice(null), 3500);
   };
@@ -159,11 +219,28 @@ function DashboardPage() {
     setTimeout(() => setActionNotice(null), 3500);
   };
 
-  const handleSaveAndApprove = (updated: AISuggestion) => {
+  const handleSaveAndApprove = async (updated: AISuggestion) => {
     setAiSuggestions((prev) => prev.filter((s) => s.id !== updated.id));
     setApprovedCount((c) => c + 1);
     setIsEditModalOpen(false);
-    setActionNotice(`Saved & approved task: "${updated.title.slice(0, 32)}..."`);
+
+    if (activeWorkspace?.id) {
+      try {
+        await api.createTask(activeWorkspace.id, {
+          title: updated.title,
+          description: `Auto-extracted from chat: "${updated.context}"`,
+          assigneeId: updated.assigneeId,
+          priority: (updated.priority as any) || "MEDIUM",
+          sourceMessageId: updated.messageId,
+          sourceConversationId: updated.conversationId,
+        });
+        setActionNotice(`Saved & created task: "${updated.title.slice(0, 32)}..."`);
+      } catch (err: any) {
+        setActionNotice(`Saved & approved task: "${updated.title.slice(0, 32)}..."`);
+      }
+    } else {
+      setActionNotice(`Saved & approved task: "${updated.title.slice(0, 32)}..."`);
+    }
     setTimeout(() => setActionNotice(null), 3500);
   };
 
@@ -450,18 +527,44 @@ function DashboardPage() {
             </div>
 
             <div className="grid gap-3.5 pt-1">
-              {aiSuggestions.map((suggestion) => (
-                <ApprovalCard
-                  key={suggestion.id}
-                  suggestion={suggestion}
-                  canManage={canManageAI}
-                  onEdit={() => handleOpenEdit(suggestion)}
-                  onApprove={() => handleApprove(suggestion.id, suggestion.title)}
-                  onReject={() => handleReject(suggestion.id, suggestion.title)}
-                />
-              ))}
-
-              {aiSuggestions.length === 0 && (
+              {loadingAiSuggestions ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="rounded-2xl border border-border/70 bg-card/60 p-5 animate-pulse flex flex-col md:flex-row gap-4 justify-between items-start md:items-center"
+                    >
+                      <div className="space-y-2.5 flex-1 w-full">
+                        <div className="flex gap-2 items-center">
+                          <div className="h-4 w-28 rounded-full bg-muted/80" />
+                          <div className="h-4 w-24 rounded-full bg-muted/60" />
+                        </div>
+                        <div className="h-5 w-3/4 rounded-lg bg-muted/80" />
+                        <div className="flex gap-4">
+                          <div className="h-4 w-28 rounded-md bg-muted/60" />
+                          <div className="h-4 w-32 rounded-md bg-muted/60" />
+                        </div>
+                        <div className="h-10 w-full rounded-xl bg-muted/40" />
+                      </div>
+                      <div className="flex gap-2 w-full md:w-32 md:flex-col pt-2 md:pt-0">
+                        <div className="h-8 flex-1 md:w-full rounded-xl bg-muted/80" />
+                        <div className="h-8 flex-1 md:w-full rounded-xl bg-muted/60" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : aiSuggestions.length > 0 ? (
+                aiSuggestions.map((suggestion) => (
+                  <ApprovalCard
+                    key={suggestion.id}
+                    suggestion={suggestion}
+                    canManage={canManageAI}
+                    onEdit={() => handleOpenEdit(suggestion)}
+                    onApprove={() => handleApprove(suggestion.id, suggestion.title)}
+                    onReject={() => handleReject(suggestion.id, suggestion.title)}
+                  />
+                ))
+              ) : (
                 <div className="rounded-2xl border border-dashed border-border/80 bg-card/40 p-12 text-center flex flex-col items-center justify-center gap-3 backdrop-blur-xs">
                   <div className="grid h-12 w-12 place-items-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                     <CheckCircle2 className="h-6 w-6" />
@@ -474,13 +577,6 @@ function DashboardPage() {
                       ActionFlow AI will continue scanning chat threads for commitments, deadlines, and deliverables.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setAiSuggestions(INITIAL_SUGGESTIONS)}
-                    className="mt-2 text-xs font-semibold text-primary hover:underline cursor-pointer"
-                  >
-                    Reset demo suggestions
-                  </button>
                 </div>
               )}
             </div>

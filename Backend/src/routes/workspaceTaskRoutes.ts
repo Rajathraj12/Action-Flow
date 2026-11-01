@@ -737,14 +737,13 @@ router.patch(
         return;
       }
 
-      // Authorization check: creator, assignee, or workspace managers/admins can update
+      // Authorization check: creator or workspace managers/admins can update task details
       const memberRole = req.workspaceMember?.role;
       const isCreator = task.createdBy.toString() === currentUserId.toString();
-      const isAssignee = task.assigneeId.toString() === currentUserId.toString();
       const isPrivileged = ["OWNER", "ADMIN", "MANAGER"].includes(memberRole || "");
 
-      if (!isCreator && !isAssignee && !isPrivileged) {
-        res.status(403).json({ error: "Unauthorized: You do not have permission to edit this task" });
+      if (!isCreator && !isPrivileged) {
+        res.status(403).json({ error: "Unauthorized: Only the task creator or workspace managers can edit this task" });
         return;
       }
 

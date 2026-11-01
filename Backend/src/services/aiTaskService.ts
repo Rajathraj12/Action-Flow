@@ -1,4 +1,7 @@
 import mongoose, { Types } from "mongoose";
+import { spawn } from "child_process";
+import path from "path";
+import fs from "fs";
 import { User, IUser } from "../models/User.js";
 import { WorkspaceMember } from "../models/WorkspaceMember.js";
 import { Message, IMessage } from "../models/Message.js";
@@ -53,6 +56,59 @@ async function callPythonAiService(payload: {
   timestamp?: string;
   team_members: string[];
 }): Promise<any> {
+  // 1. Direct Python Bridge Execution (Zero network dependency, executes trained Linear SVM pipeline directly)
+  try {
+    const candidatePaths = [
+      path.resolve(process.cwd(), "AI-Service", "bridge.py"),
+      path.resolve(process.cwd(), "..", "AI-Service", "bridge.py"),
+    ];
+    const bridgePath = candidatePaths.find((p) => fs.existsSync(p));
+
+    if (bridgePath) {
+      const pyProcess = spawn("python", [bridgePath]);
+
+      const result = await new Promise<any>((resolve, reject) => {
+        let stdout = "";
+        let stderr = "";
+        const timer = setTimeout(() => {
+          pyProcess.kill();
+          reject(new Error("Python bridge timeout"));
+        }, 15000);
+
+        pyProcess.stdout.on("data", (chunk) => (stdout += chunk.toString()));
+        pyProcess.stderr.on("data", (chunk) => (stderr += chunk.toString()));
+
+        pyProcess.on("close", (code) => {
+          clearTimeout(timer);
+          if (code === 0 && stdout.trim()) {
+            try {
+              const parsed = JSON.parse(stdout.trim());
+              if (parsed.error) reject(new Error(parsed.error));
+              else resolve(parsed);
+            } catch (e: any) {
+              reject(new Error(`Failed to parse Python output: ${stdout}`));
+            }
+          } else {
+            reject(new Error(stderr || `Python process exited with code ${code}`));
+          }
+        });
+
+        pyProcess.on("error", (err) => {
+          clearTimeout(timer);
+          reject(err);
+        });
+
+        pyProcess.stdin.write(JSON.stringify(payload));
+        pyProcess.stdin.end();
+      });
+
+      return result;
+    }
+  } catch (pyErr: any) {
+    console.warn(`[ActionFlow AI] Python bridge failed, trying HTTP: ${pyErr?.message}`);
+  }
+
+  // 2. HTTP Fallback
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
 
@@ -142,8 +198,8 @@ export async function detectTaskFromMessage(params: {
   const { workspaceId, conversationId, messageId } = params;
 
   // 1. Fetch message and conversation
-  const message = await Message.findById(messageId).populate<{ senderId: IUser }>(
-    "senderId",
+  const message = await Message.findById(messageId).populate<{ sender: IUser }>(
+    "sender",
     "displayName email initials avatarUrl"
   );
   if (!message) {
@@ -169,9 +225,10 @@ export async function detectTaskFromMessage(params: {
     .map((m) => ({ user: m.userId as unknown as IUser }));
 
   const teamMemberNames = validMembers.map((m) => m.user.displayName.trim());
+  const senderUser = (message.sender as unknown as IUser) || null;
   const senderDisplayName =
-    message.senderId && typeof message.senderId === "object"
-      ? (message.senderId as any).displayName || "Teammate"
+    senderUser && typeof senderUser === "object"
+      ? senderUser.displayName || "Teammate"
       : "Teammate";
 
   let aiRawResponse: any = null;
@@ -282,11 +339,129 @@ export async function detectTaskFromMessage(params: {
       conversationId: conversation._id.toString(),
       text: message.text,
       senderId:
-        message.senderId && typeof message.senderId === "object"
-          ? (message.senderId as any)._id.toString()
-          : String(message.senderId),
+        message.sender && typeof message.sender === "object"
+          ? (message.sender as any)._id.toString()
+          : String(message.sender),
       senderName: senderDisplayName,
       timestamp: (message.createdAt || new Date()).toISOString(),
     },
   };
+}
+
+/**
+ * Fast real-time AI scan for a single message string.
+ */
+export async function fastAutoDetectTask(
+  text: string,
+  senderName: string = "Teammate",
+  teamMembers: string[] = []
+): Promise<{
+  isTaskCandidate: boolean;
+  category: string;
+  confidence: number;
+  tasks: Array<{
+    title: string;
+    assigneeName?: string | null;
+    priority?: string | null;
+    deadlineText?: string | null;
+    deadlineDate?: string | null;
+  }>;
+}> {
+  try {
+    const raw = await callPythonAiService({
+      message: text,
+      sender: senderName,
+      timestamp: new Date().toISOString(),
+      team_members: teamMembers,
+    });
+
+    const isTaskCandidate = Boolean(raw.is_task_candidate);
+    const category = raw.category || (isTaskCandidate ? "clear_task" : "not_task");
+    const confidence = typeof raw.confidence === "number" ? raw.confidence : 0.85;
+
+    const tasks = (raw.tasks || []).map((t: any) => ({
+      title: t.title || text.slice(0, 60),
+      assigneeName: t.assignee || null,
+      priority: t.priority ? String(t.priority).toUpperCase() : "MEDIUM",
+      deadlineText: t.deadline_text || null,
+      deadlineDate: t.deadline_date || null,
+      confidence: typeof t.confidence === "number" ? t.confidence : confidence,
+    }));
+
+    return {
+      isTaskCandidate,
+      category,
+      confidence,
+      tasks,
+    };
+  } catch (err) {
+    // Fast regex heuristic fallback if AI service is temporarily busy
+    const textSnippet = text.trim();
+    const isTaskLike =
+      /\b(please|can you|fix|update|prepare|send|review|deploy|by tomorrow|by friday|urgent|asap|verify)\b/i.test(
+        textSnippet
+      );
+
+    return {
+      isTaskCandidate: isTaskLike,
+      category: isTaskLike ? "clear_task" : "not_task",
+      confidence: 0.7,
+      tasks: isTaskLike
+        ? [
+            {
+              title: textSnippet.slice(0, 75).trim(),
+              assigneeName: null,
+              priority: /asap|urgent/i.test(textSnippet) ? "URGENT" : "MEDIUM",
+              deadlineText: null,
+              deadlineDate: null,
+            },
+          ]
+        : [],
+    };
+  }
+}
+
+/**
+ * Scans all unscanned messages in a conversation and saves detection metadata in MongoDB.
+ */
+export async function scanConversationMessages(
+  conversationId: string | Types.ObjectId,
+  workspaceId: string | Types.ObjectId
+): Promise<Record<string, any>> {
+  const memberRecords = await WorkspaceMember.find({
+    workspaceId,
+    status: "ACTIVE",
+  }).populate<{ userId: IUser }>("userId", "displayName");
+
+  const teamMemberNames = memberRecords
+    .filter((m) => m.userId && typeof m.userId === "object" && (m.userId as any).displayName)
+    .map((m) => (m.userId as any).displayName.trim());
+
+  // Find messages in conversation without detectedAt
+  const unscannedMessages = await Message.find({
+    conversationId,
+    isDeletedForEveryone: false,
+    $or: [
+      { "aiTaskDetection.detectedAt": { $exists: false } },
+      { aiTaskDetection: { $exists: false } },
+      { "aiTaskDetection.isTaskCandidate": false },
+      { "aiTaskDetection.confidence": { $lte: 0.75 } },
+    ],
+  }).limit(50);
+
+  const results: Record<string, any> = {};
+
+  for (const msg of unscannedMessages) {
+    const detection = await fastAutoDetectTask(msg.text, "Teammate", teamMemberNames);
+    const aiData = {
+      ...detection,
+      detectedAt: new Date(),
+    };
+
+    msg.aiTaskDetection = aiData;
+    await msg.save();
+    results[msg._id.toString()] = aiData;
+  }
+
+  return results;
 }
