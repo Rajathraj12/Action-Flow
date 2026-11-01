@@ -39,3 +39,17 @@ Thumbs.db
 Backend/scripts/
 scripts/
 
+# Python
+__pycache__/
+*/__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+*/.venv/
+venv/
+*/venv/
+env/
+*/env/
+.pytest_cache/
+
+

@@ -1,0 +1,83 @@
+﻿id,source,language,category,sender,timestamp,message,is_task
+hand-team-103,handwritten,en,ambiguous,Neha,2026-12-16T09:54:00+05:30,Please ask Rahul to check the staging deployment tomorrow.,1
+hand-team-099,handwritten,en,ambiguous,Neha,2026-11-05T15:26:00+05:30,"Rahul, fix the report export issue ASAP.",1
+hand-team-098,handwritten,en,ambiguous,Neha,2027-01-06T12:19:00+05:30,Rahul please send me the latest build before Friday.,1
+hand-team-104,handwritten,en,ambiguous,Aditi,2027-01-21T12:01:00+05:30,"Rahul, add the missing validation to the form by Friday.",1
+hand-team-101,handwritten,hinglish,ambiguous,Neha,2027-01-11T12:40:00+05:30,Rahul kal tak test results share kar dena please.,1
+hand-team-026,handwritten,en,clear_task,Kunal,2027-02-01T12:55:00+05:30,Nisha please schedule the Diwali campaign posts for Friday.,1
+hand-team-024,handwritten,en,clear_task,Tanya,2026-11-26T15:41:00+05:30,Kunal please export the monthly analytics report by tomorrow.,1
+hand-team-020,handwritten,en,clear_task,Ishita,2027-01-22T12:13:00+05:30,Sana please print the evaluation forms before Thursday's meeting.,1
+hand-team-012,handwritten,en,clear_task,Dev,2027-02-02T15:17:00+05:30,Rohan please prepare the DBMS lab screenshots before Wednesday.,1
+hand-team-005,handwritten,en,clear_task,Vikram,2026-12-18T12:28:00+05:30,Kabir please add pagination to the customer table. Need it by EOD.,1
+hand-team-016,handwritten,en,clear_task,Dev,2026-12-07T09:45:00+05:30,"Rohan, check the model accuracy and add the results to the report by EOD.",1
+hand-team-027,handwritten,en,clear_task,Farah,2026-12-01T15:02:00+05:30,"Arjun, fix the broken links on the campaign page ASAP.",1
+hand-team-010,handwritten,en,clear_task,Aarav,2026-11-27T09:03:00+05:30,"Kabir, fix the mobile navbar overlap before Thursday's review.",1
+hand-team-030,handwritten,en,clear_task,Kunal,2026-12-11T15:23:00+05:30,"Farah, upload the final banner files to the client folder by Wednesday.",1
+hand-team-017,handwritten,en,clear_task,Sana,2027-01-12T12:52:00+05:30,Ananya please merge the final PPT slides by Wednesday evening.,1
+hand-team-032,handwritten,en,clear_task,Neha,2026-11-10T12:37:00+05:30,Rahul Kumar please review the mobile checkout flow before Wednesday.,1
+hand-team-022,handwritten,en,clear_task,Nisha,2026-12-22T09:27:00+05:30,Arjun please resize the campaign creatives for Instagram by Thursday.,1
+hand-team-013,handwritten,en,clear_task,Sana,2026-12-02T09:24:00+05:30,"Ishita, submit the survey responses in the shared sheet by Friday.",1
+hand-team-004,handwritten,en,clear_task,Priya,2026-11-12T09:21:00+05:30,"Meera, review the payment failure logs and share the cause by Friday.",1
+hand-team-040,handwritten,en,clear_task,Rahul Kumar,2027-02-05T09:33:00+05:30,Manish please merge the approved pull request by tomorrow.,1
+hand-team-039,handwritten,en,clear_task,Rahul Sharma,2026-12-31T15:26:00+05:30,"Aditi, share the QA checklist with the team by Wednesday.",1
+hand-team-011,handwritten,en,clear_task,Ishita,2026-12-28T12:10:00+05:30,"Ananya, upload the literature review draft to the drive by Thursday.",1
+hand-team-025,handwritten,en,clear_task,Kunal,2027-01-01T09:48:00+05:30,"Farah, add the approved testimonials to the landing page by EOD.",1
+hand-team-036,handwritten,en,clear_task,Neha,2026-12-21T15:05:00+05:30,"Rahul Sharma, investigate the duplicate order issue ASAP.",1
+hand-team-001,handwritten,en,clear_task,Meera,2026-11-02T09:00:00+05:30,"Aarav, can you fix the signup validation? Please push it by Thursday.",1
+hand-team-136,handwritten,hinglish,looks_like_task,Vikram,2026-11-23T09:45:00+05:30,"Login page ka 80% done hai, bas validation pending hai.",0
+hand-team-163,handwritten,hinglish,looks_like_task,Manish,2027-01-27T09:54:00+05:30,Dashboard ka latest screenshot dekh lena when you get time.,0
+hand-team-151,handwritten,hinglish,looks_like_task,Ananya,2026-12-28T09:30:00+05:30,"Build local pe chal raha hai, bas staging pe issue aa raha hai.",0
+hand-team-146,handwritten,en,looks_like_task,Sana,2027-01-18T12:55:00+05:30,Has the faculty shared the presentation slot yet?,0
+hand-team-144,handwritten,en,looks_like_task,Rohan,2026-11-12T15:41:00+05:30,Our model accuracy is 91.4% on the validation set.,0
+hand-team-159,handwritten,en,looks_like_task,Farah,2026-12-17T15:26:00+05:30,"Happy Friday team, hope the launch goes smoothly.",0
+hand-team-157,handwritten,en,looks_like_task,Tanya,2027-01-12T09:12:00+05:30,The mobile preview seems a little different from Figma.,0
+hand-team-141,handwritten,en,looks_like_task,Meera,2026-11-02T15:20:00+05:30,"The new build is on staging, please have a look when free.",0
+hand-team-152,handwritten,hinglish,looks_like_task,Arjun,2027-02-02T12:37:00+05:30,Client ne homepage ka design approve kar diya.,0
+hand-team-140,handwritten,hinglish,looks_like_task,Priya,2027-01-08T12:13:00+05:30,Kal demo hai na? Just checking the time.,0
+hand-team-158,handwritten,en,looks_like_task,Kunal,2026-11-11T12:19:00+05:30,"No rush, just wanted to know if the copy is ready.",0
+hand-team-150,handwritten,en,looks_like_task,Dev,2026-11-27T15:23:00+05:30,I think we should use a bar chart for these results.,0
+hand-team-164,handwritten,en,looks_like_task,Rahul Sharma,2026-11-26T12:01:00+05:30,Is the staging server stable now?,0
+hand-team-149,handwritten,en,looks_like_task,Ishita,2027-01-28T12:16:00+05:30,The survey response count has crossed 100.,0
+hand-team-161,handwritten,en,looks_like_task,Neha,2026-11-16T12:40:00+05:30,"Rahul's update is in the branch, I haven't checked it yet.",0
+hand-team-088,handwritten,en,missing_info,Farah,2026-11-11T09:09:00+05:30,Someone should export the campaign leads and remove duplicates.,1
+hand-team-087,handwritten,hinglish,missing_info,Kunal,2027-01-12T15:02:00+05:30,Client ke liye new testimonial section add karna hai.,1
+hand-team-089,handwritten,en,missing_info,Nisha,2026-12-17T12:16:00+05:30,"The footer links are outdated, can this be fixed?",1
+hand-team-085,handwritten,hinglish,missing_info,Ananya,2026-11-06T09:48:00+05:30,Model ke confusion matrix ka screenshot chahiye.,1
+hand-team-095,handwritten,en,missing_info,Neha,2027-01-01T12:58:00+05:30,Please test the new notification settings.,1
+hand-team-090,handwritten,en,missing_info,Arjun,2027-01-22T15:23:00+05:30,Need the revised product photos in the shared folder.,1
+hand-team-077,handwritten,en,missing_info,Priya,2026-11-17T12:52:00+05:30,Someone needs to check why the webhook retries are failing.,1
+hand-team-076,handwritten,hinglish,missing_info,Aarav,2027-01-18T09:45:00+05:30,"Literature review ka updated section abhi pending hai, someone needs to take it.",1
+hand-team-091,handwritten,en,missing_info,Aditi,2026-11-16T09:30:00+05:30,The reports API needs pagination before we can close this.,1
+hand-team-079,handwritten,en,missing_info,Meera,2027-01-28T09:06:00+05:30,We need the staging database backup before the next release.,1
+hand-team-050,handwritten,en,multi_task,Ishita,2026-12-25T12:43:00+05:30,"Dev, book the projector for tomorrow and Sana, share the agenda before Thursday.",1
+hand-team-041,handwritten,en,multi_task,Meera,2026-11-30T12:40:00+05:30,"Priya, update the checkout button by Wednesday and Vikram, check the payment webhook by Friday.",1
+hand-team-042,handwritten,en,multi_task,Kabir,2027-01-05T15:47:00+05:30,"Aarav please fix the login redirect today; Meera, add the error message by tomorrow.",1
+hand-team-055,handwritten,en,multi_task,Farah,2026-12-04T09:18:00+05:30,"Tanya please approve the copy today and Kunal, schedule the approved posts by Friday.",1
+hand-team-049,handwritten,en,multi_task,Sana,2026-11-19T09:36:00+05:30,Rohan submit the lab file by Wednesday and Ishita upload the output screenshots by Friday.,1
+hand-team-053,handwritten,en,multi_task,Tanya,2026-12-30T12:04:00+05:30,"Kunal, export the leads report by Thursday and Nisha, email it to the account team Friday.",1
+hand-team-046,handwritten,hinglish,multi_task,Vikram,2026-11-09T09:15:00+05:30,"Meera, checkout ka flow aaj check kar lena; aur Kabir error text update kar dena kal tak.",1
+hand-team-054,handwritten,en,multi_task,Kunal,2027-02-04T15:11:00+05:30,"Farah, fix the footer spacing by Wednesday, and Arjun please check tablet view by Thursday.",1
+hand-team-044,handwritten,en,multi_task,Priya,2026-12-10T12:01:00+05:30,"Vikram handle the API timeout ASAP, and Aarav please add retry logic by Thursday.",1
+hand-team-052,handwritten,en,multi_task,Kunal,2026-11-24T09:57:00+05:30,Arjun resize the hero images today; Tanya update the alt text by tomorrow.,1
+hand-team-129,handwritten,en,not_task,Kunal,2027-01-14T15:56:00+05:30,The new playlist is a vibe.,0
+hand-team-113,handwritten,hinglish,not_task,Kabir,2026-11-04T12:04:00+05:30,kal wali match dekhi kya?,0
+hand-team-115,handwritten,hinglish,not_task,Rohan,2027-01-15T09:18:00+05:30,Yaar canteen mein aaj samosa hai kya?,0
+hand-team-117,handwritten,en,not_task,Sana,2026-12-15T15:32:00+05:30,That lecture felt longer than the whole semester 😭,0
+hand-team-124,handwritten,en,not_task,Tanya,2027-02-04T09:21:00+05:30,Thanks for the quick reply.,0
+hand-team-127,handwritten,en,not_task,Arjun,2026-11-03T09:42:00+05:30,Weekend plans anyone?,0
+hand-team-112,handwritten,en,not_task,Meera,2027-01-05T09:57:00+05:30,"Nice work on the demo, team!",0
+hand-team-125,handwritten,en,not_task,Kunal,2026-12-04T12:28:00+05:30,"That reference looks clean, love the colors.",0
+hand-team-134,handwritten,hinglish,not_task,Manish,2026-12-24T12:31:00+05:30,Aaj lunch bahar se mangwayein?,0
+hand-team-131,handwritten,hinglish,not_task,Rahul Kumar,2026-12-14T12:10:00+05:30,Yaar aaj ka lunch plan kya hai?,0
+hand-team-116,handwritten,en,not_task,Dev,2026-11-09T12:25:00+05:30,Thanks for sharing the notes.,0
+hand-team-106,handwritten,en,not_task,Priya,2026-12-21T09:15:00+05:30,"Good morning everyone, hope the week is starting well.",0
+hand-team-133,handwritten,en,not_task,Aditi,2026-11-18T09:24:00+05:30,Haha same thing happened to me yesterday.,0
+hand-team-128,handwritten,hinglish,not_task,Tanya,2026-12-09T12:49:00+05:30,Yaar traffic was crazy near the office.,0
+hand-team-114,handwritten,en,not_task,Ananya,2026-12-10T15:11:00+05:30,Good luck for the viva everyone!!,0
+hand-team-071,handwritten,en,self_commitment,Farah,2026-11-02T12:10:00+05:30,I'll schedule the remaining posts before Friday.,1
+hand-team-064,handwritten,en,self_commitment,Aarav,2026-12-24T09:21:00+05:30,I'll finish the payment test cases before Thursday's stand-up.,1
+hand-team-073,handwritten,en,self_commitment,Rahul Kumar,2027-01-13T09:24:00+05:30,I'll fix the filter bug by Wednesday. I have reproduced it now.,1
+hand-team-074,handwritten,hinglish,self_commitment,Neha,2026-11-12T12:31:00+05:30,Main kal tak QA sheet update kar dunga.,1
+hand-team-070,handwritten,hinglish,self_commitment,Tanya,2027-01-08T09:03:00+05:30,Main client ke comments aaj EOD tak add kar dunga.,1
+hand-team-066,handwritten,hinglish,self_commitment,Dev,2026-11-23T15:35:00+05:30,Main Wednesday tak references complete kar dunga.,1
+hand-team-067,handwritten,en,self_commitment,Sana,2026-12-29T09:42:00+05:30,I'll send the cleaned dataset tonight.,1

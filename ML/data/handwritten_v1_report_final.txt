@@ -1,0 +1,339 @@
+165 rows checked
+
+ERR  date-time         165
+
+===== ERR =====
+row 2    [date-time] bad date/time '11/2/2026' '9:00'
+          "Aarav, can you fix the signup validation? Please push it by Thursday."
+row 3    [date-time] bad date/time '12/8/2026' '12:07'
+          "Priya please update the pricing cards before Wednesday's demo."
+row 4    [date-time] bad date/time '1/13/2027' '15:14'
+          "Vikram, deploy the latest API to staging by tomorrow morning."
+row 5    [date-time] bad date/time '11/12/2026' '9:21'
+          "Meera, review the payment failure logs and share the cause by Friday."
+row 6    [date-time] bad date/time '12/18/2026' '12:28'
+          "Kabir please add pagination to the customer table. Need it by EOD."
+row 7    [date-time] bad date/time '1/18/2027' '15:35'
+          "Vikram, staging pe latest build daal dena kal tak please."
+row 8    [date-time] bad date/time '11/17/2026' '9:42'
+          "Aarav, update the README with the new environment variables by Wednesday."
+row 9    [date-time] bad date/time '12/23/2026' '12:49'
+          "Vikram please check the Redis connection issue ASAP."
+row 10   [date-time] bad date/time '1/28/2027' '15:56'
+          "Meera, send the revised onboarding flow to design by Friday."
+row 11   [date-time] bad date/time '11/27/2026' '9:03'
+          "Kabir, fix the mobile navbar overlap before Thursday's review."
+row 12   [date-time] bad date/time '12/28/2026' '12:10'
+          "Ananya, upload the literature review draft to the drive by Thursday."
+row 13   [date-time] bad date/time '2/2/2027' '15:17'
+          "Rohan please prepare the DBMS lab screenshots before Wednesday."
+row 14   [date-time] bad date/time '12/2/2026' '9:24'
+          "Ishita, submit the survey responses in the shared sheet by Friday."
+row 15   [date-time] bad date/time '1/7/2027' '12:31'
+          "Dev please book the seminar room for the project presentation by tomorrow."
+row 16   [date-time] bad date/time '11/6/2026' '15:38'
+          "Sana, format the references in IEEE style by Thursday."
+row 17   [date-time] bad date/time '12/7/2026' '9:45'
+          "Rohan, check the model accuracy and add the results to the report by EOD."
+row 18   [date-time] bad date/time '1/12/2027' '12:52'
+          "Ananya please merge the final PPT slides by Wednesday evening."
+row 19   [date-time] bad date/time '11/11/2026' '15:59'
+          "Dev, mail the faculty mentor the updated synopsis by Friday."
+row 20   [date-time] bad date/time '12/17/2026' '9:06'
+          "Ishita, clean the duplicate rows in the dataset by tomorrow."
+row 21   [date-time] bad date/time '1/22/2027' '12:13'
+          "Sana please print the evaluation forms before Thursday's meeting."
+row 22   [date-time] bad date/time '11/16/2026' '15:20'
+          "Nisha, send the homepage mockup to the client by Wednesday."
+row 23   [date-time] bad date/time '12/22/2026' '9:27'
+          "Arjun please resize the campaign creatives for Instagram by Thursday."
+row 24   [date-time] bad date/time '1/27/2027' '12:34'
+          "Tanya, update the client's product descriptions before Friday's review."
+row 25   [date-time] bad date/time '11/26/2026' '15:41'
+          "Kunal please export the monthly analytics report by tomorrow."
+row 26   [date-time] bad date/time '1/1/2027' '9:48'
+          "Farah, add the approved testimonials to the landing page by EOD."
+row 27   [date-time] bad date/time '2/1/2027' '12:55'
+          "Nisha please schedule the Diwali campaign posts for Friday."
+row 28   [date-time] bad date/time '12/1/2026' '15:02'
+          "Arjun, fix the broken links on the campaign page ASAP."
+row 29   [date-time] bad date/time '1/6/2027' '9:09'
+          "Tanya please share the revised brand copy with the client by Thursday."
+row 30   [date-time] bad date/time '11/5/2026' '12:16'
+          "Kunal, prepare the ad spend summary for Monday's call."
+row 31   [date-time] bad date/time '12/11/2026' '15:23'
+          "Farah, upload the final banner files to the client folder by Wednesday."
+row 32   [date-time] bad date/time '1/11/2027' '9:30'
+          "Rahul Sharma, update the inventory endpoint by Thursday."
+row 33   [date-time] bad date/time '11/10/2026' '12:37'
+          "Rahul Kumar please review the mobile checkout flow before Wednesday."
+row 34   [date-time] bad date/time '12/16/2026' '15:44'
+          "Neha, send the revised dashboard icons to Manish by Friday."
+row 35   [date-time] bad date/time '1/21/2027' '9:51'
+          "Aditi please test the password reset flow by tomorrow."
+row 36   [date-time] bad date/time '11/20/2026' '12:58'
+          "Manish, prepare the release notes by EOD."
+row 37   [date-time] bad date/time '12/21/2026' '15:05'
+          "Rahul Sharma, investigate the duplicate order issue ASAP."
+row 38   [date-time] bad date/time '1/26/2027' '9:12'
+          "Rahul Kumar, add the empty state to the reports page by Thursday."
+row 39   [date-time] bad date/time '11/25/2026' '12:19'
+          "Neha please update the API documentation before Friday."
+row 40   [date-time] bad date/time '12/31/2026' '15:26'
+          "Aditi, share the QA checklist with the team by Wednesday."
+row 41   [date-time] bad date/time '2/5/2027' '9:33'
+          "Manish please merge the approved pull request by tomorrow."
+row 42   [date-time] bad date/time '11/30/2026' '12:40'
+          "Priya, update the checkout button by Wednesday and Vikram, check the payment webhook by Fr"
+row 43   [date-time] bad date/time '1/5/2027' '15:47'
+          "Aarav please fix the login redirect today; Meera, add the error message by tomorrow."
+row 44   [date-time] bad date/time '11/4/2026' '9:54'
+          "Kabir, prepare the release build by Thursday and Priya, send the changelog to everyone on "
+row 45   [date-time] bad date/time '12/10/2026' '12:01'
+          "Vikram handle the API timeout ASAP, and Aarav please add retry logic by Thursday."
+row 46   [date-time] bad date/time '1/15/2027' '15:08'
+          "Meera, review the new dashboard today and Kabir, fix the chart labels by Wednesday."
+row 47   [date-time] bad date/time '11/9/2026' '9:15'
+          "Meera, checkout ka flow aaj check kar lena; aur Kabir error text update kar dena kal tak."
+row 48   [date-time] bad date/time '12/15/2026' '12:22'
+          "Ishita please clean the CSV by tomorrow and Dev, update the methodology section by Friday."
+row 49   [date-time] bad date/time '1/20/2027' '15:29'
+          "Sana, make the presentation cover slide today. Ananya, check the citations by Thursday."
+row 50   [date-time] bad date/time '11/19/2026' '9:36'
+          "Rohan submit the lab file by Wednesday and Ishita upload the output screenshots by Friday."
+row 51   [date-time] bad date/time '12/25/2026' '12:43'
+          "Dev, book the projector for tomorrow and Sana, share the agenda before Thursday."
+row 52   [date-time] bad date/time '1/25/2027' '15:50'
+          "Nisha, send the first draft by Wednesday and Farah, collect client feedback by Friday."
+row 53   [date-time] bad date/time '11/24/2026' '9:57'
+          "Arjun resize the hero images today; Tanya update the alt text by tomorrow."
+row 54   [date-time] bad date/time '12/30/2026' '12:04'
+          "Kunal, export the leads report by Thursday and Nisha, email it to the account team Friday."
+row 55   [date-time] bad date/time '2/4/2027' '15:11'
+          "Farah, fix the footer spacing by Wednesday, and Arjun please check tablet view by Thursday"
+row 56   [date-time] bad date/time '12/4/2026' '9:18'
+          "Tanya please approve the copy today and Kunal, schedule the approved posts by Friday."
+row 57   [date-time] bad date/time '1/4/2027' '12:25'
+          "Rahul Sharma, check the order API by Thursday. Neha, update the test cases by Friday."
+row 58   [date-time] bad date/time '11/3/2026' '15:32'
+          "Aditi, verify the new icons by tomorrow and Manish, merge them before Thursday."
+row 59   [date-time] bad date/time '12/9/2026' '9:39'
+          "Rahul Kumar please fix the cart badge today; Rahul Sharma, review the cart API by Wednesda"
+row 60   [date-time] bad date/time '1/14/2027' '12:46'
+          "Neha send the dashboard screenshot by Wednesday and Aditi, add it to the report by Thursda"
+row 61   [date-time] bad date/time '11/13/2026' '15:53'
+          "Manish, prepare the deployment checklist by Friday and Rahul Kumar, run smoke tests by Mon"
+row 62   [date-time] bad date/time '12/14/2026' '9:00'
+          "I'll push the updated login flow by Wednesday, just need to finish the tests."
+row 63   [date-time] bad date/time '1/19/2027' '12:07'
+          "I can take the API docs. I'll share them by Friday."
+row 64   [date-time] bad date/time '11/18/2026' '15:14'
+          "Main kal tak dashboard ka responsive fix bhej dungi."
+row 65   [date-time] bad date/time '12/24/2026' '9:21'
+          "I'll finish the payment test cases before Thursday's stand-up."
+row 66   [date-time] bad date/time '1/29/2027' '12:28'
+          "I'll upload my part of the report by tomorrow, pakka."
+row 67   [date-time] bad date/time '11/23/2026' '15:35'
+          "Main Wednesday tak references complete kar dunga."
+row 68   [date-time] bad date/time '12/29/2026' '9:42'
+          "I'll send the cleaned dataset tonight."
+row 69   [date-time] bad date/time '2/3/2027' '12:49'
+          "Kal evening tak PPT ka final version share kar dungi."
+row 70   [date-time] bad date/time '12/3/2026' '15:56'
+          "I'll get the revised banner to you by Thursday afternoon."
+row 71   [date-time] bad date/time '1/8/2027' '9:03'
+          "Main client ke comments aaj EOD tak add kar dunga."
+row 72   [date-time] bad date/time '11/2/2026' '12:10'
+          "I'll schedule the remaining posts before Friday."
+row 73   [date-time] bad date/time '12/8/2026' '15:17'
+          "Report main kal subah tak bhej dungi, no worries."
+row 74   [date-time] bad date/time '1/13/2027' '9:24'
+          "I'll fix the filter bug by Wednesday. I have reproduced it now."
+row 75   [date-time] bad date/time '11/12/2026' '12:31'
+          "Main kal tak QA sheet update kar dunga."
+row 76   [date-time] bad date/time '12/18/2026' '15:38'
+          "I'll share the build link by Friday morning."
+row 77   [date-time] bad date/time '1/18/2027' '9:45'
+          "Literature review ka updated section abhi pending hai, someone needs to take it."
+row 78   [date-time] bad date/time '11/17/2026' '12:52'
+          "Someone needs to check why the webhook retries are failing."
+row 79   [date-time] bad date/time '12/23/2026' '15:59'
+          "Please get the onboarding email copy updated."
+row 80   [date-time] bad date/time '1/28/2027' '9:06'
+          "We need the staging database backup before the next release."
+row 81   [date-time] bad date/time '11/27/2026' '12:13'
+          "Can the empty state be added to the billing screen?"
+row 82   [date-time] bad date/time '12/28/2026' '15:20'
+          "Someone should verify the references in chapter two."
+row 83   [date-time] bad date/time '2/2/2027' '9:27'
+          "Dataset ke missing values clean karne hain."
+row 84   [date-time] bad date/time '12/2/2026' '12:34'
+          "The final report needs a proper limitations section."
+row 85   [date-time] bad date/time '1/7/2027' '15:41'
+          "Please arrange the consent forms for the survey."
+row 86   [date-time] bad date/time '11/6/2026' '9:48'
+          "Model ke confusion matrix ka screenshot chahiye."
+row 87   [date-time] bad date/time '12/7/2026' '12:55'
+          "We still need the mobile version of the landing page checked."
+row 88   [date-time] bad date/time '1/12/2027' '15:02'
+          "Client ke liye new testimonial section add karna hai."
+row 89   [date-time] bad date/time '11/11/2026' '9:09'
+          "Someone should export the campaign leads and remove duplicates."
+row 90   [date-time] bad date/time '12/17/2026' '12:16'
+          "The footer links are outdated, can this be fixed?"
+row 91   [date-time] bad date/time '1/22/2027' '15:23'
+          "Need the revised product photos in the shared folder."
+row 92   [date-time] bad date/time '11/16/2026' '9:30'
+          "The reports API needs pagination before we can close this."
+row 93   [date-time] bad date/time '12/22/2026' '12:37'
+          "Can someone check the duplicate invoice issue?"
+row 94   [date-time] bad date/time '1/27/2027' '15:44'
+          "Rahul se deployment notes update karwane hain."
+row 95   [date-time] bad date/time '11/26/2026' '9:51'
+          "The profile page still needs the loading skeleton."
+row 96   [date-time] bad date/time '1/1/2027' '12:58'
+          "Please test the new notification settings."
+row 97   [date-time] bad date/time '2/1/2027' '15:05'
+          "Rahul, please share the updated test report by Thursday."
+row 98   [date-time] bad date/time '12/1/2026' '9:12'
+          "Can Rahul check the checkout bug today?"
+row 99   [date-time] bad date/time '1/6/2027' '12:19'
+          "Rahul please send me the latest build before Friday."
+row 100  [date-time] bad date/time '11/5/2026' '15:26'
+          "Rahul, fix the report export issue ASAP."
+row 101  [date-time] bad date/time '12/11/2026' '9:33'
+          "Need Rahul to review the dashboard query by Wednesday."
+row 102  [date-time] bad date/time '1/11/2027' '12:40'
+          "Rahul kal tak test results share kar dena please."
+row 103  [date-time] bad date/time '11/10/2026' '15:47'
+          "Rahul can you merge the approved changes by EOD?"
+row 104  [date-time] bad date/time '12/16/2026' '9:54'
+          "Please ask Rahul to check the staging deployment tomorrow."
+row 105  [date-time] bad date/time '1/21/2027' '12:01'
+          "Rahul, add the missing validation to the form by Friday."
+row 106  [date-time] bad date/time '11/20/2026' '15:08'
+          "Rahul please verify the invoice totals before Thursday's call."
+row 107  [date-time] bad date/time '12/21/2026' '9:15'
+          "Good morning everyone, hope the week is starting well."
+row 108  [date-time] bad date/time '1/26/2027' '12:22'
+          "Anyone up for chai after the stand-up?"
+row 109  [date-time] bad date/time '11/25/2026' '15:29'
+          "Haha that bug really chose violence today 😂"
+row 110  [date-time] bad date/time '12/31/2026' '9:36'
+          "Thanks Priya, got it!"
+row 111  [date-time] bad date/time '2/5/2027' '12:43'
+          "Lunch order going in at 1:15, anyone wants anything?"
+row 112  [date-time] bad date/time '11/30/2026' '15:50'
+          "The weather is so nice today yaar."
+row 113  [date-time] bad date/time '1/5/2027' '9:57'
+          "Nice work on the demo, team!"
+row 114  [date-time] bad date/time '11/4/2026' '12:04'
+          "kal wali match dekhi kya?"
+row 115  [date-time] bad date/time '12/10/2026' '15:11'
+          "Good luck for the viva everyone!!"
+row 116  [date-time] bad date/time '1/15/2027' '9:18'
+          "Yaar canteen mein aaj samosa hai kya?"
+row 117  [date-time] bad date/time '11/9/2026' '12:25'
+          "Thanks for sharing the notes."
+row 118  [date-time] bad date/time '12/15/2026' '15:32'
+          "That lecture felt longer than the whole semester 😭"
+row 119  [date-time] bad date/time '1/20/2027' '9:39'
+          "Anyone coming to the library after class?"
+row 120  [date-time] bad date/time '11/19/2026' '12:46'
+          "Happy birthday Sana!! 🎂"
+row 121  [date-time] bad date/time '12/25/2026' '15:53'
+          "Aaj attendance ka scene kya hai?"
+row 122  [date-time] bad date/time '1/25/2027' '9:00'
+          "The new campus cafe is actually pretty good."
+row 123  [date-time] bad date/time '11/24/2026' '12:07'
+          "Client call was longgg today 😅"
+row 124  [date-time] bad date/time '12/30/2026' '15:14'
+          "Morning folks! Coffee first, then everything else."
+row 125  [date-time] bad date/time '2/4/2027' '9:21'
+          "Thanks for the quick reply."
+row 126  [date-time] bad date/time '12/4/2026' '12:28'
+          "That reference looks clean, love the colors."
+row 127  [date-time] bad date/time '1/4/2027' '15:35'
+          "Lunch break? I'm starving."
+row 128  [date-time] bad date/time '11/3/2026' '9:42'
+          "Weekend plans anyone?"
+row 129  [date-time] bad date/time '12/9/2026' '12:49'
+          "Yaar traffic was crazy near the office."
+row 130  [date-time] bad date/time '1/14/2027' '15:56'
+          "The new playlist is a vibe."
+row 131  [date-time] bad date/time '11/13/2026' '9:03'
+          "Good morning team 🌞"
+row 132  [date-time] bad date/time '12/14/2026' '12:10'
+          "Yaar aaj ka lunch plan kya hai?"
+row 133  [date-time] bad date/time '1/19/2027' '15:17'
+          "Anyone tried the new coffee machine?"
+row 134  [date-time] bad date/time '11/18/2026' '9:24'
+          "Haha same thing happened to me yesterday."
+row 135  [date-time] bad date/time '12/24/2026' '12:31'
+          "Aaj lunch bahar se mangwayein?"
+row 136  [date-time] bad date/time '1/29/2027' '15:38'
+          "Great work everyone, enjoy the evening!"
+row 137  [date-time] bad date/time '11/23/2026' '9:45'
+          "Login page ka 80% done hai, bas validation pending hai."
+row 138  [date-time] bad date/time '12/29/2026' '12:52'
+          "API tests abhi pass ho rahe hain, local pe sab sahi lag raha hai."
+row 139  [date-time] bad date/time '2/3/2027' '15:59'
+          "Payment integration is looking much better now."
+row 140  [date-time] bad date/time '12/3/2026' '9:06'
+          "I think the API response is slower after the latest merge."
+row 141  [date-time] bad date/time '1/8/2027' '12:13'
+          "Kal demo hai na? Just checking the time."
+row 142  [date-time] bad date/time '11/2/2026' '15:20'
+          "The new build is on staging, please have a look when free."
+row 143  [date-time] bad date/time '12/8/2026' '9:27'
+          "No rush on the UI, we can discuss it in tomorrow's sync."
+row 144  [date-time] bad date/time '1/13/2027' '12:34'
+          "Should we keep the old onboarding flow for the demo?"
+row 145  [date-time] bad date/time '11/12/2026' '15:41'
+          "Our model accuracy is 91.4% on the validation set."
+row 146  [date-time] bad date/time '12/18/2026' '9:48'
+          "Report ka first draft almost ready hai."
+row 147  [date-time] bad date/time '1/18/2027' '12:55'
+          "Has the faculty shared the presentation slot yet?"
+row 148  [date-time] bad date/time '11/17/2026' '15:02'
+          "I am still waiting for the dataset access."
+row 149  [date-time] bad date/time '12/23/2026' '9:09'
+          "Kal lab open rahegi kya?"
+row 150  [date-time] bad date/time '1/28/2027' '12:16'
+          "The survey response count has crossed 100."
+row 151  [date-time] bad date/time '11/27/2026' '15:23'
+          "I think we should use a bar chart for these results."
+row 152  [date-time] bad date/time '12/28/2026' '9:30'
+          "Build local pe chal raha hai, bas staging pe issue aa raha hai."
+row 153  [date-time] bad date/time '2/2/2027' '12:37'
+          "Client ne homepage ka design approve kar diya."
+row 154  [date-time] bad date/time '12/2/2026' '15:44'
+          "The campaign reach is higher than last week."
+row 155  [date-time] bad date/time '1/7/2027' '9:51'
+          "Are the revised images visible in the shared folder?"
+row 156  [date-time] bad date/time '11/6/2026' '12:58'
+          "I have added the client's comments in the thread."
+row 157  [date-time] bad date/time '12/7/2026' '15:05'
+          "Kal client call 3 baje hi hai na?"
+row 158  [date-time] bad date/time '1/12/2027' '9:12'
+          "The mobile preview seems a little different from Figma."
+row 159  [date-time] bad date/time '11/11/2026' '12:19'
+          "No rush, just wanted to know if the copy is ready."
+row 160  [date-time] bad date/time '12/17/2026' '15:26'
+          "Happy Friday team, hope the launch goes smoothly."
+row 161  [date-time] bad date/time '1/22/2027' '9:33'
+          "The API tests are passing locally now."
+row 162  [date-time] bad date/time '11/16/2026' '12:40'
+          "Rahul's update is in the branch, I haven't checked it yet."
+row 163  [date-time] bad date/time '12/22/2026' '15:47'
+          "Anyone know why the notification count is not refreshing?"
+row 164  [date-time] bad date/time '1/27/2027' '9:54'
+          "Dashboard ka latest screenshot dekh lena when you get time."
+row 165  [date-time] bad date/time '11/26/2026' '12:01'
+          "Is the staging server stable now?"
+row 166  [date-time] bad date/time '1/1/2027' '15:08'
+          "The invoice export looks fine on my machine."
+
+===== WARN =====
+
+===== FIX =====

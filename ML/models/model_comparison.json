@@ -1,0 +1,30 @@
+{
+    "selected_model": "Linear SVM",
+    "validation_results": {
+        "Logistic Regression": {
+            "accuracy": 0.6951219512195121,
+            "macro_f1": 0.722603800140746,
+            "weighted_f1": 0.6725559694020585
+        },
+        "Linear SVM": {
+            "accuracy": 0.7073170731707317,
+            "macro_f1": 0.7295376121463077,
+            "weighted_f1": 0.6909331919406151
+        },
+        "Complement Naive Bayes": {
+            "accuracy": 0.5853658536585366,
+            "macro_f1": 0.5987145007078561,
+            "weighted_f1": 0.5781605266857677
+        },
+        "Random Forest": {
+            "accuracy": 0.6951219512195121,
+            "macro_f1": 0.7162066482800664,
+            "weighted_f1": 0.6914309600874514
+        }
+    },
+    "test_results": {
+        "accuracy": 0.7349397590361446,
+        "macro_f1": 0.7404710368996082,
+        "weighted_f1": 0.7289373946000453
+    }
+}

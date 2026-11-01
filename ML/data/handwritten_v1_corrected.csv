@@ -1,0 +1,166 @@
+﻿team,date,time,sender,message,language,category,t1_title,t1_assignee,t1_deadline_text,t1_deadline_date,t1_priority,t2_title,t2_assignee,t2_deadline_text,t2_deadline_date,t2_priority,t3_title,t3_assignee,t3_deadline_text,t3_deadline_date,t3_priority,needs_confirmation
+startup,2026-11-02,9:00,Meera,"Aarav, can you fix the signup validation? Please push it by Thursday.",en,clear_task,Fix signup validation,Aarav,by Thursday,2026-11-05,,,,,,,,,,,,no
+startup,2026-12-08,12:07,Kabir,Priya please update the pricing cards before Wednesday's demo.,en,clear_task,Update pricing cards,Priya,before Wednesday,2026-12-09,,,,,,,,,,,,no
+startup,2027-01-13,15:14,Aarav,"Vikram, deploy the latest API to staging by tomorrow morning.",en,clear_task,Deploy latest API to staging,Vikram,by tomorrow,2027-01-14,,,,,,,,,,,,no
+startup,2026-11-12,9:21,Priya,"Meera, review the payment failure logs and share the cause by Friday.",en,clear_task,Review payment failure logs,Meera,by Friday,2026-11-13,,,,,,,,,,,,no
+startup,2026-12-18,12:28,Vikram,Kabir please add pagination to the customer table. Need it by EOD.,en,clear_task,Add pagination to customer table,Kabir,by EOD,2026-12-18,,,,,,,,,,,,no
+startup,2027-01-18,15:35,Priya,"Vikram, staging pe latest build daal dena kal tak please.",hinglish,clear_task,Deploy latest build to staging,Vikram,kal,2027-01-19,,,,,,,,,,,,no
+startup,2026-11-17,9:42,Vikram,"Aarav, update the README with the new environment variables by Wednesday.",en,clear_task,Update README environment variables,Aarav,by Wednesday,2026-11-18,,,,,,,,,,,,no
+startup,2026-12-23,12:49,Meera,Vikram please check the Redis connection issue ASAP.,en,clear_task,Check Redis connection issue,Vikram,,,high,,,,,,,,,,,no
+startup,2027-01-28,15:56,Kabir,"Meera, send the revised onboarding flow to design by Friday.",en,clear_task,Send revised onboarding flow,Meera,by Friday,2027-01-29,,,,,,,,,,,,no
+startup,2026-11-27,9:03,Aarav,"Kabir, fix the mobile navbar overlap before Thursday's review.",en,clear_task,Fix mobile navbar overlap,Kabir,before Thursday,2026-12-03,,,,,,,,,,,,no
+college,2026-12-28,12:10,Ishita,"Ananya, upload the literature review draft to the drive by Thursday.",en,clear_task,Upload literature review draft,Ananya,by Thursday,2026-12-31,,,,,,,,,,,,no
+college,2027-02-02,15:17,Dev,Rohan please prepare the DBMS lab screenshots before Wednesday.,en,clear_task,Prepare DBMS lab screenshots,Rohan,before Wednesday,2027-02-03,,,,,,,,,,,,no
+college,2026-12-02,9:24,Sana,"Ishita, submit the survey responses in the shared sheet by Friday.",en,clear_task,Enter survey responses in shared sheet,Ishita,by Friday,2026-12-04,,,,,,,,,,,,no
+college,2027-01-07,12:31,Ananya,Dev please book the seminar room for the project presentation by tomorrow.,en,clear_task,Book seminar room,Dev,by tomorrow,2027-01-08,,,,,,,,,,,,no
+college,2026-11-06,15:38,Rohan,"Sana, format the references in IEEE style by Thursday.",en,clear_task,Format references in IEEE style,Sana,by Thursday,2026-11-12,,,,,,,,,,,,no
+college,2026-12-07,9:45,Dev,"Rohan, check the model accuracy and add the results to the report by EOD.",en,clear_task,Add model accuracy results to report,Rohan,by EOD,2026-12-07,,,,,,,,,,,,no
+college,2027-01-12,12:52,Sana,Ananya please merge the final PPT slides by Wednesday evening.,en,clear_task,Merge final PPT slides,Ananya,by Wednesday,2027-01-13,,,,,,,,,,,,no
+college,2026-11-11,15:59,Ananya,"Dev, mail the faculty mentor the updated synopsis by Friday.",en,clear_task,Email updated synopsis to faculty mentor,Dev,by Friday,2026-11-13,,,,,,,,,,,,no
+college,2026-12-17,9:06,Rohan,"Ishita, clean the duplicate rows in the dataset by tomorrow.",en,clear_task,Remove duplicate dataset rows,Ishita,by tomorrow,2026-12-18,,,,,,,,,,,,no
+college,2027-01-22,12:13,Ishita,Sana please print the evaluation forms before Thursday's meeting.,en,clear_task,Print evaluation forms,Sana,before Thursday,2027-01-28,,,,,,,,,,,,no
+agency,2026-11-16,15:20,Farah,"Nisha, send the homepage mockup to the client by Wednesday.",en,clear_task,Send homepage mockup to client,Nisha,by Wednesday,2026-11-18,,,,,,,,,,,,no
+agency,2026-12-22,9:27,Nisha,Arjun please resize the campaign creatives for Instagram by Thursday.,en,clear_task,Resize Instagram campaign creatives,Arjun,by Thursday,2026-12-24,,,,,,,,,,,,no
+agency,2027-01-27,12:34,Arjun,"Tanya, update the client's product descriptions before Friday's review.",en,clear_task,Update product descriptions,Tanya,before Friday,2027-01-29,,,,,,,,,,,,no
+agency,2026-11-26,15:41,Tanya,Kunal please export the monthly analytics report by tomorrow.,en,clear_task,Export monthly analytics report,Kunal,by tomorrow,2026-11-27,,,,,,,,,,,,no
+agency,2027-01-01,9:48,Kunal,"Farah, add the approved testimonials to the landing page by EOD.",en,clear_task,Add approved testimonials to landing page,Farah,by EOD,2027-01-01,,,,,,,,,,,,no
+agency,2027-02-01,12:55,Kunal,Nisha please schedule the Diwali campaign posts for Friday.,en,clear_task,Schedule Diwali campaign posts,Nisha,for Friday,2027-02-05,,,,,,,,,,,,no
+agency,2026-12-01,15:02,Farah,"Arjun, fix the broken links on the campaign page ASAP.",en,clear_task,Fix broken campaign page links,Arjun,,,high,,,,,,,,,,,no
+agency,2027-01-06,9:09,Nisha,Tanya please share the revised brand copy with the client by Thursday.,en,clear_task,Share revised brand copy,Tanya,by Thursday,2027-01-07,,,,,,,,,,,,no
+agency,2026-11-05,12:16,Arjun,"Kunal, prepare the ad spend summary for Monday's call.",en,clear_task,Prepare ad spend summary,Kunal,for Monday,2026-11-09,,,,,,,,,,,,no
+agency,2026-12-11,15:23,Kunal,"Farah, upload the final banner files to the client folder by Wednesday.",en,clear_task,Upload final banner files,Farah,by Wednesday,2026-12-16,,,,,,,,,,,,no
+two_rahuls,2027-01-11,9:30,Rahul Kumar,"Rahul Sharma, update the inventory endpoint by Thursday.",en,clear_task,Update inventory endpoint,Rahul Sharma,by Thursday,2027-01-14,,,,,,,,,,,,no
+two_rahuls,2026-11-10,12:37,Neha,Rahul Kumar please review the mobile checkout flow before Wednesday.,en,clear_task,Review mobile checkout flow,Rahul Kumar,before Wednesday,2026-11-11,,,,,,,,,,,,no
+two_rahuls,2026-12-16,15:44,Aditi,"Neha, send the revised dashboard icons to Manish by Friday.",en,clear_task,Send revised dashboard icons,Neha,by Friday,2026-12-18,,,,,,,,,,,,no
+two_rahuls,2027-01-21,9:51,Manish,Aditi please test the password reset flow by tomorrow.,en,clear_task,Test password reset flow,Aditi,by tomorrow,2027-01-22,,,,,,,,,,,,no
+two_rahuls,2026-11-20,12:58,Rahul Sharma,"Manish, prepare the release notes by EOD.",en,clear_task,Prepare release notes,Manish,by EOD,2026-11-20,,,,,,,,,,,,no
+two_rahuls,2026-12-21,15:05,Neha,"Rahul Sharma, investigate the duplicate order issue ASAP.",en,clear_task,Investigate duplicate order issue,Rahul Sharma,,,high,,,,,,,,,,,no
+two_rahuls,2027-01-26,9:12,Aditi,"Rahul Kumar, add the empty state to the reports page by Thursday.",en,clear_task,Add reports page empty state,Rahul Kumar,by Thursday,2027-01-28,,,,,,,,,,,,no
+two_rahuls,2026-11-25,12:19,Manish,Neha please update the API documentation before Friday.,en,clear_task,Update API documentation,Neha,before Friday,2026-11-27,,,,,,,,,,,,no
+two_rahuls,2026-12-31,15:26,Rahul Sharma,"Aditi, share the QA checklist with the team by Wednesday.",en,clear_task,Share QA checklist,Aditi,by Wednesday,2027-01-06,,,,,,,,,,,,no
+two_rahuls,2027-02-05,9:33,Rahul Kumar,Manish please merge the approved pull request by tomorrow.,en,clear_task,Merge approved pull request,Manish,by tomorrow,2027-02-06,,,,,,,,,,,,no
+startup,2026-11-30,12:40,Meera,"Priya, update the checkout button by Wednesday and Vikram, check the payment webhook by Friday.",en,multi_task,Update checkout button,Priya,by Wednesday,2026-12-02,,Check payment webhook,Vikram,by Friday,2026-12-04,,,,,,,no
+startup,2027-01-05,15:47,Kabir,"Aarav please fix the login redirect today; Meera, add the error message by tomorrow.",en,multi_task,Fix login redirect,Aarav,today,2027-01-05,,Add login error message,Meera,by tomorrow,2027-01-06,,,,,,,no
+startup,2026-11-04,9:54,Aarav,"Kabir, prepare the release build by Thursday and Priya, send the changelog to everyone on Friday.",en,multi_task,Prepare release build,Kabir,by Thursday,2026-11-05,,Send changelog,Priya,on Friday,2026-11-06,,,,,,,no
+startup,2026-12-10,12:01,Priya,"Vikram handle the API timeout ASAP, and Aarav please add retry logic by Thursday.",en,multi_task,Handle API timeout,Vikram,,,high,Add retry logic,Aarav,by Thursday,2026-12-17,,,,,,,no
+startup,2027-01-15,15:08,Vikram,"Meera, review the new dashboard today and Kabir, fix the chart labels by Wednesday.",en,multi_task,Review new dashboard,Meera,today,2027-01-15,,Fix chart labels,Kabir,by Wednesday,2027-01-20,,,,,,,no
+startup,2026-11-09,9:15,Vikram,"Meera, checkout ka flow aaj check kar lena; aur Kabir error text update kar dena kal tak.",hinglish,multi_task,Review checkout flow,Meera,aaj,2026-11-09,,Update error text,Kabir,kal tak,2026-11-10,,,,,,,no
+college,2026-12-15,12:22,Ananya,"Ishita please clean the CSV by tomorrow and Dev, update the methodology section by Friday.",en,multi_task,Clean CSV dataset,Ishita,by tomorrow,2026-12-16,,Update methodology section,Dev,by Friday,2026-12-18,,,,,,,no
+college,2027-01-20,15:29,Rohan,"Sana, make the presentation cover slide today. Ananya, check the citations by Thursday.",en,multi_task,Create presentation cover slide,Sana,today,2027-01-20,,Check citations,Ananya,by Thursday,2027-01-21,,,,,,,no
+college,2026-11-19,9:36,Sana,Rohan submit the lab file by Wednesday and Ishita upload the output screenshots by Friday.,en,multi_task,Submit lab file,Rohan,by Wednesday,2026-11-25,,Upload output screenshots,Ishita,by Friday,2026-11-20,,,,,,,no
+college,2026-12-25,12:43,Ishita,"Dev, book the projector for tomorrow and Sana, share the agenda before Thursday.",en,multi_task,Book projector,Dev,for tomorrow,2026-12-26,,Share meeting agenda,Sana,before Thursday,2026-12-31,,,,,,,no
+agency,2027-01-25,15:50,Tanya,"Nisha, send the first draft by Wednesday and Farah, collect client feedback by Friday.",en,multi_task,Send first draft,Nisha,by Wednesday,2027-01-27,,Collect client feedback,Farah,by Friday,2027-01-29,,,,,,,no
+agency,2026-11-24,9:57,Kunal,Arjun resize the hero images today; Tanya update the alt text by tomorrow.,en,multi_task,Resize hero images,Arjun,today,2026-11-24,,Update image alt text,Tanya,by tomorrow,2026-11-25,,,,,,,no
+agency,2026-12-30,12:04,Tanya,"Kunal, export the leads report by Thursday and Nisha, email it to the account team Friday.",en,multi_task,Export leads report,Kunal,by Thursday,2026-12-31,,Email leads report to account team,Nisha,Friday,2027-01-01,,,,,,,no
+agency,2027-02-04,15:11,Kunal,"Farah, fix the footer spacing by Wednesday, and Arjun please check tablet view by Thursday.",en,multi_task,Fix footer spacing,Farah,by Wednesday,2027-02-10,,Check tablet layout,Arjun,by Thursday,2027-02-11,,,,,,,no
+agency,2026-12-04,9:18,Farah,"Tanya please approve the copy today and Kunal, schedule the approved posts by Friday.",en,multi_task,Approve campaign copy,Tanya,today,2026-12-04,,Schedule approved posts,Kunal,by Friday,2026-12-11,,,,,,,no
+two_rahuls,2027-01-04,12:25,Rahul Kumar,"Rahul Sharma, check the order API by Thursday. Neha, update the test cases by Friday.",en,multi_task,Check order API,Rahul Sharma,by Thursday,2027-01-07,,Update test cases,Neha,by Friday,2027-01-08,,,,,,,no
+two_rahuls,2026-11-03,15:32,Neha,"Aditi, verify the new icons by tomorrow and Manish, merge them before Thursday.",en,multi_task,Verify new icons,Aditi,by tomorrow,2026-11-04,,Merge approved icons,Manish,before Thursday,2026-11-05,,,,,,,no
+two_rahuls,2026-12-09,9:39,Aditi,"Rahul Kumar please fix the cart badge today; Rahul Sharma, review the cart API by Wednesday.",en,multi_task,Fix cart badge,Rahul Kumar,today,2026-12-09,,Review cart API,Rahul Sharma,by Wednesday,2026-12-16,,,,,,,no
+two_rahuls,2027-01-14,12:46,Manish,"Neha send the dashboard screenshot by Wednesday and Aditi, add it to the report by Thursday.",en,multi_task,Send dashboard screenshot,Neha,by Wednesday,2027-01-20,,Add dashboard screenshot to report,Aditi,by Thursday,2027-01-21,,,,,,,no
+two_rahuls,2026-11-13,15:53,Rahul Sharma,"Manish, prepare the deployment checklist by Friday and Rahul Kumar, run smoke tests by Monday.",en,multi_task,Prepare deployment checklist,Manish,by Friday,2026-11-20,,Run smoke tests,Rahul Kumar,by Monday,2026-11-16,,,,,,,no
+startup,2026-12-14,9:00,Vikram,"I'll push the updated login flow by Wednesday, just need to finish the tests.",en,self_commitment,Push updated login flow,Vikram,by Wednesday,2026-12-16,,,,,,,,,,,,no
+startup,2027-01-19,12:07,Meera,I can take the API docs. I'll share them by Friday.,en,self_commitment,Share API documentation,Meera,by Friday,2027-01-22,,,,,,,,,,,,no
+startup,2026-11-18,15:14,Kabir,Main kal tak dashboard ka responsive fix bhej dungi.,hinglish,self_commitment,Send responsive dashboard fix,Kabir,kal,2026-11-19,,,,,,,,,,,,no
+startup,2026-12-24,9:21,Aarav,I'll finish the payment test cases before Thursday's stand-up.,en,self_commitment,Finish payment test cases,Aarav,before Thursday,2026-12-31,,,,,,,,,,,,no
+college,2027-01-29,12:28,Rohan,"I'll upload my part of the report by tomorrow, pakka.",hinglish,self_commitment,Upload report section,Rohan,by tomorrow,2027-01-30,,,,,,,,,,,,no
+college,2026-11-23,15:35,Dev,Main Wednesday tak references complete kar dunga.,hinglish,self_commitment,Complete references,Dev,Wednesday tak,2026-11-25,,,,,,,,,,,,no
+college,2026-12-29,9:42,Sana,I'll send the cleaned dataset tonight.,en,self_commitment,Send cleaned dataset,Sana,tonight,2026-12-29,,,,,,,,,,,,no
+college,2027-02-03,12:49,Ananya,Kal evening tak PPT ka final version share kar dungi.,hinglish,self_commitment,Share final PPT,Ananya,Kal evening tak,2027-02-04,,,,,,,,,,,,no
+agency,2026-12-03,15:56,Arjun,I'll get the revised banner to you by Thursday afternoon.,en,self_commitment,Send revised banner,Arjun,by Thursday,2026-12-10,,,,,,,,,,,,no
+agency,2027-01-08,9:03,Tanya,Main client ke comments aaj EOD tak add kar dunga.,hinglish,self_commitment,Add client comments,Tanya,aaj EOD tak,2027-01-08,,,,,,,,,,,,no
+agency,2026-11-02,12:10,Farah,I'll schedule the remaining posts before Friday.,en,self_commitment,Schedule remaining posts,Farah,before Friday,2026-11-06,,,,,,,,,,,,no
+agency,2026-12-08,15:17,Nisha,"Report main kal subah tak bhej dungi, no worries.",hinglish,self_commitment,Send analytics report,Nisha,kal,2026-12-09,,,,,,,,,,,,no
+two_rahuls,2027-01-13,9:24,Rahul Kumar,I'll fix the filter bug by Wednesday. I have reproduced it now.,en,self_commitment,Fix filter bug,Rahul Kumar,by Wednesday,2027-01-20,,,,,,,,,,,,no
+two_rahuls,2026-11-12,12:31,Neha,Main kal tak QA sheet update kar dunga.,hinglish,self_commitment,Update QA sheet,Neha,kal,2026-11-13,,,,,,,,,,,,no
+two_rahuls,2026-12-18,15:38,Aditi,I'll share the build link by Friday morning.,en,self_commitment,Share build link,Aditi,by Friday,2026-12-25,,,,,,,,,,,,no
+startup,2027-01-18,9:45,Aarav,"Literature review ka updated section abhi pending hai, someone needs to take it.",hinglish,missing_info,Complete updated literature review section,,,,,,,,,,,,,,,no
+startup,2026-11-17,12:52,Priya,Someone needs to check why the webhook retries are failing.,en,missing_info,Investigate webhook retry failures,,,,,,,,,,,,,,,no
+startup,2026-12-23,15:59,Vikram,Please get the onboarding email copy updated.,en,missing_info,Update onboarding email copy,,,,,,,,,,,,,,,no
+startup,2027-01-28,9:06,Meera,We need the staging database backup before the next release.,en,missing_info,Create staging database backup,,before the next release,,,,,,,,,,,,,no
+startup,2026-11-27,12:13,Kabir,Can the empty state be added to the billing screen?,en,missing_info,Add billing screen empty state,,,,,,,,,,,,,,,no
+college,2026-12-28,15:20,Rohan,Someone should verify the references in chapter two.,en,missing_info,Verify chapter two references,,,,,,,,,,,,,,,no
+college,2027-02-02,9:27,Ishita,Dataset ke missing values clean karne hain.,hinglish,missing_info,Clean missing dataset values,,,,,,,,,,,,,,,no
+college,2026-12-02,12:34,Dev,The final report needs a proper limitations section.,en,missing_info,Add limitations section to report,,,,,,,,,,,,,,,no
+college,2027-01-07,15:41,Sana,Please arrange the consent forms for the survey.,en,missing_info,Arrange survey consent forms,,,,,,,,,,,,,,,no
+college,2026-11-06,9:48,Ananya,Model ke confusion matrix ka screenshot chahiye.,hinglish,missing_info,Capture model confusion matrix,,,,,,,,,,,,,,,no
+agency,2026-12-07,12:55,Tanya,We still need the mobile version of the landing page checked.,en,missing_info,Review mobile landing page,,,,,,,,,,,,,,,no
+agency,2027-01-12,15:02,Kunal,Client ke liye new testimonial section add karna hai.,hinglish,missing_info,Add testimonial section,,,,,,,,,,,,,,,no
+agency,2026-11-11,9:09,Farah,Someone should export the campaign leads and remove duplicates.,en,missing_info,Export and deduplicate campaign leads,,,,,,,,,,,,,,,no
+agency,2026-12-17,12:16,Nisha,"The footer links are outdated, can this be fixed?",en,missing_info,Update footer links,,,,,,,,,,,,,,,no
+agency,2027-01-22,15:23,Arjun,Need the revised product photos in the shared folder.,en,missing_info,Upload revised product photos,,,,,,,,,,,,,,,no
+two_rahuls,2026-11-16,9:30,Aditi,The reports API needs pagination before we can close this.,en,missing_info,Add pagination to reports API,,,,,,,,,,,,,,,no
+two_rahuls,2026-12-22,12:37,Manish,Can someone check the duplicate invoice issue?,en,missing_info,Investigate duplicate invoice issue,,,,,,,,,,,,,,,no
+two_rahuls,2027-01-27,15:44,Rahul Sharma,Rahul se deployment notes update karwane hain.,hinglish,missing_info,Update deployment notes,,,,,,,,,,,,,,,no
+two_rahuls,2026-11-26,9:51,Rahul Kumar,The profile page still needs the loading skeleton.,en,missing_info,Add profile page loading skeleton,,,,,,,,,,,,,,,no
+two_rahuls,2027-01-01,12:58,Neha,Please test the new notification settings.,en,missing_info,Test notification settings,,,,,,,,,,,,,,,no
+two_rahuls,2027-02-01,15:05,Manish,"Rahul, please share the updated test report by Thursday.",en,ambiguous,Share updated test report,,by Thursday,2027-02-04,,,,,,,,,,,,yes
+two_rahuls,2026-12-01,9:12,Manish,Can Rahul check the checkout bug today?,en,ambiguous,Check checkout bug,,today,2026-12-01,,,,,,,,,,,,yes
+two_rahuls,2027-01-06,12:19,Neha,Rahul please send me the latest build before Friday.,en,ambiguous,Send latest build,,before Friday,2027-01-08,,,,,,,,,,,,yes
+two_rahuls,2026-11-05,15:26,Neha,"Rahul, fix the report export issue ASAP.",en,ambiguous,Fix report export issue,,,,high,,,,,,,,,,,yes
+two_rahuls,2026-12-11,9:33,Aditi,Need Rahul to review the dashboard query by Wednesday.,en,ambiguous,Review dashboard query,,by Wednesday,2026-12-16,,,,,,,,,,,,yes
+two_rahuls,2027-01-11,12:40,Neha,Rahul kal tak test results share kar dena please.,hinglish,ambiguous,Share test results,,kal,2027-01-12,,,,,,,,,,,,yes
+two_rahuls,2026-11-10,15:47,Aditi,Rahul can you merge the approved changes by EOD?,en,ambiguous,Merge approved changes,,by EOD,2026-11-10,,,,,,,,,,,,yes
+two_rahuls,2026-12-16,9:54,Neha,Please ask Rahul to check the staging deployment tomorrow.,en,ambiguous,Check staging deployment,,tomorrow,2026-12-17,,,,,,,,,,,,yes
+two_rahuls,2027-01-21,12:01,Aditi,"Rahul, add the missing validation to the form by Friday.",en,ambiguous,Add form validation,,by Friday,2027-01-22,,,,,,,,,,,,yes
+two_rahuls,2026-11-20,15:08,Manish,Rahul please verify the invoice totals before Thursday's call.,en,ambiguous,Verify invoice totals,,before Thursday,2026-11-26,,,,,,,,,,,,yes
+startup,2026-12-21,9:15,Priya,"Good morning everyone, hope the week is starting well.",en,not_task,,,,,,,,,,,,,,,,no
+startup,2027-01-26,12:22,Vikram,Anyone up for chai after the stand-up?,en,not_task,,,,,,,,,,,,,,,,no
+startup,2026-11-25,15:29,Meera,Haha that bug really chose violence today 😂,en,not_task,,,,,,,,,,,,,,,,no
+startup,2026-12-31,9:36,Kabir,"Thanks Priya, got it!",en,not_task,,,,,,,,,,,,,,,,no
+startup,2027-02-05,12:43,Aarav,"Lunch order going in at 1:15, anyone wants anything?",en,not_task,,,,,,,,,,,,,,,,no
+startup,2026-11-30,15:50,Vikram,The weather is so nice today yaar.,hinglish,not_task,,,,,,,,,,,,,,,,no
+startup,2027-01-05,9:57,Meera,"Nice work on the demo, team!",en,not_task,,,,,,,,,,,,,,,,no
+startup,2026-11-04,12:04,Kabir,kal wali match dekhi kya?,hinglish,not_task,,,,,,,,,,,,,,,,no
+college,2026-12-10,15:11,Ananya,Good luck for the viva everyone!!,en,not_task,,,,,,,,,,,,,,,,no
+college,2027-01-15,9:18,Rohan,Yaar canteen mein aaj samosa hai kya?,hinglish,not_task,,,,,,,,,,,,,,,,no
+college,2026-11-09,12:25,Dev,Thanks for sharing the notes.,en,not_task,,,,,,,,,,,,,,,,no
+college,2026-12-15,15:32,Sana,That lecture felt longer than the whole semester 😭,en,not_task,,,,,,,,,,,,,,,,no
+college,2027-01-20,9:39,Ananya,Anyone coming to the library after class?,en,not_task,,,,,,,,,,,,,,,,no
+college,2026-11-19,12:46,Rohan,Happy birthday Sana!! 🎂,en,not_task,,,,,,,,,,,,,,,,no
+college,2026-12-25,15:53,Ishita,Aaj attendance ka scene kya hai?,hinglish,not_task,,,,,,,,,,,,,,,,no
+college,2027-01-25,9:00,Sana,The new campus cafe is actually pretty good.,en,not_task,,,,,,,,,,,,,,,,no
+agency,2026-11-24,12:07,Nisha,Client call was longgg today 😅,en,not_task,,,,,,,,,,,,,,,,no
+agency,2026-12-30,15:14,Arjun,"Morning folks! Coffee first, then everything else.",en,not_task,,,,,,,,,,,,,,,,no
+agency,2027-02-04,9:21,Tanya,Thanks for the quick reply.,en,not_task,,,,,,,,,,,,,,,,no
+agency,2026-12-04,12:28,Kunal,"That reference looks clean, love the colors.",en,not_task,,,,,,,,,,,,,,,,no
+agency,2027-01-04,15:35,Nisha,Lunch break? I'm starving.,en,not_task,,,,,,,,,,,,,,,,no
+agency,2026-11-03,9:42,Arjun,Weekend plans anyone?,en,not_task,,,,,,,,,,,,,,,,no
+agency,2026-12-09,12:49,Tanya,Yaar traffic was crazy near the office.,hinglish,not_task,,,,,,,,,,,,,,,,no
+agency,2027-01-14,15:56,Kunal,The new playlist is a vibe.,en,not_task,,,,,,,,,,,,,,,,no
+two_rahuls,2026-11-13,9:03,Manish,Good morning team 🌞,en,not_task,,,,,,,,,,,,,,,,no
+two_rahuls,2026-12-14,12:10,Rahul Kumar,Yaar aaj ka lunch plan kya hai?,hinglish,not_task,,,,,,,,,,,,,,,,no
+two_rahuls,2027-01-19,15:17,Neha,Anyone tried the new coffee machine?,en,not_task,,,,,,,,,,,,,,,,no
+two_rahuls,2026-11-18,9:24,Aditi,Haha same thing happened to me yesterday.,en,not_task,,,,,,,,,,,,,,,,no
+two_rahuls,2026-12-24,12:31,Manish,Aaj lunch bahar se mangwayein?,hinglish,not_task,,,,,,,,,,,,,,,,no
+two_rahuls,2027-01-29,15:38,Rahul Sharma,"Great work everyone, enjoy the evening!",en,not_task,,,,,,,,,,,,,,,,no
+startup,2026-11-23,9:45,Vikram,"Login page ka 80% done hai, bas validation pending hai.",hinglish,looks_like_task,,,,,,,,,,,,,,,,no
+startup,2026-12-29,12:52,Meera,"API tests abhi pass ho rahe hain, local pe sab sahi lag raha hai.",hinglish,looks_like_task,,,,,,,,,,,,,,,,no
+startup,2027-02-03,15:59,Kabir,Payment integration is looking much better now.,en,looks_like_task,,,,,,,,,,,,,,,,no
+startup,2026-12-03,9:06,Aarav,I think the API response is slower after the latest merge.,en,looks_like_task,,,,,,,,,,,,,,,,no
+startup,2027-01-08,12:13,Priya,Kal demo hai na? Just checking the time.,hinglish,looks_like_task,,,,,,,,,,,,,,,,no
+startup,2026-11-02,15:20,Meera,"The new build is on staging, please have a look when free.",en,missing_info,,,,,,,,,,,,,,,,no
+startup,2026-12-08,9:27,Kabir,"No rush on the UI, we can discuss it in tomorrow's sync.",en,looks_like_task,,,,,,,,,,,,,,,,no
+startup,2027-01-13,12:34,Aarav,Should we keep the old onboarding flow for the demo?,en,looks_like_task,,,,,,,,,,,,,,,,no
+college,2026-11-12,15:41,Rohan,Our model accuracy is 91.4% on the validation set.,en,looks_like_task,,,,,,,,,,,,,,,,no
+college,2026-12-18,9:48,Ishita,Report ka first draft almost ready hai.,hinglish,looks_like_task,,,,,,,,,,,,,,,,no
+college,2027-01-18,12:55,Sana,Has the faculty shared the presentation slot yet?,en,looks_like_task,,,,,,,,,,,,,,,,no
+college,2026-11-17,15:02,Ananya,I am still waiting for the dataset access.,en,looks_like_task,,,,,,,,,,,,,,,,no
+college,2026-12-23,9:09,Rohan,Kal lab open rahegi kya?,hinglish,looks_like_task,,,,,,,,,,,,,,,,no
+college,2027-01-28,12:16,Ishita,The survey response count has crossed 100.,en,looks_like_task,,,,,,,,,,,,,,,,no
+college,2026-11-27,15:23,Dev,I think we should use a bar chart for these results.,en,looks_like_task,,,,,,,,,,,,,,,,no
+college,2026-12-28,9:30,Ananya,"Build local pe chal raha hai, bas staging pe issue aa raha hai.",hinglish,looks_like_task,,,,,,,,,,,,,,,,no
+agency,2027-02-02,12:37,Arjun,Client ne homepage ka design approve kar diya.,hinglish,looks_like_task,,,,,,,,,,,,,,,,no
+agency,2026-12-02,15:44,Tanya,The campaign reach is higher than last week.,en,looks_like_task,,,,,,,,,,,,,,,,no
+agency,2027-01-07,9:51,Kunal,Are the revised images visible in the shared folder?,en,looks_like_task,,,,,,,,,,,,,,,,no
+agency,2026-11-06,12:58,Farah,I have added the client's comments in the thread.,en,looks_like_task,,,,,,,,,,,,,,,,no
+agency,2026-12-07,15:05,Arjun,Kal client call 3 baje hi hai na?,hinglish,looks_like_task,,,,,,,,,,,,,,,,no
+agency,2027-01-12,9:12,Tanya,The mobile preview seems a little different from Figma.,en,looks_like_task,,,,,,,,,,,,,,,,no
+agency,2026-11-11,12:19,Kunal,"No rush, just wanted to know if the copy is ready.",en,looks_like_task,,,,,,,,,,,,,,,,no
+agency,2026-12-17,15:26,Farah,"Happy Friday team, hope the launch goes smoothly.",en,looks_like_task,,,,,,,,,,,,,,,,no
+two_rahuls,2027-01-22,9:33,Rahul Sharma,The API tests are passing locally now.,en,looks_like_task,,,,,,,,,,,,,,,,no
+two_rahuls,2026-11-16,12:40,Neha,"Rahul's update is in the branch, I haven't checked it yet.",en,looks_like_task,,,,,,,,,,,,,,,,no
+two_rahuls,2026-12-22,15:47,Aditi,Anyone know why the notification count is not refreshing?,en,looks_like_task,,,,,,,,,,,,,,,,no
+two_rahuls,2027-01-27,9:54,Manish,Dashboard ka latest screenshot dekh lena when you get time.,hinglish,missing_info,,,,,,,,,,,,,,,,no
+two_rahuls,2026-11-26,12:01,Rahul Sharma,Is the staging server stable now?,en,looks_like_task,,,,,,,,,,,,,,,,no
+two_rahuls,2027-01-01,15:08,Rahul Kumar,The invoice export looks fine on my machine.,en,looks_like_task,,,,,,,,,,,,,,,,no

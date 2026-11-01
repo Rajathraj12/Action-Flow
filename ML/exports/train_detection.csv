@@ -1,0 +1,494 @@
+﻿id,source,language,category,sender,timestamp,message,is_task
+seed-001,seed,en,multi_task,Vikram,2026-10-26T10:30:00+05:30,"Rahul, complete the payment integration by Friday. Neha, send Rahul the updated UI tomorrow.",1
+seed-002,seed,en,clear_task,Vikram,2026-10-26T11:00:00+05:30,"Neha, send the updated UI to Rahul tomorrow.",1
+seed-003,seed,en,not_task,Amit,2026-10-26T12:40:00+05:30,Lunch at 1?,0
+seed-004,seed,en,looks_like_task,Priya,2026-10-26T13:05:00+05:30,Rahul finished the API integration yesterday.,0
+seed-005,seed,en,looks_like_task,Vikram,2026-10-26T13:30:00+05:30,We should really clean up the old database tables someday.,0
+seed-006,seed,en,missing_info,Vikram,2026-10-26T14:00:00+05:30,Someone needs to update the README before the demo.,1
+seed-007,seed,en,clear_task,Vikram,2026-10-26T14:15:00+05:30,"Amit, please fix the login bug today. It's urgent.",1
+seed-008,seed,en,self_commitment,Neha,2026-10-26T15:05:00+05:30,I'll send the wireframes by Wednesday.,1
+seed-009,seed,hinglish,clear_task,Vikram,2026-10-26T16:20:00+05:30,"Rahul, kal tak payment wala kaam khatam kar dena.",1
+seed-010,seed,en,clear_task,Vikram,2026-10-27T11:10:00+05:30,"Rahul, can you review Neha's pull request by end of day?",1
+seed-011,seed,en,missing_info,Priya,2026-10-27T13:45:00+05:30,Can someone check the staging server? It's down.,1
+seed-012,seed,en,not_task,Amit,2026-10-27T15:30:00+05:30,"Thanks Neha, got the files!",0
+seed-013,seed,en,ambiguous,Vikram,2026-10-27T10:00:00+05:30,"Rahul, please share the test report by Thursday.",1
+tpl-0001,synthetic_template,en,not_task,Ananya,2026-12-01T11:10:00+05:30,Lol,0
+tpl-0002,synthetic_template,en,multi_task,Meera,2027-01-14T12:40:00+05:30,Quick assignments: Rohan - update the client proposal by Wednesday; Isha - write the campaign copy tomorrow by noon; Tanvi - send the updated UI latest by Friday,1
+tpl-0003,synthetic_template,en,clear_task,Aarav,2026-11-23T15:35:00+05:30,"dev, could you please update the api documentation by next thursday?",1
+tpl-0004,synthetic_template,en,not_task,Tanvi,2026-11-27T12:45:00+05:30,"welcome to the team, rohan! 🎉",0
+tpl-0005,synthetic_template,en,clear_task,Priya,2026-12-18T10:40:00+05:30,"Vikram, could you pls set up the CI pipeline by Monday?",1
+tpl-0006,synthetic_template,en,missing_info,Rohan,2026-12-02T15:15:00+05:30,Need someone to collect the timesheets by Tuesday. 👍,1
+tpl-0007,synthetic_template,en,looks_like_task,Meera,2026-11-12T13:55:00+05:30,What's the status of the Instagram posts?,0
+tpl-0008,synthetic_template,en,self_commitment,Rohan,2027-01-27T14:20:00+05:30,"sure, i'll book the meeting room. low priority.",1
+tpl-0009,synthetic_template,en,missing_info,Aarav,2027-01-25T14:50:00+05:30,"Simran, check the staging server.",1
+tpl-0010,synthetic_template,en,clear_task,Vikram,2026-12-10T13:45:00+05:30,@Rahul Sharma fix the crash on the settings screen tonight.,1
+tpl-0011,synthetic_template,en,self_commitment,Kabir,2026-11-13T10:35:00+05:30,I can fix the crash on the settings screen by end of day.,1
+tpl-0012,synthetic_template,hinglish,not_task,Tanvi,2026-12-29T11:05:00+05:30,Good morning sabko!,0
+tpl-0013,synthetic_template,en,looks_like_task,Sana,2026-12-14T14:40:00+05:30,Would be great if we could debug the chat message delay sometime in the future.,0
+tpl-0014,synthetic_template,en,missing_info,Meera,2026-11-05T14:50:00+05:30,Anyone free to update the client proposal tomorrow morning? 🔥,1
+tpl-0015,synthetic_template,hinglish,not_task,Priya,2026-12-28T09:50:00+05:30,Happy birthday Vikram! 🎂,0
+tpl-0016,synthetic_template,hinglish,not_task,Kabir,2027-01-12T09:15:00+05:30,Office pahunch gaya,0
+tpl-0017,synthetic_template,en,missing_info,Neha,2026-12-07T15:40:00+05:30,Somebody please update the sprint board. High priority.,1
+tpl-0018,synthetic_template,hinglish,not_task,Aarav,2026-12-10T13:55:00+05:30,Shukriya Dev!,0
+tpl-0019,synthetic_template,en,ambiguous,Vikram,2026-12-24T09:00:00+05:30,"Can you collect the timesheets before the client call, Rahul? Urgent!",1
+tpl-0020,synthetic_template,en,not_task,Ananya,2027-01-14T11:55:00+05:30,Good morning everyone ☀️ Pro tip: the 4th floor pantry has the best chai,0
+tpl-0021,synthetic_template,en,clear_task,Meera,2026-12-01T12:10:00+05:30,"Hey Tanvi, could you export the app icons latest by Friday?",1
+tpl-0022,synthetic_template,en,ambiguous,Vikram,2027-01-28T14:00:00+05:30,"Hey Rahul, could you update the sprint board by Tuesday evening?",1
+tpl-0023,synthetic_template,en,looks_like_task,Amit,2027-01-22T14:45:00+05:30,Sprint planning is on Wednesday at 10.,0
+tpl-0024,synthetic_template,hinglish,missing_info,Rahul,2026-11-27T13:00:00+05:30,Staging server check karna hai Guruvar tak,1
+tpl-0025,synthetic_template,hinglish,not_task,Aarav,2026-11-19T10:25:00+05:30,Mast hai ye!,0
+tpl-0026,synthetic_template,hinglish,missing_info,Meera,2026-12-17T12:00:00+05:30,"Isha yaar, campaign analytics share kar dena pls.",1
+tpl-0027,synthetic_template,en,clear_task,Ananya,2026-11-26T15:15:00+05:30,"Aarav, I need you to complete the payment integration tomorrow by noon.",1
+tpl-0028,synthetic_template,en,looks_like_task,Simran,2027-01-26T15:15:00+05:30,Standup at 11. 🔥,0
+tpl-0029,synthetic_template,en,not_task,Rohan,2026-11-11T09:25:00+05:30,Coffee machine is finally fixed 🙌,0
+tpl-0030,synthetic_template,en,missing_info,Vikram,2026-12-03T10:55:00+05:30,We need to share the meeting notes,1
+tpl-0031,synthetic_template,en,clear_task,Neha,2026-11-12T11:20:00+05:30,"Vikram, I need you to integrate push notifications by the end of this week.",1
+tpl-0032,synthetic_template,en,clear_task,Vikram,2027-01-14T12:40:00+05:30,"Please rotate the API keys tomorrow morning, Rahul Sharma",1
+tpl-0033,synthetic_template,en,self_commitment,Ananya,2026-12-02T15:50:00+05:30,"Sure, I'll merge the feature branch",1
+tpl-0034,synthetic_template,en,not_task,Rahul Sharma,2026-12-04T12:25:00+05:30,Running 10 mins late. Lol,0
+tpl-0035,synthetic_template,en,not_task,Karan,2027-01-01T11:10:00+05:30,Thanks a lot Tanvi 🙏,0
+tpl-0036,synthetic_template,hinglish,clear_task,Aarav,2026-11-04T11:20:00+05:30,"Simran, kya tum kal shaam tak chat message delay debug kar sakti ho?",1
+tpl-0037,synthetic_template,en,clear_task,Karan,2026-12-29T10:15:00+05:30,@Meera call the vendor about the banners tonight.,1
+tpl-0038,synthetic_template,en,looks_like_task,Isha,2026-11-18T12:30:00+05:30,Meera already created the pitch deck slides.,0
+tpl-0039,synthetic_template,en,clear_task,Vikram,2026-12-11T10:25:00+05:30,Rahul pls share the wireframes before the client call 🙏,1
+tpl-0040,synthetic_template,hinglish,self_commitment,Ananya,2026-12-22T13:30:00+05:30,"Theek hai, main viva presentation prepare kar dungi next week tak",1
+tpl-0041,synthetic_template,en,ambiguous,Vikram,2026-12-25T15:55:00+05:30,"Rahul, please fix the broken signup form by Monday. 👍",1
+tpl-0042,synthetic_template,hinglish,not_task,Simran,2027-01-22T13:25:00+05:30,Bhook lag rahi hai yaar,0
+tpl-0043,synthetic_template,en,self_commitment,Karan,2026-11-03T13:05:00+05:30,"I'll take this one, will update the sprint board. Urgent!",1
+tpl-0044,synthetic_template,en,not_task,Karan,2026-12-07T15:05:00+05:30,"Congrats team, great work on the release!",0
+tpl-0045,synthetic_template,en,clear_task,Ananya,2027-01-28T12:15:00+05:30,@Aarav rotate the API keys before the next standup.,1
+tpl-0046,synthetic_template,hinglish,not_task,Ananya,2027-01-01T15:55:00+05:30,Kya haal hai sab ka? Bhook lag rahi hai yaar,0
+tpl-0047,synthetic_template,hinglish,clear_task,Karan,2027-01-13T12:50:00+05:30,"isha, pitch deck slides create kar dena agle hafte tak. araam se kar lena, koi jaldi nahi.",1
+tpl-0048,synthetic_template,en,missing_info,Meera,2026-12-08T10:15:00+05:30,Need someone to create the pitch deck slides before the demo.,1
+tpl-0049,synthetic_template,en,multi_task,Amit,2026-11-05T09:20:00+05:30,Neha can you create the pitch deck slides by Friday EOD? Priya please share the meeting notes latest by Monday.,1
+tpl-0050,synthetic_template,en,not_task,Neha,2026-12-24T13:35:00+05:30,sounds good,0
+tpl-0051,synthetic_template,en,clear_task,Meera,2027-01-26T15:40:00+05:30,Karan pls send the invoice to the client before the week ends.,1
+tpl-0052,synthetic_template,en,multi_task,Vikram,2027-01-26T13:30:00+05:30,"Rahul Kumar, update the API documentation. Also fix the crash on the settings screen before the client call. This is urgent! 🔥",1
+tpl-0053,synthetic_template,en,clear_task,Vikram,2026-11-06T12:40:00+05:30,priya pls create the pitch deck slides by month end.,1
+tpl-0054,synthetic_template,en,not_task,Meera,2027-01-07T15:55:00+05:30,Mood today: Friday energy 🎉,0
+tpl-0055,synthetic_template,en,not_task,Tanvi,2026-11-24T13:30:00+05:30,ok. What a game last night!,0
+tpl-0056,synthetic_template,en,not_task,Aarav,2026-11-17T13:50:00+05:30,Running 10 mins late,0
+tpl-0057,synthetic_template,en,looks_like_task,Simran,2027-01-01T12:50:00+05:30,Office is closed on Monday for the holiday,0
+tpl-0058,synthetic_template,en,not_task,Priya,2026-12-25T09:00:00+05:30,I'm on leave tomorrow,0
+tpl-0059,synthetic_template,en,multi_task,Vikram,2027-01-27T10:20:00+05:30,"Sana, please fix the login bug and collect the timesheets.",1
+tpl-0060,synthetic_template,en,clear_task,Tanvi,2027-01-28T15:35:00+05:30,Action for Isha: update the color palette next Tuesday.,1
+tpl-0061,synthetic_template,en,clear_task,Neha,2027-01-28T14:05:00+05:30,Vikram: fix the crash on the settings screen by 5 pm,1
+tpl-0062,synthetic_template,en,ambiguous,Vikram,2026-12-04T14:15:00+05:30,"Hey Rahul, could you test the checkout flow next Monday?",1
+tpl-0063,synthetic_template,hinglish,not_task,Rahul,2027-01-06T15:35:00+05:30,Bohot badhiya kaam kiya Neha!,0
+tpl-0064,synthetic_template,en,looks_like_task,Sana,2027-01-11T15:50:00+05:30,Sprint review tomorrow at 3 pm,0
+tpl-0065,synthetic_template,en,multi_task,Simran,2027-01-21T14:10:00+05:30,"Ananya, merge the feature branch by Friday EOD. Dev, fix the broken signup form",1
+tpl-0066,synthetic_template,hinglish,self_commitment,Vikram,2026-12-23T14:25:00+05:30,"Theek hai, main signup form fix kar dunga agle hafte tak. Urgent hai.",1
+tpl-0067,synthetic_template,en,clear_task,Aarav,2027-01-13T11:20:00+05:30,@Kabir push the latest code to the repo by next Monday.,1
+tpl-0068,synthetic_template,hinglish,ambiguous,Vikram,2027-01-28T13:00:00+05:30,"Rahul yaar, open pull request review kar dena pls.",1
+tpl-0069,synthetic_template,en,not_task,Dev,2026-11-16T10:35:00+05:30,Can't believe it's already Friday. Pro tip: the 4th floor pantry has the best chai 👍,0
+tpl-0070,synthetic_template,en,clear_task,Karan,2026-11-12T11:50:00+05:30,"tanvi, confirm the client call tomorrow.",1
+tpl-0071,synthetic_template,en,not_task,Amit,2026-12-16T11:05:00+05:30,"Got it, thanks. Running 10 mins late",0
+tpl-0072,synthetic_template,en,clear_task,Rahul Kumar,2026-11-09T12:20:00+05:30,"vikram, could you please debug the chat message delay by thursday evening?",1
+tpl-0073,synthetic_template,hinglish,not_task,Ananya,2026-11-13T15:55:00+05:30,Happy birthday Simran! 🎂 Theek hai 🙂,0
+tpl-0074,synthetic_template,en,looks_like_task,Rohan,2026-12-31T15:35:00+05:30,We should export the app icons someday.,0
+tpl-0075,synthetic_template,en,multi_task,Meera,2026-11-27T15:20:00+05:30,"Rohan, please book the meeting room and finish the landing page design by Tuesday noon.",1
+tpl-0076,synthetic_template,hinglish,not_task,Dev,2026-11-19T13:40:00+05:30,Thanks yaar!,0
+tpl-0077,synthetic_template,en,looks_like_task,Rohan,2026-11-13T12:45:00+05:30,karan sent the newsletter yesterday.,0
+tpl-0078,synthetic_template,en,self_commitment,Dev,2026-12-17T10:30:00+05:30,"I'll finalize the abstract, don't worry.",1
+tpl-0079,synthetic_template,hinglish,missing_info,Vikram,2026-12-22T12:00:00+05:30,Color palette update karna hai aaj hi. Bahut urgent hai. 🙏,1
+tpl-0080,synthetic_template,en,missing_info,Amit,2027-01-28T14:00:00+05:30,We need to integrate push notifications.,1
+tpl-0081,synthetic_template,en,clear_task,Vikram,2027-01-20T11:55:00+05:30,"Sana, could you please update the API documentation by Monday?",1
+tpl-0082,synthetic_template,en,self_commitment,Meera,2026-12-28T10:15:00+05:30,"I'll take this one, will update the client proposal by EOD",1
+tpl-0083,synthetic_template,en,missing_info,Vikram,2026-12-02T11:05:00+05:30,Can anyone collect the timesheets?,1
+tpl-0084,synthetic_template,hinglish,not_task,Ananya,2027-01-06T14:10:00+05:30,Bhai maza aa gaya 😂,0
+tpl-0085,synthetic_template,hinglish,not_task,Karan,2026-12-23T10:10:00+05:30,Barish ho rahi hai yaar ☔,0
+tpl-0086,synthetic_template,en,clear_task,Vikram,2026-11-13T10:55:00+05:30,"Hey Neha, could you send the updated UI on Tuesday? High priority.",1
+tpl-0087,synthetic_template,en,ambiguous,Vikram,2026-12-18T10:40:00+05:30,Rahul pls share the meeting notes next week.,1
+tpl-0088,synthetic_template,en,not_task,Priya,2027-01-11T15:05:00+05:30,Thank you so much Neha!,0
+tpl-0089,synthetic_template,hinglish,not_task,Vikram,2026-11-27T10:15:00+05:30,Good morning sabko! 🔥,0
+tpl-0090,synthetic_template,en,not_task,Neha,2026-11-30T11:50:00+05:30,Absolutely 👍,0
+tpl-0091,synthetic_template,en,self_commitment,Kabir,2027-01-12T14:10:00+05:30,On it. I'll write unit tests for the API by tomorrow evening.,1
+tpl-0092,synthetic_template,en,clear_task,Neha,2027-01-08T14:15:00+05:30,Action for Vikram: test the checkout flow after the review,1
+tpl-0093,synthetic_template,en,clear_task,Rahul Sharma,2026-11-23T10:00:00+05:30,"vikram, update the readme by tomorrow.",1
+tpl-0094,synthetic_template,hinglish,looks_like_task,Sana,2026-11-09T10:40:00+05:30,abhi main readme update kar rahi hoon.,0
+tpl-0095,synthetic_template,en,looks_like_task,Tanvi,2026-11-13T10:05:00+05:30,i scheduled the instagram posts this morning.,0
+tpl-0096,synthetic_template,en,looks_like_task,Meera,2027-01-13T14:50:00+05:30,Where is the meeting today?,0
+tpl-0097,synthetic_template,en,ambiguous,Vikram,2027-01-06T13:05:00+05:30,Rahul can you write the release notes this week?,1
+tpl-0098,synthetic_template,hinglish,not_task,Priya,2026-11-17T11:45:00+05:30,"Achha, samajh gaya 🔥",0
+tpl-0099,synthetic_template,en,looks_like_task,Rohan,2026-12-18T12:20:00+05:30,We should finish the landing page design someday. 🙂,0
+tpl-0100,synthetic_template,en,missing_info,Kabir,2026-11-03T09:40:00+05:30,"aarav, i need you to update the api documentation. low priority.",1
+tpl-0101,synthetic_template,en,not_task,Simran,2026-12-24T15:55:00+05:30,"Great, thanks for letting me know",0
+tpl-0102,synthetic_template,en,missing_info,Kabir,2026-12-23T09:15:00+05:30,@Aarav write the release notes.,1
+tpl-0103,synthetic_template,en,clear_task,Kabir,2026-11-19T15:20:00+05:30,Dev can you collect the signed forms from the guide by tomorrow EOD?,1
+tpl-0104,synthetic_template,en,multi_task,Kabir,2027-01-04T12:35:00+05:30,"Aarav, review the open pull request by Tuesday evening, and Dev, prepare the PPT for the review day after tomorrow.",1
+tpl-0105,synthetic_template,hinglish,clear_task,Neha,2026-12-31T10:35:00+05:30,@sana monday tak timesheets collect kar dijiye.,1
+tpl-0106,synthetic_template,en,ambiguous,Vikram,2026-12-10T14:20:00+05:30,"Rahul, review the open pull request by end of the week.",1
+tpl-0107,synthetic_template,en,not_task,Rahul,2027-01-07T15:10:00+05:30,"Rain again, so slow commute. That's so funny 😂",0
+tpl-0108,synthetic_template,en,not_task,Isha,2026-12-21T10:05:00+05:30,Congrats Tanvi on the promotion! Running 10 mins late 🙏,0
+tpl-0109,synthetic_template,en,not_task,Vikram,2026-11-12T13:45:00+05:30,Happy birthday Neha! 🎉,0
+tpl-0110,synthetic_template,en,clear_task,Aarav,2026-12-02T13:15:00+05:30,"Hey Kabir, could you proofread the final report by month end?",1
+tpl-0111,synthetic_template,en,self_commitment,Karan,2026-12-04T14:35:00+05:30,let me book the ad slots.,1
+tpl-0112,synthetic_template,en,ambiguous,Vikram,2026-12-08T15:35:00+05:30,"Rahul, I need you to set up the CI pipeline by tomorrow EOD",1
+tpl-0113,synthetic_template,en,ambiguous,Vikram,2026-12-03T12:40:00+05:30,Rahul: optimize the search query.,1
+tpl-0114,synthetic_template,en,missing_info,Dev,2026-11-19T10:00:00+05:30,Someone needs to migrate the database to the new schema before the release,1
+tpl-0115,synthetic_template,en,clear_task,Aarav,2026-11-16T14:25:00+05:30,Simran - need you to check the staging server by tomorrow EOD,1
+tpl-0116,synthetic_template,en,missing_info,Vikram,2026-11-05T12:30:00+05:30,Neha pls fix the crash on the settings screen. Low priority.,1
+tpl-0117,synthetic_template,en,missing_info,Aarav,2026-12-21T13:45:00+05:30,Somebody please update the API documentation.,1
+tpl-0118,synthetic_template,hinglish,not_task,Sana,2026-11-26T10:00:00+05:30,Happy birthday Rahul! 🎂,0
+tpl-0119,synthetic_template,hinglish,multi_task,Rahul,2027-01-11T11:50:00+05:30,"Amit, pehle Friday tak new logo options design kar dena please, phir release se pehle login bug fix kar dena please.",1
+tpl-0120,synthetic_template,en,not_task,Priya,2027-01-20T11:50:00+05:30,No worries! 🙂,0
+tpl-0121,synthetic_template,en,looks_like_task,Kabir,2027-01-05T15:55:00+05:30,"Finished uploading the code to the portal, all good now.",0
+tpl-0122,synthetic_template,en,not_task,Dev,2026-11-06T12:45:00+05:30,"got it, thanks 👍",0
+tpl-0123,synthetic_template,en,multi_task,Meera,2027-01-13T10:50:00+05:30,"Karan, book the meeting room by tomorrow, and Isha, finish the landing page design by Friday.",1
+tpl-0124,synthetic_template,en,self_commitment,Neha,2027-01-20T11:40:00+05:30,Will share the wireframes tonight. Urgent!,1
+tpl-0125,synthetic_template,hinglish,missing_info,Vikram,2026-12-10T12:30:00+05:30,"Sana yaar, meeting room book kar dijiye.",1
+tpl-0126,synthetic_template,en,not_task,Rahul Kumar,2026-12-24T09:40:00+05:30,Coffee machine is finally fixed 🙌 🔥,0
+tpl-0127,synthetic_template,en,not_task,Vikram,2026-12-28T13:45:00+05:30,Morning folks,0
+tpl-0128,synthetic_template,en,looks_like_task,Ananya,2027-01-21T12:05:00+05:30,don't worry about the chat message delay anymore.,0
+tpl-0129,synthetic_template,en,missing_info,Meera,2026-12-31T12:50:00+05:30,everyone please send your availability for the demo.,1
+tpl-0130,synthetic_template,en,looks_like_task,Simran,2027-01-29T09:40:00+05:30,Dev said he will proofread the final report tomorrow,0
+tpl-0131,synthetic_template,en,not_task,Dev,2026-11-26T11:15:00+05:30,Just got out of the meeting. Reached the office,0
+tpl-0132,synthetic_template,en,clear_task,Rohan,2026-11-03T15:25:00+05:30,"Karan, please share the meeting notes by tomorrow EOD.",1
+tpl-0133,synthetic_template,en,not_task,Meera,2026-12-24T09:15:00+05:30,brb 5 mins 👍,0
+tpl-0134,synthetic_template,en,looks_like_task,Vikram,2026-12-16T15:25:00+05:30,Client call is at 5 today.,0
+tpl-0135,synthetic_template,en,ambiguous,Neha,2026-12-18T10:15:00+05:30,"Please update the README latest by Thursday, Rahul. This is urgent!",1
+tpl-0136,synthetic_template,en,ambiguous,Sana,2027-01-27T12:50:00+05:30,Action for Rahul: update the sprint board.,1
+tpl-0137,synthetic_template,en,missing_info,Meera,2026-11-05T10:40:00+05:30,Action for Isha: share the campaign analytics.,1
+tpl-0138,synthetic_template,en,looks_like_task,Simran,2027-01-18T15:00:00+05:30,It would be nice to complete the payment integration at some point.,0
+tpl-0139,synthetic_template,en,missing_info,Aarav,2026-11-23T14:10:00+05:30,"Team, please share your project updates next Wednesday",1
+tpl-0140,synthetic_template,en,clear_task,Vikram,2026-12-17T11:05:00+05:30,@Neha confirm the client call by Friday EOD.,1
+tpl-0141,synthetic_template,en,not_task,Amit,2026-12-21T14:20:00+05:30,This weather is perfect today ☀️,0
+tpl-0142,synthetic_template,en,not_task,Isha,2027-01-14T14:15:00+05:30,The new chairs are so comfy,0
+tpl-0143,synthetic_template,en,ambiguous,Vikram,2027-01-15T10:05:00+05:30,Rahul: debug the chat message delay by Monday evening.,1
+tpl-0144,synthetic_template,en,multi_task,Vikram,2026-11-16T15:50:00+05:30,"Rahul, fix the crash on the settings screen by end of next week. Priya, review the open pull request.",1
+tpl-0145,synthetic_template,en,clear_task,Priya,2027-01-25T11:10:00+05:30,Action for Neha: fix the broken signup form by 6 pm today.,1
+tpl-0146,synthetic_template,en,multi_task,Meera,2026-11-27T10:55:00+05:30,"Rohan, send the newsletter latest by Monday. Tanvi, update the sprint board before the viva.",1
+tpl-0147,synthetic_template,hinglish,self_commitment,Rahul,2027-01-08T12:00:00+05:30,"Theek hai, main signup form fix kar dunga is hafte ke end tak.",1
+tpl-0148,synthetic_template,hinglish,not_task,Tanvi,2026-11-05T09:55:00+05:30,"Kuch nahi yaar, bas thoda thak gaya hoon. Arre waah, badhai ho Karan!",0
+tpl-0149,synthetic_template,en,looks_like_task,Aarav,2026-12-10T15:40:00+05:30,What's the staging URL?,0
+tpl-0150,synthetic_template,en,self_commitment,Priya,2027-01-22T09:15:00+05:30,"I'll update the sprint board, don't worry.",1
+tpl-0151,synthetic_template,en,not_task,Ananya,2026-11-03T09:35:00+05:30,"Welcome to the team, Kabir! 🎉",0
+tpl-0152,synthetic_template,en,looks_like_task,Rahul Sharma,2026-11-27T11:30:00+05:30,It would be nice to send the invoice to the client at some point,0
+tpl-0153,synthetic_template,en,ambiguous,Vikram,2026-11-06T11:50:00+05:30,"Can you update the README before the week ends, Rahul?",1
+tpl-0154,synthetic_template,en,clear_task,Vikram,2027-01-29T10:40:00+05:30,Rahul Kumar - need you to write unit tests for the API by end of the week.,1
+tpl-0155,synthetic_template,en,ambiguous,Neha,2026-12-11T15:35:00+05:30,Rahul: rotate the API keys latest by Wednesday.,1
+tpl-0156,synthetic_template,en,multi_task,Aarav,2026-12-17T15:55:00+05:30,"simran, check the staging server. also optimize the search query by end of day.",1
+tpl-0157,synthetic_template,en,missing_info,Aarav,2026-12-10T10:20:00+05:30,We need to proofread the final report by Monday EOD.,1
+tpl-0158,synthetic_template,hinglish,multi_task,Vikram,2026-11-27T14:55:00+05:30,"Rahul Mangalvar tak API keys rotate kar do, aur Neha Somvar tak landing page design finish kar dena 🙂",1
+tpl-0159,synthetic_template,en,looks_like_task,Sana,2027-01-26T11:00:00+05:30,Don't worry about the login bug anymore.,0
+tpl-0160,synthetic_template,en,multi_task,Aarav,2026-11-23T13:05:00+05:30,Next steps: Dev - write unit tests for the API; Simran - record the demo video tomorrow morning; Kabir - check the staging server,1
+tpl-0161,synthetic_template,hinglish,not_task,Priya,2027-01-27T11:00:00+05:30,"Kuch nahi yaar, bas thoda thak gaya hoon",0
+tpl-0162,synthetic_template,hinglish,clear_task,Kabir,2026-12-29T13:00:00+05:30,"Aarav, Monday tak staging server check kar dena pls",1
+tpl-0163,synthetic_template,en,clear_task,Priya,2027-01-21T14:45:00+05:30,"Can you update the README by end of day, Vikram?",1
+tpl-0164,synthetic_template,en,missing_info,Dev,2026-12-11T12:25:00+05:30,Reminder to everyone: send your availability for the demo.,1
+tpl-0165,synthetic_template,en,multi_task,Meera,2027-01-06T13:45:00+05:30,next steps: rohan - send the invoice to the client latest by friday; isha - book the meeting room by end of next week; tanvi - share the campaign analytics before the viva.,1
+tpl-0166,synthetic_template,en,clear_task,Priya,2027-01-20T12:45:00+05:30,"Rahul, update the color palette by end of day",1
+tpl-0167,synthetic_template,en,not_task,Amit,2026-12-25T10:40:00+05:30,Good morning team!,0
+tpl-0168,synthetic_template,en,clear_task,Meera,2026-12-17T14:00:00+05:30,Isha - need you to update the color palette before the release.,1
+tpl-0169,synthetic_template,en,clear_task,Amit,2026-12-29T11:55:00+05:30,"Can you test the checkout flow tomorrow, Vikram?",1
+tpl-0170,synthetic_template,en,missing_info,Meera,2026-12-08T15:45:00+05:30,Anyone free to update the client proposal? This is urgent!,1
+tpl-0171,synthetic_template,en,not_task,Amit,2027-01-08T15:10:00+05:30,Viva went well! 😊,0
+tpl-0172,synthetic_template,hinglish,looks_like_task,Meera,2027-01-12T14:25:00+05:30,Standup 11 baje hai,0
+tpl-0173,synthetic_template,en,looks_like_task,Kabir,2026-12-15T12:00:00+05:30,Done with the code to the portal.,0
+tpl-0174,synthetic_template,hinglish,clear_task,Aarav,2026-11-26T11:25:00+05:30,@Ananya Friday tak signup form fix kar dena.,1
+tpl-0175,synthetic_template,en,looks_like_task,Ananya,2026-11-16T11:45:00+05:30,we should collect the survey responses someday.,0
+tpl-0176,synthetic_template,en,multi_task,Ananya,2026-12-28T11:55:00+05:30,"Aarav, complete the payment integration by next Thursday, and Kabir, write the release notes by the end of this week",1
+tpl-0177,synthetic_template,en,missing_info,Isha,2027-01-21T09:05:00+05:30,Everyone please send your availability for the demo by Friday noon.,1
+tpl-0178,synthetic_template,en,self_commitment,Rohan,2027-01-08T10:25:00+05:30,on it. i'll confirm the client call by monday eod.,1
+tpl-0179,synthetic_template,en,clear_task,Tanvi,2026-12-30T12:30:00+05:30,"Hey Meera, could you confirm the client call by 5 pm? Urgent!",1
+tpl-0180,synthetic_template,hinglish,clear_task,Aarav,2027-01-08T10:30:00+05:30,"Ananya, kya tum aaj shaam tak abstract finalize kar sakti ho?",1
+tpl-0181,synthetic_template,en,looks_like_task,Rahul,2026-12-17T14:45:00+05:30,Amit migrated the database to the new schema yesterday.,0
+tpl-0182,synthetic_template,en,clear_task,Meera,2026-11-12T09:55:00+05:30,"karan, i need you to book the ad slots tomorrow.",1
+tpl-0183,synthetic_template,en,ambiguous,Sana,2027-01-22T12:15:00+05:30,Rahul pls add dark mode to the app by 5 pm.,1
+tpl-0184,synthetic_template,en,missing_info,Karan,2026-11-05T12:40:00+05:30,"Team, please complete the training module",1
+tpl-0185,synthetic_template,en,not_task,Sana,2026-11-13T13:15:00+05:30,No worries!,0
+tpl-0186,synthetic_template,en,multi_task,Simran,2026-11-09T15:55:00+05:30,"Aarav, please test the checkout flow and rotate the API keys tonight",1
+tpl-0187,synthetic_template,en,clear_task,Vikram,2027-01-21T14:55:00+05:30,"can you add dark mode to the app before the next standup, priya? 🙏",1
+tpl-0188,synthetic_template,hinglish,clear_task,Isha,2026-12-18T13:00:00+05:30,"Meera, Budhvar tak meeting notes share kar dena please.",1
+tpl-0189,synthetic_template,en,clear_task,Neha,2026-12-17T15:15:00+05:30,Priya - need you to fix the broken signup form this week.,1
+tpl-0190,synthetic_template,en,looks_like_task,Tanvi,2027-01-18T09:55:00+05:30,Any update on the sprint board?,0
+tpl-0191,synthetic_template,en,not_task,Simran,2027-01-18T14:05:00+05:30,"Anyone up for chai? Rain again, so slow commute",0
+tpl-0192,synthetic_template,en,not_task,Aarav,2027-01-13T14:25:00+05:30,Anyone up for chai?,0
+tpl-0193,synthetic_template,en,not_task,Tanvi,2027-01-13T09:35:00+05:30,Okay 👍,0
+tpl-0194,synthetic_template,en,multi_task,Isha,2026-11-11T11:25:00+05:30,"Meera, update the client proposal by Thursday EOD. Tanvi, export the app icons tomorrow.",1
+tpl-0195,synthetic_template,en,clear_task,Tanvi,2027-01-22T09:00:00+05:30,Karan can you book the meeting room by Monday? High priority.,1
+tpl-0196,synthetic_template,en,missing_info,Meera,2027-01-28T14:35:00+05:30,Tanvi: prepare the user flow diagram. Low priority.,1
+tpl-0197,synthetic_template,en,looks_like_task,Ananya,2026-11-16T12:35:00+05:30,It would be nice to upload the code to the portal at some point. 🙂,0
+tpl-0198,synthetic_template,hinglish,clear_task,Meera,2026-12-01T09:35:00+05:30,"Tanvi, kya tum review se pehle landing page design finish kar sakti ho?",1
+tpl-0199,synthetic_template,en,missing_info,Vikram,2026-11-30T14:15:00+05:30,We need to share the wireframes.,1
+tpl-0200,synthetic_template,en,missing_info,Aarav,2027-01-28T11:25:00+05:30,We still need to clean up the unused code. Low priority.,1
+tpl-0201,synthetic_template,en,ambiguous,Neha,2027-01-01T10:20:00+05:30,Action for Rahul: optimize the search query on Thursday.,1
+tpl-0202,synthetic_template,hinglish,not_task,Meera,2027-01-18T13:20:00+05:30,Good morning sabko! Haan ji 🙂,0
+tpl-0203,synthetic_template,hinglish,not_task,Ananya,2026-11-27T11:35:00+05:30,Office pahunch gaya 🔥,0
+tpl-0204,synthetic_template,en,not_task,Tanvi,2027-01-04T12:35:00+05:30,Happy Diwali everyone! 🪔,0
+tpl-0205,synthetic_template,en,multi_task,Vikram,2026-11-27T13:50:00+05:30,"Priya, prepare the user flow diagram next week. Neha, review the open pull request.",1
+tpl-0206,synthetic_template,en,multi_task,Vikram,2026-11-23T11:25:00+05:30,"Amit, optimize the search query tomorrow by noon. Rahul, book the meeting room on Thursday.",1
+tpl-0207,synthetic_template,en,looks_like_task,Amit,2026-11-11T12:30:00+05:30,"Forget the staging server, the client dropped it.",0
+tpl-0208,synthetic_template,en,not_task,Ananya,2026-12-09T10:45:00+05:30,That's so funny 😂,0
+tpl-0209,synthetic_template,en,multi_task,Vikram,2026-12-18T10:50:00+05:30,"Rahul Sharma, fix the login bug after the review. Also check the staging server by next week.",1
+tpl-0210,synthetic_template,en,ambiguous,Vikram,2026-11-16T09:30:00+05:30,"Please test the checkout flow tomorrow, Rahul.",1
+tpl-0211,synthetic_template,en,not_task,Rohan,2026-12-09T14:00:00+05:30,Thank you so much Karan!,0
+tpl-0212,synthetic_template,hinglish,missing_info,Meera,2026-12-09T14:00:00+05:30,Sab log hafte ke end tak task status update kar dena.,1
+tpl-0213,synthetic_template,en,looks_like_task,Meera,2027-01-08T10:50:00+05:30,What's the staging URL? 🔥,0
+tpl-0214,synthetic_template,en,clear_task,Karan,2026-11-11T15:40:00+05:30,meera - need you to update the sprint board after the review. high priority.,1
+tpl-0215,synthetic_template,en,not_task,Priya,2027-01-25T12:20:00+05:30,"lol that meme is gold 😂 np, anytime",0
+tpl-0216,synthetic_template,en,missing_info,Meera,2027-01-12T14:45:00+05:30,Everyone needs to fill the feedback form by end of next week. Low priority,1
+tpl-0217,synthetic_template,en,ambiguous,Sana,2026-11-24T15:35:00+05:30,Action for Rahul: debug the chat message delay tonight,1
+tpl-0218,synthetic_template,en,multi_task,Aarav,2027-01-14T15:00:00+05:30,"dev, rotate the api keys by eod. kabir, prepare the viva presentation tonight.",1
+tpl-0219,synthetic_template,hinglish,looks_like_task,Ananya,2026-12-23T15:35:00+05:30,Kabhi na kabhi API documentation update kar lena chahiye.,0
+tpl-0220,synthetic_template,en,looks_like_task,Priya,2026-11-30T09:35:00+05:30,What's the status of the API keys?,0
+tpl-0221,synthetic_template,en,clear_task,Aarav,2026-12-03T14:20:00+05:30,@Kabir write the release notes by the end of today.,1
+tpl-0222,synthetic_template,en,missing_info,Meera,2026-12-08T15:30:00+05:30,We need to schedule the Instagram posts after the review.,1
+tpl-0223,synthetic_template,hinglish,looks_like_task,Aarav,2026-11-25T13:05:00+05:30,Staging ka URL kya hai?,0
+tpl-0224,synthetic_template,hinglish,not_task,Rahul,2026-11-12T11:55:00+05:30,Hahaha sahi hai,0
+tpl-0225,synthetic_template,en,not_task,Neha,2026-12-01T09:25:00+05:30,"Np, anytime",0
+tpl-0226,synthetic_template,hinglish,self_commitment,Rahul,2027-01-26T10:55:00+05:30,"theek hai, main app icons export kar dunga kal subah tak. 🙏",1
+tpl-0227,synthetic_template,en,multi_task,Amit,2027-01-27T14:10:00+05:30,"Priya, add dark mode to the app before the next standup. Also fix the crash on the settings screen before the client call",1
+tpl-0228,synthetic_template,en,looks_like_task,Vikram,2026-12-02T11:55:00+05:30,I collected the timesheets this morning.,0
+tpl-0229,synthetic_template,hinglish,multi_task,Meera,2026-12-07T15:40:00+05:30,"Karan parso tak timesheets collect kar dena, aur Tanvi Shukravar tak ad slots book kar dena please.",1
+tpl-0230,synthetic_template,en,looks_like_task,Kabir,2026-11-16T15:25:00+05:30,The review got postponed to next week.,0
+tpl-0231,synthetic_template,en,not_task,Rahul,2026-12-09T11:55:00+05:30,nice work neha!,0
+tpl-0232,synthetic_template,en,self_commitment,Kabir,2027-01-15T09:15:00+05:30,Let me write the literature review.,1
+tpl-0233,synthetic_template,en,clear_task,Ananya,2026-11-05T12:40:00+05:30,"Aarav, please clean up the unused code latest by Tuesday.",1
+tpl-0234,synthetic_template,en,clear_task,Vikram,2026-12-30T15:50:00+05:30,Priya pls export the app icons by Friday.,1
+tpl-0235,synthetic_template,en,missing_info,Meera,2027-01-20T12:15:00+05:30,Someone needs to update the color palette after the review. This is urgent!,1
+tpl-0236,synthetic_template,en,clear_task,Simran,2026-11-23T15:20:00+05:30,Action for Aarav: update the API documentation by Tuesday EOD.,1
+tpl-0237,synthetic_template,en,multi_task,Aarav,2026-11-10T10:50:00+05:30,"kabir, please fix the broken signup form and fix the crash on the settings screen by 5 pm.",1
+tpl-0238,synthetic_template,hinglish,clear_task,Karan,2026-11-26T09:25:00+05:30,"Tanvi, meeting notes share kar dena Monday tak",1
+tpl-0239,synthetic_template,en,not_task,Rahul Sharma,2027-01-27T14:10:00+05:30,Pizza for lunch today? Hope everyone had a good weekend,0
+tpl-0240,synthetic_template,en,not_task,Ananya,2026-12-14T11:55:00+05:30,Pro tip: the 4th floor pantry has the best chai,0
+tpl-0241,synthetic_template,hinglish,ambiguous,Vikram,2026-12-29T14:25:00+05:30,"Rahul, please EOD tak search query optimize kar dena.",1
+tpl-0242,synthetic_template,hinglish,looks_like_task,Vikram,2027-01-14T15:20:00+05:30,Rahul ne kal latest build deploy kar diya,0
+tpl-0243,synthetic_template,en,looks_like_task,Neha,2026-12-11T14:45:00+05:30,Vikram said he would send the UI tomorrow.,0
+tpl-0244,synthetic_template,en,ambiguous,Vikram,2026-11-19T13:25:00+05:30,Rahul can you deploy the latest build to staging by Friday evening?,1
+tpl-0245,synthetic_template,hinglish,clear_task,Neha,2027-01-29T10:30:00+05:30,"Vikram, pls is hafte ke end tak login bug fix kar dena 🔥",1
+tpl-0246,synthetic_template,en,missing_info,Meera,2026-12-10T12:10:00+05:30,Anyone free to export the app icons by Monday EOD?,1
+tpl-0247,synthetic_template,en,ambiguous,Vikram,2026-12-15T11:15:00+05:30,"Rahul, please update the README before the demo. 🔥",1
+tpl-0248,synthetic_template,en,clear_task,Aarav,2026-12-25T10:10:00+05:30,"Please collect the survey responses by end of next week, Ananya",1
+tpl-0249,synthetic_template,en,clear_task,Aarav,2027-01-11T09:20:00+05:30,Kabir pls check the staging server by Thursday noon.,1
+tpl-0250,synthetic_template,en,clear_task,Priya,2026-11-18T09:30:00+05:30,Amit pls fix the login bug before the next standup.,1
+tpl-0251,synthetic_template,en,not_task,Ananya,2026-12-01T11:25:00+05:30,Haha same,0
+tpl-0252,synthetic_template,hinglish,self_commitment,Meera,2027-01-07T11:35:00+05:30,Main Shukravar tak updated UI send kar dungi.,1
+tpl-0253,synthetic_template,en,clear_task,Aarav,2027-01-19T14:30:00+05:30,"Hey Ananya, could you finalize the abstract by Monday? This is urgent!",1
+tpl-0254,synthetic_template,en,not_task,Priya,2026-11-13T15:35:00+05:30,Absolutely,0
+tpl-0255,synthetic_template,en,multi_task,Vikram,2026-12-25T15:00:00+05:30,"Neha, check the staging server by the end of today, and Rahul Kumar, migrate the database to the new schema by the end of today",1
+tpl-0256,synthetic_template,en,not_task,Ananya,2026-12-04T09:30:00+05:30,Good morning everyone ☀️,0
+tpl-0257,synthetic_template,hinglish,multi_task,Priya,2027-01-05T11:25:00+05:30,"Vikram, Guruvar tak CI pipeline setup kar dijiye. Neha, Wednesday tak database migrate kar do.",1
+tpl-0258,synthetic_template,en,clear_task,Meera,2026-11-02T12:50:00+05:30,"Can you confirm the client call day after tomorrow, Isha? 🔥",1
+tpl-0259,synthetic_template,en,clear_task,Vikram,2026-11-05T15:20:00+05:30,"hey neha, could you send the invoice to the client by tomorrow evening?",1
+tpl-0260,synthetic_template,en,clear_task,Vikram,2027-01-25T11:50:00+05:30,Rahul - need you to integrate push notifications tomorrow morning.,1
+tpl-0261,synthetic_template,hinglish,looks_like_task,Meera,2026-11-30T13:05:00+05:30,monthly report ka status kya hai?,0
+tpl-0262,synthetic_template,en,looks_like_task,Karan,2026-11-05T15:55:00+05:30,"Just a heads up, I'll be offline after 6.",0
+tpl-0263,synthetic_template,hinglish,missing_info,Vikram,2026-11-26T10:50:00+05:30,Koi API documentation update kar de kal shaam tak. 🔥,1
+tpl-0264,synthetic_template,hinglish,multi_task,Kabir,2027-01-05T11:15:00+05:30,"Simran, Wednesday tak project report submit kar dijiye. Aarav, kal shaam tak push notifications integrate kar dena. 👍",1
+tpl-0265,synthetic_template,hinglish,clear_task,Meera,2026-12-16T13:50:00+05:30,"Tanvi, kal tak client invoice send kar dena please. Bahut urgent hai",1
+tpl-0266,synthetic_template,en,multi_task,Meera,2026-12-09T15:40:00+05:30,"Tanvi, write the campaign copy latest by Monday. Rohan, collect the timesheets by tomorrow evening. 🙏",1
+tpl-0267,synthetic_template,hinglish,self_commitment,Tanvi,2026-12-30T13:20:00+05:30,"Theek hai, main wireframes share kar dungi hafte ke end tak.",1
+tpl-0268,synthetic_template,en,not_task,Ananya,2027-01-28T09:55:00+05:30,Haha nice one Simran,0
+tpl-0269,synthetic_template,en,not_task,Neha,2026-11-06T12:55:00+05:30,Good night everyone,0
+tpl-0270,synthetic_template,en,not_task,Dev,2026-11-30T15:55:00+05:30,Same here 🔥,0
+tpl-0271,synthetic_template,en,missing_info,Rahul Kumar,2026-11-02T15:35:00+05:30,can anyone review the open pull request latest by wednesday? it's urgent.,1
+tpl-0272,synthetic_template,hinglish,looks_like_task,Rahul Kumar,2026-11-25T14:30:00+05:30,Server phir se down hai yaar,0
+tpl-0273,synthetic_template,en,ambiguous,Vikram,2027-01-19T11:25:00+05:30,Action for Rahul: book the meeting room.,1
+tpl-0274,synthetic_template,en,clear_task,Priya,2026-11-23T10:00:00+05:30,"Can you push the latest code to the repo latest by Friday, Rahul? 🙏",1
+tpl-0275,synthetic_template,hinglish,ambiguous,Vikram,2026-12-14T11:40:00+05:30,@Rahul is hafte ke end tak CI pipeline setup kar dena pls,1
+tpl-0276,synthetic_template,en,not_task,Simran,2027-01-27T14:30:00+05:30,👍,0
+tpl-0277,synthetic_template,hinglish,looks_like_task,Dev,2026-12-15T11:25:00+05:30,Abhi main search query optimize kar raha hoon.,0
+tpl-0278,synthetic_template,en,not_task,Kabir,2027-01-11T09:00:00+05:30,Proud of this team 💪,0
+tpl-0279,synthetic_template,en,not_task,Vikram,2026-12-07T11:50:00+05:30,Welcome back Priya!,0
+tpl-0280,synthetic_template,en,not_task,Ananya,2027-01-08T12:35:00+05:30,Reached the office. Back now,0
+tpl-0281,synthetic_template,en,missing_info,Aarav,2027-01-26T11:20:00+05:30,"can you print the project documents, ananya? whenever you get time.",1
+tpl-0282,synthetic_template,en,ambiguous,Vikram,2026-11-25T12:25:00+05:30,Rahul pls add dark mode to the app on Friday.,1
+tpl-0283,synthetic_template,en,ambiguous,Vikram,2026-11-03T15:20:00+05:30,Rahul can you merge the feature branch by the end of this week?,1
+tpl-0284,synthetic_template,en,looks_like_task,Amit,2026-11-19T10:25:00+05:30,Wi-Fi is down on the 3rd floor.,0
+tpl-0285,synthetic_template,hinglish,multi_task,Aarav,2027-01-12T11:05:00+05:30,"Ananya Friday tak seminar hall book kar dena, aur Kabir parso tak code upload kar dijiye.",1
+tpl-0286,synthetic_template,en,not_task,Priya,2026-11-12T09:00:00+05:30,Hope everyone had a good weekend. lol that meme is gold 😂,0
+tpl-0287,synthetic_template,hinglish,clear_task,Rahul Sharma,2026-12-15T14:20:00+05:30,"Neha, kya tum client call se pehle checkout flow test kar sakti ho? Koi jaldi nahi.",1
+tpl-0288,synthetic_template,en,clear_task,Vikram,2026-12-09T11:25:00+05:30,"Hey Amit, could you send the updated UI by tomorrow evening?",1
+tpl-0289,synthetic_template,en,looks_like_task,Vikram,2026-12-25T10:00:00+05:30,We should send the invoice to the client someday.,0
+tpl-0290,synthetic_template,en,not_task,Vikram,2027-01-26T09:20:00+05:30,Fingers crossed 🤞 🙏,0
+tpl-0291,synthetic_template,en,self_commitment,Rahul,2026-11-03T10:20:00+05:30,"I'll take this one, will update the sprint board. Low priority.",1
+tpl-0292,synthetic_template,en,not_task,Priya,2026-11-25T12:50:00+05:30,Traffic is crazy today,0
+tpl-0293,synthetic_template,en,not_task,Tanvi,2026-12-29T15:25:00+05:30,Anyone tried the new cafe nearby?,0
+tpl-0294,synthetic_template,en,looks_like_task,Simran,2026-11-04T12:35:00+05:30,"Finished rotating the API keys, all good now.",0
+tpl-0295,synthetic_template,hinglish,missing_info,Rohan,2026-12-15T09:00:00+05:30,landing page design finish karna hai hafte ke end tak.,1
+tpl-0296,synthetic_template,en,not_task,Rohan,2026-11-04T09:15:00+05:30,"sure, will do 🙂",0
+tpl-0297,synthetic_template,en,looks_like_task,Tanvi,2026-12-28T13:20:00+05:30,We should prepare the user flow diagram someday.,0
+tpl-0298,synthetic_template,en,missing_info,Vikram,2027-01-08T13:20:00+05:30,Need someone to test the checkout flow.,1
+tpl-0299,synthetic_template,en,self_commitment,Rohan,2026-11-13T10:35:00+05:30,I can update the client proposal by the end of today.,1
+tpl-0300,synthetic_template,en,clear_task,Vikram,2027-01-06T14:30:00+05:30,Priya: share the meeting notes latest by Monday.,1
+tpl-0301,synthetic_template,en,missing_info,Priya,2026-11-12T09:00:00+05:30,Need someone to add dark mode to the app by Friday noon.,1
+tpl-0302,synthetic_template,en,not_task,Vikram,2026-11-26T13:25:00+05:30,Haha nice one Amit,0
+tpl-0303,synthetic_template,en,looks_like_task,Amit,2027-01-04T09:05:00+05:30,Vikram mentioned he'll deploy the latest build to staging by Friday,0
+tpl-0304,synthetic_template,en,not_task,Kabir,2026-12-25T15:35:00+05:30,Noted,0
+tpl-0305,synthetic_template,en,not_task,Isha,2026-11-24T13:10:00+05:30,"got it, thanks",0
+tpl-0306,synthetic_template,en,clear_task,Meera,2027-01-07T12:40:00+05:30,Rohan can you design the new logo options on Tuesday?,1
+tpl-0307,synthetic_template,en,ambiguous,Vikram,2026-11-24T10:30:00+05:30,"Rahul, please update the README by Wednesday EOD.",1
+tpl-0308,synthetic_template,en,self_commitment,Rohan,2026-12-04T11:15:00+05:30,"i'll write the campaign copy by end of next week, don't worry.",1
+tpl-0309,synthetic_template,en,not_task,Meera,2027-01-26T10:10:00+05:30,This weather is perfect today ☀️ Who's up for a cricket game on Sunday?,0
+tpl-0310,synthetic_template,en,ambiguous,Vikram,2027-01-07T09:35:00+05:30,Rahul pls fix the login bug,1
+tpl-0311,synthetic_template,en,looks_like_task,Tanvi,2026-11-18T09:55:00+05:30,Any update on the pitch deck slides?,0
+tpl-0312,synthetic_template,en,looks_like_task,Amit,2026-12-29T11:40:00+05:30,What time is the review?,0
+tpl-0313,synthetic_template,en,multi_task,Meera,2027-01-12T13:30:00+05:30,"Tanvi, send the updated UI by tomorrow evening. Isha, share the campaign analytics tomorrow.",1
+tpl-0314,synthetic_template,en,looks_like_task,Priya,2026-11-12T15:00:00+05:30,Who is handling the latest code to the repo?,0
+tpl-0315,synthetic_template,en,clear_task,Vikram,2026-12-15T15:00:00+05:30,Amit pls finish the landing page design by Wednesday.,1
+tpl-0316,synthetic_template,hinglish,looks_like_task,Karan,2026-12-18T12:15:00+05:30,"updated UI send ho gaya, ab sab theek hai",0
+tpl-0317,synthetic_template,en,clear_task,Vikram,2027-01-08T15:25:00+05:30,"Priya, please fix the login bug tonight.",1
+tpl-0318,synthetic_template,en,multi_task,Ananya,2026-12-21T15:00:00+05:30,Kabir can you clean up the unused code tomorrow? Aarav please upload the code to the portal by next week.,1
+tpl-0319,synthetic_template,en,clear_task,Ananya,2026-11-18T12:10:00+05:30,"Aarav, could you pls proofread the final report tomorrow morning?",1
+tpl-0320,synthetic_template,en,looks_like_task,Dev,2026-11-19T13:25:00+05:30,I added dark mode to the app this morning.,0
+tpl-0321,synthetic_template,en,clear_task,Rohan,2026-12-03T14:40:00+05:30,Action for Isha: design the new logo options by 6 pm today,1
+tpl-0322,synthetic_template,en,not_task,Amit,2026-12-08T15:50:00+05:30,Congrats Rahul on the promotion!,0
+tpl-0323,synthetic_template,hinglish,looks_like_task,Dev,2026-12-03T14:10:00+05:30,Kabir ne kal signed forms collect kar diya.,0
+tpl-0324,synthetic_template,en,missing_info,Meera,2027-01-18T15:40:00+05:30,Can someone call the vendor about the banners tomorrow by noon? 🙂,1
+tpl-0325,synthetic_template,hinglish,not_task,Kabir,2027-01-06T10:30:00+05:30,Kya haal hai sab ka? Bohot badhiya kaam kiya Aarav!,0
+tpl-0326,synthetic_template,hinglish,clear_task,Vikram,2026-12-25T13:55:00+05:30,"neha, kya tum mangalvar tak login bug fix kar sakti ho?",1
+tpl-0327,synthetic_template,en,not_task,Kabir,2027-01-21T11:45:00+05:30,"What a day! Rain again, so slow commute",0
+tpl-0328,synthetic_template,en,looks_like_task,Rahul,2026-12-02T15:50:00+05:30,What's the status of the checkout flow?,0
+tpl-0329,synthetic_template,en,clear_task,Aarav,2026-12-03T15:10:00+05:30,"simran, please fix the crash on the settings screen before the week ends.",1
+tpl-0330,synthetic_template,en,not_task,Dev,2026-12-09T14:15:00+05:30,Is anyone watching the match tonight?,0
+tpl-0331,synthetic_template,en,not_task,Aarav,2027-01-06T09:35:00+05:30,"Happy birthday Dev! 🎉 Ha, classic Dev 😄",0
+tpl-0332,synthetic_template,hinglish,looks_like_task,Amit,2026-11-24T11:25:00+05:30,Maine updated UI send kar diya hai.,0
+tpl-0333,synthetic_template,en,not_task,Rahul,2026-11-04T12:30:00+05:30,That's great news!,0
+tpl-0334,synthetic_template,en,looks_like_task,Vikram,2027-01-13T11:40:00+05:30,We should write unit tests for the API someday.,0
+tpl-0335,synthetic_template,hinglish,clear_task,Isha,2026-12-22T14:20:00+05:30,@karan kal shaam tak pitch deck slides create kar dena please.,1
+tpl-0336,synthetic_template,en,looks_like_task,Vikram,2026-12-18T11:00:00+05:30,seminar hall is booked for thursday.,0
+tpl-0337,synthetic_template,en,multi_task,Rahul,2026-12-21T09:50:00+05:30,vikram can you deploy the latest build to staging tomorrow? neha please update the api documentation by the end of this week.,1
+tpl-0338,synthetic_template,en,not_task,Isha,2026-12-28T12:20:00+05:30,I need a coffee badly ☕,0
+tpl-0339,synthetic_template,en,not_task,Rohan,2026-12-07T13:45:00+05:30,See you all on Monday. Thanks everyone for the wishes 🙏,0
+tpl-0340,synthetic_template,en,clear_task,Dev,2026-12-31T11:40:00+05:30,@Simran merge the feature branch by tomorrow evening.,1
+tpl-0341,synthetic_template,en,clear_task,Neha,2027-01-11T10:15:00+05:30,Vikram can you debug the chat message delay tomorrow morning?,1
+tpl-0342,synthetic_template,en,not_task,Vikram,2027-01-20T14:05:00+05:30,There's cake in the pantry 🎂 👍,0
+tpl-0343,synthetic_template,en,clear_task,Isha,2026-12-29T11:55:00+05:30,Karan pls schedule the Instagram posts tomorrow by noon. ASAP.,1
+tpl-0344,synthetic_template,en,not_task,Rahul,2027-01-04T09:55:00+05:30,"Thanks Vikram, got the files!",0
+tpl-0345,synthetic_template,en,looks_like_task,Simran,2026-11-30T13:50:00+05:30,Don't worry about the checkout flow anymore.,0
+tpl-0346,synthetic_template,en,looks_like_task,Amit,2026-12-23T14:10:00+05:30,Release is planned for next Friday.,0
+tpl-0347,synthetic_template,en,clear_task,Vikram,2027-01-14T14:15:00+05:30,"Please send the invoice to the client before the demo, Rahul Kumar.",1
+tpl-0348,synthetic_template,en,clear_task,Vikram,2026-12-18T11:05:00+05:30,Amit can you update the README latest by Wednesday?,1
+tpl-0349,synthetic_template,en,looks_like_task,Isha,2027-01-28T11:20:00+05:30,"client wants the demo to be shorter, fyi.",0
+tpl-0350,synthetic_template,hinglish,clear_task,Vikram,2026-12-16T11:40:00+05:30,"Priya, please hafte ke end tak open pull request review kar dijiye. 🔥",1
+tpl-0351,synthetic_template,hinglish,clear_task,Kabir,2027-01-18T14:30:00+05:30,"Aarav, please Budhvar tak open pull request review kar dena.",1
+tpl-0352,synthetic_template,en,ambiguous,Sana,2026-11-02T10:45:00+05:30,"Rahul, please fix the broken signup form by day after tomorrow",1
+tpl-0353,synthetic_template,hinglish,not_task,Rahul,2026-11-12T15:00:00+05:30,"samose aaye hain, aa jao 😋",0
+tpl-0354,synthetic_template,en,multi_task,Aarav,2026-12-08T10:20:00+05:30,"Kabir, book the seminar hall before the sprint review. Ananya, merge the feature branch by next Friday.",1
+tpl-0355,synthetic_template,en,not_task,Priya,2027-01-01T10:25:00+05:30,"Great presentation today, Amit 🙂",0
+tpl-0356,synthetic_template,en,not_task,Amit,2026-12-01T14:15:00+05:30,Congrats Neha on the promotion!,0
+tpl-0357,synthetic_template,hinglish,clear_task,Rahul,2027-01-06T09:00:00+05:30,"Priya yaar, agle hafte tak payment integration complete kar do. Araam se kar lena, koi jaldi nahi.",1
+tpl-0358,synthetic_template,hinglish,self_commitment,Rahul Sharma,2027-01-13T12:00:00+05:30,Main Friday tak client invoice send kar dunga.,1
+tpl-0359,synthetic_template,en,self_commitment,Vikram,2027-01-20T15:00:00+05:30,I'll migrate the database to the new schema by Thursday evening.,1
+tpl-0360,synthetic_template,hinglish,not_task,Karan,2026-12-24T11:50:00+05:30,"Bhook lag rahi hai yaar. Samose aaye hain, aa jao 😋",0
+tpl-0361,synthetic_template,en,not_task,Priya,2027-01-06T12:10:00+05:30,Hope everyone had a good weekend,0
+tpl-0362,synthetic_template,en,looks_like_task,Meera,2026-12-21T09:05:00+05:30,what's the status of the landing page design?,0
+tpl-0363,synthetic_template,en,looks_like_task,Meera,2026-12-30T13:05:00+05:30,We should update the client proposal someday.,0
+tpl-0364,synthetic_template,en,looks_like_task,Simran,2027-01-04T10:00:00+05:30,I'm checking the staging server right now 🔥,0
+tpl-0365,synthetic_template,en,looks_like_task,Neha,2026-12-02T09:35:00+05:30,"Still updating the sprint board, almost there. 🙂",0
+tpl-0366,synthetic_template,en,looks_like_task,Rohan,2027-01-22T10:40:00+05:30,We should book the meeting room someday 🙂,0
+tpl-0367,synthetic_template,hinglish,self_commitment,Isha,2026-11-30T13:20:00+05:30,User flow diagram prepare main kar dungi.,1
+tpl-0368,synthetic_template,en,looks_like_task,Amit,2026-12-23T13:05:00+05:30,"Finished testing the checkout flow, all good now.",0
+tpl-0369,synthetic_template,en,missing_info,Tanvi,2026-12-04T14:25:00+05:30,Action for Isha: confirm the client call.,1
+tpl-0370,synthetic_template,hinglish,clear_task,Karan,2026-11-26T09:40:00+05:30,"Meera, please Budhvar tak campaign analytics share kar dena please.",1
+tpl-0371,synthetic_template,en,not_task,Ananya,2027-01-26T14:10:00+05:30,Enjoy your vacation Simran!,0
+tpl-0372,synthetic_template,en,not_task,Simran,2027-01-22T14:15:00+05:30,"great presentation today, dev",0
+tpl-0373,synthetic_template,en,not_task,Vikram,2026-11-30T11:00:00+05:30,"Np, anytime. Enjoy your vacation Rahul!",0
+tpl-0374,synthetic_template,hinglish,clear_task,Vikram,2026-12-22T12:55:00+05:30,"Rahul Kumar, kal shaam tak latest build deploy kar dijiye.",1
+tpl-0375,synthetic_template,en,self_commitment,Rahul,2026-11-11T11:55:00+05:30,I'll fix the login bug before the demo.,1
+tpl-0376,synthetic_template,en,missing_info,Priya,2026-11-11T15:00:00+05:30,Can someone confirm the client call?,1
+tpl-0377,synthetic_template,hinglish,not_task,Vikram,2026-11-20T13:40:00+05:30,happy birthday neha! 🎂,0
+tpl-0378,synthetic_template,en,ambiguous,Vikram,2027-01-01T11:00:00+05:30,"Rahul, please debug the chat message delay by Thursday evening. 🙏",1
+tpl-0379,synthetic_template,en,not_task,Simran,2027-01-14T12:50:00+05:30,Welcome back Kabir! Viva went well! 😊,0
+tpl-0380,synthetic_template,en,looks_like_task,Aarav,2027-01-04T11:40:00+05:30,Dev said he will prepare the PPT for the review tomorrow 👍,0
+tpl-0381,synthetic_template,en,ambiguous,Sana,2026-11-19T15:55:00+05:30,"Rahul, I need you to rotate the API keys.",1
+tpl-0382,synthetic_template,en,clear_task,Aarav,2027-01-19T11:35:00+05:30,"hey simran, could you clean up the unused code tomorrow by noon?",1
+tpl-0383,synthetic_template,en,ambiguous,Sana,2026-11-26T10:15:00+05:30,Rahul: optimize the search query before the next standup.,1
+tpl-0384,synthetic_template,en,clear_task,Vikram,2027-01-12T09:15:00+05:30,"Rahul, I need you to set up the CI pipeline by Monday evening.",1
+tpl-0385,synthetic_template,en,not_task,Neha,2026-12-28T12:45:00+05:30,What a game last night!,0
+tpl-0386,synthetic_template,hinglish,not_task,Tanvi,2026-12-08T12:50:00+05:30,Happy birthday Karan! 🎂,0
+tpl-0387,synthetic_template,hinglish,clear_task,Ananya,2026-12-14T13:00:00+05:30,"Kabir, Tuesday tak latest build deploy kar dena please.",1
+tpl-0388,synthetic_template,en,self_commitment,Vikram,2026-12-07T13:20:00+05:30,On it. I'll merge the feature branch by tomorrow EOD.,1
+tpl-0389,synthetic_template,hinglish,ambiguous,Sana,2027-01-05T14:40:00+05:30,@rahul aaj tak client invoice send kar dena please.,1
+tpl-0390,synthetic_template,en,looks_like_task,Kabir,2026-12-07T09:15:00+05:30,Ananya already checked the staging server.,0
+tpl-0391,synthetic_template,en,clear_task,Meera,2026-12-23T14:15:00+05:30,"Isha, could you please confirm the client call by tomorrow? This is urgent!",1
+tpl-0392,synthetic_template,en,not_task,Kabir,2026-11-17T09:45:00+05:30,ok,0
+tpl-0393,synthetic_template,en,clear_task,Vikram,2026-11-05T12:55:00+05:30,Action for Neha: migrate the database to the new schema by Friday.,1
+tpl-0394,synthetic_template,en,looks_like_task,Priya,2026-12-29T09:25:00+05:30,I'm merging the feature branch right now.,0
+tpl-0395,synthetic_template,en,clear_task,Simran,2026-11-04T11:00:00+05:30,"please rotate the api keys by tomorrow eod, aarav.",1
+tpl-0396,synthetic_template,en,looks_like_task,Kabir,2027-01-05T11:40:00+05:30,I finalized the abstract this morning.,0
+tpl-0397,synthetic_template,en,multi_task,Rahul,2026-11-25T13:15:00+05:30,"Vikram, book the meeting room by Tuesday noon, and Priya, integrate push notifications before the sprint review.",1
+tpl-0398,synthetic_template,en,looks_like_task,Rahul,2026-11-10T11:05:00+05:30,Vikram mentioned he'll clean up the unused code by Friday.,0
+tpl-0399,synthetic_template,en,not_task,Simran,2026-12-16T10:35:00+05:30,Morning folks. This weather is perfect today ☀️,0
+tpl-0400,synthetic_template,en,multi_task,Vikram,2026-12-30T12:05:00+05:30,"Rahul, add dark mode to the app by tomorrow, and Amit, confirm the client call.",1
+tpl-0401,synthetic_template,en,clear_task,Vikram,2026-11-23T14:05:00+05:30,Action for Rahul: push the latest code to the repo next Thursday.,1
+tpl-0402,synthetic_template,en,missing_info,Vikram,2026-12-29T11:40:00+05:30,Need someone to confirm the client call by 6 pm today,1
+tpl-0403,synthetic_template,en,clear_task,Rahul Sharma,2026-12-30T09:40:00+05:30,"Can you share the meeting notes latest by Monday, Vikram?",1
+tpl-0404,synthetic_template,en,not_task,Rohan,2027-01-19T13:10:00+05:30,Morning folks 🔥,0
+tpl-0405,synthetic_template,en,clear_task,Amit,2026-12-09T12:05:00+05:30,"Can you integrate push notifications next week, Priya? ASAP.",1
+tpl-0406,synthetic_template,en,clear_task,Vikram,2026-11-12T11:05:00+05:30,@Neha fix the crash on the settings screen next Thursday. 🔥,1
+tpl-0407,synthetic_template,en,ambiguous,Vikram,2026-11-25T14:15:00+05:30,"Rahul, fix the broken signup form. Low priority",1
+tpl-0408,synthetic_template,en,looks_like_task,Rohan,2026-11-27T11:40:00+05:30,Isha said she would send the UI tomorrow.,0
+tpl-0409,synthetic_template,en,not_task,Rahul,2026-12-14T10:25:00+05:30,my internet is so slow today,0
+tpl-0410,synthetic_template,en,clear_task,Vikram,2026-11-23T12:30:00+05:30,"Hey Priya, could you optimize the search query by the end of this week?",1
+tpl-0411,synthetic_template,en,missing_info,Meera,2027-01-18T14:35:00+05:30,Can anyone book the ad slots before the client call? No rush,1
+tpl-0412,synthetic_template,en,multi_task,Vikram,2026-11-19T14:00:00+05:30,action items: neha - update the api documentation tomorrow by noon; priya - share the meeting notes by the end of this week; amit - merge the feature branch by next week.,1
+tpl-0413,synthetic_template,en,clear_task,Priya,2026-11-02T11:35:00+05:30,@Vikram update the API documentation by Thursday noon.,1
+tpl-0414,synthetic_template,en,clear_task,Vikram,2027-01-06T12:35:00+05:30,"Please update the color palette by tomorrow evening, Rahul.",1
+tpl-0415,synthetic_template,en,clear_task,Vikram,2026-12-23T15:40:00+05:30,Rahul pls confirm the client call this week.,1
+tpl-0416,synthetic_template,en,looks_like_task,Tanvi,2026-11-18T15:45:00+05:30,Don't worry about the meeting notes anymore,0
+tpl-0417,synthetic_template,en,missing_info,Meera,2026-11-18T10:55:00+05:30,"Tanvi, could you please schedule the Instagram posts? No rush.",1
+tpl-0418,synthetic_template,en,ambiguous,Vikram,2027-01-07T14:20:00+05:30,Action for Rahul: check the staging server by tomorrow.,1
+tpl-0419,synthetic_template,en,self_commitment,Simran,2026-11-06T13:15:00+05:30,i'll submit the project report latest by thursday. 🙏,1
+tpl-0420,synthetic_template,hinglish,missing_info,Isha,2027-01-01T15:45:00+05:30,@Meera updated UI send kar dena,1
+tpl-0421,synthetic_template,en,self_commitment,Rohan,2026-12-03T12:35:00+05:30,On it. I'll collect the timesheets.,1
+tpl-0422,synthetic_template,en,clear_task,Aarav,2026-12-30T13:50:00+05:30,Simran pls set up the CI pipeline by Thursday EOD.,1
+tpl-0423,synthetic_template,en,clear_task,Karan,2026-12-24T13:50:00+05:30,Rohan pls schedule the Instagram posts by Monday,1
+tpl-0424,synthetic_template,en,looks_like_task,Simran,2027-01-12T13:05:00+05:30,Who is handling the demo video?,0
+tpl-0425,synthetic_template,en,multi_task,Vikram,2026-12-04T15:00:00+05:30,"Priya, complete the payment integration by next Thursday. Rahul, update the README.",1
+tpl-0426,synthetic_template,hinglish,ambiguous,Vikram,2026-11-02T15:10:00+05:30,"rahul, pls kal shaam tak settings screen ka crash fix kar dena. 👍",1
+tpl-0427,synthetic_template,en,multi_task,Meera,2027-01-12T13:30:00+05:30,"Tanvi, update the color palette before the week ends. Also design the new logo options by the end of today.",1
+tpl-0428,synthetic_template,en,looks_like_task,Isha,2026-12-31T09:20:00+05:30,Demo is on Friday. 🔥,0
+tpl-0429,synthetic_template,en,clear_task,Aarav,2026-11-02T12:10:00+05:30,"can you print the project documents by next week, ananya?",1
+tpl-0430,synthetic_template,hinglish,not_task,Ananya,2027-01-05T15:10:00+05:30,Bhai maza aa gaya 😂 🙂,0
+tpl-0431,synthetic_template,en,not_task,Simran,2027-01-26T09:15:00+05:30,Absolutely 🙂,0
+tpl-0432,synthetic_template,hinglish,multi_task,Meera,2026-11-10T11:15:00+05:30,"Rohan parso tak vendor call kar dijiye, aur Tanvi release se pehle color palette update kar dena.",1
+tpl-0433,synthetic_template,hinglish,clear_task,Vikram,2027-01-12T15:05:00+05:30,"Neha, app icons export kar dena is hafte ke end tak.",1
+tpl-0434,synthetic_template,en,missing_info,Vikram,2026-11-13T14:15:00+05:30,@Amit deploy the latest build to staging.,1
+tpl-0435,synthetic_template,hinglish,multi_task,Tanvi,2027-01-13T11:50:00+05:30,"rohan, monday tak meeting notes share kar dena. karan, shukravar tak campaign analytics share kar dijiye.",1
+tpl-0436,synthetic_template,hinglish,missing_info,Meera,2027-01-04T10:20:00+05:30,@Isha new logo options design kar dena please.,1
+tpl-0437,synthetic_template,en,multi_task,Meera,2027-01-04T09:00:00+05:30,"Tanvi, book the ad slots by the end of this week. Also confirm the client call by Tuesday EOD.",1
+tpl-0438,synthetic_template,en,clear_task,Neha,2026-12-15T15:30:00+05:30,vikram can you fix the login bug tomorrow morning? high priority.,1
+tpl-0439,synthetic_template,en,missing_info,Vikram,2026-11-10T13:00:00+05:30,Let's integrate push notifications before the next standup.,1
+tpl-0440,synthetic_template,en,self_commitment,Dev,2026-12-10T12:15:00+05:30,"ok, i'll prepare the ppt for the review next tuesday.",1
+tpl-0441,synthetic_template,en,clear_task,Neha,2026-11-12T14:30:00+05:30,"please write the release notes by end of day, priya.",1
+tpl-0442,synthetic_template,en,looks_like_task,Rohan,2026-12-25T13:35:00+05:30,Meera exported the app icons yesterday. 🙏,0
+tpl-0443,synthetic_template,en,multi_task,Tanvi,2027-01-21T15:10:00+05:30,"Meera, confirm the client call by Wednesday evening, and Karan, share the wireframes by end of the week.",1
+tpl-0444,synthetic_template,en,multi_task,Dev,2026-12-18T12:25:00+05:30,"Simran, push the latest code to the repo by end of the week. Also review the open pull request before the week ends.",1
+tpl-0445,synthetic_template,en,self_commitment,Vikram,2027-01-08T14:35:00+05:30,On it. I'll migrate the database to the new schema by Wednesday.,1
+tpl-0446,synthetic_template,en,ambiguous,Neha,2026-12-11T11:40:00+05:30,"Rahul, I need you to add dark mode to the app. 👍",1
+tpl-0447,synthetic_template,en,looks_like_task,Kabir,2026-11-26T15:40:00+05:30,Ananya already printed the project documents,0
+tpl-0448,synthetic_template,en,not_task,Vikram,2026-11-12T10:50:00+05:30,Coffee machine is finally fixed 🙌 Lol,0
+tpl-0449,synthetic_template,en,clear_task,Neha,2026-12-21T12:40:00+05:30,@Vikram update the sprint board before the sprint review.,1
+tpl-0450,synthetic_template,en,clear_task,Aarav,2026-11-12T13:00:00+05:30,"Hey Simran, could you update the README by tomorrow?",1
+tpl-0451,synthetic_template,hinglish,clear_task,Neha,2027-01-26T09:40:00+05:30,"Priya yaar, Friday tak chat message delay debug kar dena pls.",1
+tpl-0452,synthetic_template,hinglish,ambiguous,Vikram,2026-12-04T14:05:00+05:30,"Rahul yaar, release se pehle payment integration complete kar dijiye.",1
+tpl-0453,synthetic_template,en,clear_task,Vikram,2026-12-18T13:35:00+05:30,Action for Rahul: write the release notes latest by Monday.,1
+tpl-0454,synthetic_template,en,missing_info,Meera,2027-01-25T13:15:00+05:30,Everyone please update your task status on the board next Monday.,1
+tpl-0455,synthetic_template,en,not_task,Rahul Kumar,2026-11-25T10:45:00+05:30,Same here,0
+tpl-0456,synthetic_template,hinglish,ambiguous,Vikram,2027-01-01T09:05:00+05:30,"Rahul, meeting notes share kar dena is hafte ke end tak.",1
+tpl-0457,synthetic_template,en,not_task,Simran,2026-12-04T13:10:00+05:30,Back now,0
+tpl-0458,synthetic_template,hinglish,clear_task,Tanvi,2026-11-27T10:30:00+05:30,"Rohan, meeting notes share kar dena Wednesday tak.",1
+tpl-0459,synthetic_template,hinglish,not_task,Kabir,2027-01-27T11:50:00+05:30,Kya haal hai sab ka?,0
+tpl-0460,synthetic_template,hinglish,multi_task,Vikram,2026-11-17T13:00:00+05:30,"Neha, Thursday tak latest code push kar dena please. Rahul Sharma, kal tak API documentation update kar dijiye",1
+tpl-0461,synthetic_template,en,clear_task,Tanvi,2027-01-15T15:15:00+05:30,Rohan - need you to create the pitch deck slides next Monday.,1
+tpl-0462,synthetic_template,en,not_task,Vikram,2026-11-13T14:15:00+05:30,thanks for the quick help!,0
+tpl-0463,synthetic_template,hinglish,looks_like_task,Rahul Sharma,2026-12-30T12:15:00+05:30,"checkout flow test ho gaya, ab sab theek hai.",0
+tpl-0464,synthetic_template,en,multi_task,Vikram,2026-12-25T12:30:00+05:30,"Amit, share the meeting notes by month end, and Priya, deploy the latest build to staging by end of next week",1
+tpl-0465,synthetic_template,en,clear_task,Ananya,2027-01-05T11:55:00+05:30,"Simran, fix the login bug by Wednesday evening.",1
+tpl-0466,synthetic_template,en,looks_like_task,Meera,2027-01-08T11:50:00+05:30,i'm booking the meeting room right now.,0
+tpl-0467,synthetic_template,en,not_task,Kabir,2027-01-14T14:50:00+05:30,Reached the office,0
+tpl-0468,synthetic_template,hinglish,multi_task,Amit,2026-12-30T11:05:00+05:30,"rahul, kal shaam tak settings screen ka crash fix kar dijiye. neha, aaj hi updated ui send kar dena please. 🙂",1
+tpl-0469,synthetic_template,en,clear_task,Neha,2026-11-10T12:20:00+05:30,"pls set up the CI pipeline by end of the month, Rahul. Urgent!",1
+tpl-0470,synthetic_template,en,looks_like_task,Isha,2026-12-21T13:55:00+05:30,Rohan said he will prepare the user flow diagram tomorrow.,0
+tpl-0471,synthetic_template,en,multi_task,Meera,2026-11-09T13:55:00+05:30,Rohan can you schedule the Instagram posts? Isha please confirm the client call day after tomorrow 🙂,1
+tpl-0472,synthetic_template,hinglish,not_task,Karan,2027-01-29T09:40:00+05:30,"Aaj Friday hai, mood set hai 😄 Office pahunch gaya",0
+tpl-0473,synthetic_template,en,looks_like_task,Rahul Sharma,2026-11-03T14:15:00+05:30,I'm integrating push notifications right now,0
+tpl-0474,synthetic_template,hinglish,ambiguous,Vikram,2026-12-14T09:40:00+05:30,"Rahul yaar, kal tak latest code push kar do 🙂",1
+tpl-0475,synthetic_template,en,multi_task,Meera,2027-01-08T09:30:00+05:30,"Karan, share the wireframes by Wednesday evening. Also update the color palette once the API is ready",1
+tpl-0476,synthetic_template,en,not_task,Rahul,2026-12-01T12:20:00+05:30,Yes!,0
+tpl-0477,synthetic_template,en,not_task,Priya,2027-01-14T09:05:00+05:30,Welcome back Vikram!,0
+tpl-0478,synthetic_template,en,looks_like_task,Dev,2026-12-22T13:30:00+05:30,We should write the literature review someday,0
+tpl-0479,synthetic_template,hinglish,not_task,Kabir,2026-12-08T11:05:00+05:30,Chai peene chalein?,0
+tpl-0480,synthetic_template,hinglish,multi_task,Rahul,2027-01-12T12:35:00+05:30,"Amit, kal subah tak dark mode add kar dijiye. Neha, Budhvar tak app icons export kar do.",1
