@@ -172,7 +172,7 @@ router.get(
                   });
                 } else if (!isGroup) {
                   // Direct message: match the other user's display name
-                  const other = (c.participants as any[])?.find(
+                  const other = (c.participants as unknown as any[])?.find(
                     (p) => p._id.toString() !== currentUserId.toString()
                   );
                   if (other && new RegExp(safeQuery, "i").test(other.displayName)) {

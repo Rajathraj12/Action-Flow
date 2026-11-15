@@ -150,6 +150,17 @@ export async function sendMessageService(params: SendMessageParams): Promise<For
     }
   }
 
+  // Get sender details if not supplied
+  let senderName = params.senderDisplayName;
+  let senderInitials = params.senderInitials;
+  if (!senderName || !senderInitials) {
+    const senderUser = await User.findById(senderId).select("displayName initials");
+    if (senderUser) {
+      senderName = senderName || senderUser.displayName;
+      senderInitials = senderInitials || senderUser.initials;
+    }
+  }
+
   // Run real-time AI task detection
   let aiTaskDetection: any = undefined;
   try {
@@ -226,17 +237,6 @@ export async function sendMessageService(params: SendMessageParams): Promise<For
     minute: "2-digit",
   });
 
-  // Get sender details if not supplied
-  let senderName = params.senderDisplayName;
-  let senderInitials = params.senderInitials;
-  if (!senderName || !senderInitials) {
-    const senderUser = await User.findById(senderId).select("displayName initials");
-    if (senderUser) {
-      senderName = senderName || senderUser.displayName;
-      senderInitials = senderInitials || senderUser.initials;
-    }
-  }
-
   const formattedPayload: FormattedMessagePayload = {
     id: savedMessage._id.toString(),
     conversationId: conversation._id.toString(),
@@ -277,8 +277,10 @@ export async function sendMessageService(params: SendMessageParams): Promise<For
       io.to(room).emit("conversation:updated", conversationUpdatePayload);
       io.to(room).emit("conversation_updated", conversationUpdatePayload);
 
-      // Notify each active recipient's personal room for conversation list updates
+      // Notify each active recipient's personal room for conversation list updates and incoming messages
       for (const recipientId of recipientIds) {
+        io.to(`user:${recipientId}`).emit("message:new", formattedPayload);
+        io.to(`user:${recipientId}`).emit("message_received", formattedPayload);
         io.to(`user:${recipientId}`).emit("conversation:updated", conversationUpdatePayload);
         io.to(`user:${recipientId}`).emit("conversation_updated", conversationUpdatePayload);
       }

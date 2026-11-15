@@ -56,6 +56,8 @@ import { DeleteMessageModal } from "@/components/chat/DeleteMessageModal";
 import { GroupInfoModal } from "@/components/chat/GroupInfoModal";
 import { CreateTaskModal } from "@/components/tasks/CreateTaskModal";
 import { AiTaskReviewModal } from "@/components/tasks/AiTaskReviewModal";
+import { DesktopDownloadPill } from "@/components/desktop/DesktopDownloadPill";
+import { notifyDesktop, updateDesktopBadge } from "@/lib/notifications";
 import type { AiDetectionResponse } from "@/lib/api";
 
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "🔥", "🎉", "🚀", "🙌", "✨", "😊", "👀", "💯", "👏"];
@@ -142,6 +144,8 @@ function ChatApp() {
   const search = Route.useSearch();
   const navigate = useNavigate();
   const [conversations, setConversations] = useState<BackendConversation[]>([]);
+  const conversationsRef = useRef<BackendConversation[]>(conversations);
+  conversationsRef.current = conversations;
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<BackendMessage[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
@@ -326,6 +330,29 @@ function ChatApp() {
 
         return [updated, ...prev.filter((c) => c.id !== newMsg.conversationId)];
       });
+
+      // Dispatch native OS notification for incoming messages from teammates
+      const isMe =
+        (user?._id && String(newMsg.senderId) === String(user._id)) ||
+        (user?.firebaseUid && String(newMsg.senderId) === String(user.firebaseUid)) ||
+        (user?._id && newMsg.sender?.id && String(newMsg.sender.id) === String(user._id));
+
+      if (!isMe) {
+        const currentConv = conversationsRef.current.find(
+          (c) => c.id === newMsg.conversationId
+        );
+        const senderName = newMsg.senderName || "New message";
+        const title = currentConv?.isGroup
+          ? `${senderName} (${currentConv.name || "Group"})`
+          : senderName;
+        const body = newMsg.text || "Sent a message";
+
+        notifyDesktop({
+          title,
+          body,
+          conversationId: newMsg.conversationId,
+        });
+      }
     };
 
     const handleMessageEdited = (data: {
@@ -491,6 +518,12 @@ function ChatApp() {
       socket.off("user_status_changed", handleUserStatusChanged);
     };
   }, [token, activeId, user?._id]);
+
+  // Sync desktop OS dock/taskbar unread badge count
+  useEffect(() => {
+    const totalUnread = conversations.reduce((acc, c) => acc + (c.unread || 0), 0);
+    updateDesktopBadge(totalUnread);
+  }, [conversations]);
 
   // 3. Load Messages when Active Conversation changes
   useEffect(() => {
@@ -989,6 +1022,9 @@ function ChatApp() {
             })
           )}
         </div>
+
+        {/* WhatsApp-Style Desktop App Download Banner */}
+        <DesktopDownloadPill />
       </aside>
 
       {/* Main Chat Thread Area */}

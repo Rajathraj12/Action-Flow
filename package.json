@@ -1,0 +1,97 @@
+{
+  "name": "actionflow-desktop",
+  "version": "1.0.0",
+  "description": "ActionFlow Real-Time Messenger & AI Task Manager",
+  "main": "electron/main.js",
+  "scripts": {
+    "frontend:dev": "npm --prefix Frontend run dev",
+    "frontend:build": "cross-env NITRO_PRESET=node-server npm --prefix Frontend run build && mkdir -p Frontend/.output/server/node_modules && cp -r Frontend/node_modules/tslib Frontend/.output/server/node_modules/",
+    "backend:dev": "npm --prefix Backend run dev",
+    "ai:dev": "cd AI-Service && ./.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000",
+    "electron:start": "electron .",
+    "electron:dev": "concurrently -k -n \"FE,EL\" -c \"cyan,magenta\" \"npm run frontend:dev\" \"wait-on http://localhost:8080 && electron .\"",
+    "electron:pack": "npm run frontend:build && electron-builder --dir",
+    "dist:mac": "npm run frontend:build && electron-builder --mac",
+    "dist:win": "npm run frontend:build && electron-builder --win",
+    "dist:linux": "npm run frontend:build && electron-builder --linux",
+    "dist:all": "npm run frontend:build && electron-builder -mwl"
+  },
+  "build": {
+    "appId": "com.actionflow.desktop",
+    "productName": "ActionFlow",
+    "directories": {
+      "output": "release"
+    },
+    "afterPack": "electron/afterPack.js",
+    "files": [
+      "electron/**/*",
+      "Frontend/.output/**/*",
+      "node_modules/tslib/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "electron/assets/icon.png"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "electron/assets/icon.png"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "electron/assets/icon.png",
+      "category": "Office"
+    }
+  },
+  "dependencies": {
+    "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^34.2.0",
+    "electron-builder": "^25.1.8",
+    "wait-on": "^8.0.2"
+  }
+}

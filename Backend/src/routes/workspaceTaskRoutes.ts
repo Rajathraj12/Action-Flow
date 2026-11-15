@@ -507,7 +507,7 @@ router.get(
       }
 
       // Explicit overdue filter
-      if (isOverdue === "true" || isOverdue === true) {
+      if (String(isOverdue) === "true") {
         queryFilter.dueDate = queryFilter.dueDate || {};
         queryFilter.dueDate.$lt = new Date();
         if (!queryFilter.status) {
@@ -687,7 +687,7 @@ router.get(
   async (req: WorkspaceAuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const workspaceId = req.workspace!._id;
-      const { taskId } = req.params;
+      const taskId = String(req.params.taskId || "");
 
       if (!mongoose.Types.ObjectId.isValid(taskId)) {
         res.status(400).json({ error: "Invalid task ID format" });
@@ -723,7 +723,7 @@ router.patch(
     try {
       const workspaceId = req.workspace!._id;
       const currentUserId = req.user!._id;
-      const { taskId } = req.params;
+      const taskId = String(req.params.taskId || "");
       const { title, description, priority, dueDate } = req.body;
 
       if (!mongoose.Types.ObjectId.isValid(taskId)) {
@@ -820,7 +820,7 @@ router.patch(
     try {
       const workspaceId = req.workspace!._id;
       const currentUserId = req.user!._id;
-      const { taskId } = req.params;
+      const taskId = String(req.params.taskId || "");
       const { status } = req.body;
 
       if (!mongoose.Types.ObjectId.isValid(taskId)) {
@@ -958,7 +958,7 @@ router.patch(
     try {
       const workspaceId = req.workspace!._id;
       const currentUserId = req.user!._id;
-      const { taskId } = req.params;
+      const taskId = String(req.params.taskId || "");
       const { assigneeId } = req.body;
 
       if (!mongoose.Types.ObjectId.isValid(taskId) || !assigneeId || !mongoose.Types.ObjectId.isValid(assigneeId)) {
@@ -1048,7 +1048,7 @@ router.delete(
     try {
       const workspaceId = req.workspace!._id;
       const currentUserId = req.user!._id;
-      const { taskId } = req.params;
+      const taskId = String(req.params.taskId || "");
 
       if (!mongoose.Types.ObjectId.isValid(taskId)) {
         res.status(400).json({ error: "Invalid task ID format" });

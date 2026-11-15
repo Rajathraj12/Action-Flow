@@ -16,6 +16,7 @@ import workspaceTaskRoutes from "./routes/workspaceTaskRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import searchRoutes from "./routes/searchRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import downloadRoutes from "./routes/downloadRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { startReminderScheduler } from "./services/reminderScheduler.js";
 import { seedDemoTeam } from "./services/seedDemoTeam.js";
@@ -55,6 +56,7 @@ app.use("/api/conversations", conversationRoutes);
 app.use("/api/conversations", messageRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/workspaces", aiRoutes);
+app.use("/api/downloads", downloadRoutes);
 
 // Global Error Handler
 app.use(errorHandler);

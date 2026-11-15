@@ -73,6 +73,7 @@ async def verify_internal_api_key(x_api_key: str = Header(None)):
     return True
 
 
+@app.get("/", response_model=HealthResponse)
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
     mgr = ModelManager.get_instance()

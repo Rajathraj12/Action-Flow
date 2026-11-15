@@ -29,6 +29,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { getSocket } from "@/lib/socket";
 import { cn } from "@/lib/utils";
+import { notifyDesktop } from "@/lib/notifications";
 
 function formatRelativeTime(dateString: string): string {
   try {
@@ -152,7 +153,13 @@ export function NotificationCenter({ isSidebarExpanded = false }: { isSidebarExp
       setNotifications((prev) => [notification, ...prev]);
       setUnreadCount((prev) => prev + 1);
 
-      // Playful toast alert
+      // Trigger OS native notification (macOS Notification Center / Windows Action Center)
+      notifyDesktop({
+        title: notification.title || "ActionFlow Notification",
+        body: notification.description || "",
+      });
+
+      // In-app toast alert
       toast.info(notification.title, {
         description: notification.description,
         action: notification.navigationUrl

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { api, type NotificationPreferences } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { notifyDesktop } from "@/lib/notifications";
 
 export function NotificationPreferencesTab() {
   const [prefs, setPrefs] = useState<NotificationPreferences>({
@@ -101,16 +102,32 @@ export function NotificationPreferencesTab() {
   return (
     <div className="space-y-6 pb-8">
       {/* Overview Card */}
-      <div className="p-4 mx-6 mt-4 rounded-2xl bg-primary/10 border border-primary/20 flex items-start gap-3">
-        <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/20 text-primary shrink-0">
-          <Bell className="h-5 w-5" />
+      <div className="p-4 mx-6 mt-4 rounded-2xl bg-primary/10 border border-primary/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/20 text-primary shrink-0">
+            <Bell className="h-5 w-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-sm font-bold text-foreground">Notification Preferences</h4>
+            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+              Configure how and when you receive real-time notifications, task reminders, and direct message alerts in ActionFlow.
+            </p>
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-bold text-foreground">Notification Preferences</h4>
-          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-            Configure how and when you receive real-time notifications, task reminders, and direct message alerts in ActionFlow.
-          </p>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            notifyDesktop({
+              title: "ActionFlow Desktop Alert",
+              body: "This is a test notification from ActionFlow! Notifications are functioning properly.",
+            });
+            toast.success("Dispatched test notification to your system!");
+          }}
+          className="shrink-0 px-3.5 py-2 text-xs font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition shadow-sm flex items-center gap-1.5"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          <span>Test OS Notification</span>
+        </button>
       </div>
 
       {/* Tasks & Workflow Section */}

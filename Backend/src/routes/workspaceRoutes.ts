@@ -265,7 +265,7 @@ router.patch(
   requirePermission(WorkspacePermission.ROLES_UPDATE),
   async (req: WorkspaceAuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const { memberId } = req.params;
+      const memberId = String(req.params.memberId || "");
       const { role } = req.body as { role: WorkspaceRole };
 
       const VALID_ROLES: WorkspaceRole[] = ["OWNER", "ADMIN", "MANAGER", "MEMBER"];
@@ -368,7 +368,7 @@ router.delete(
   requirePermission(WorkspacePermission.MEMBERS_VIEW),
   async (req: WorkspaceAuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const { memberId } = req.params;
+      const memberId = String(req.params.memberId || "");
 
       if (!Types.ObjectId.isValid(memberId)) {
         res.status(400).json({ error: "Invalid memberId" });

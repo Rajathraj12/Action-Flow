@@ -80,7 +80,7 @@ export function SidebarNav() {
         <div
           className={cn(
             "flex h-16 w-full items-center border-b border-rail-foreground/10 shrink-0",
-            isCollapsed ? "justify-center px-0" : "justify-between px-3.5"
+            isCollapsed ? "justify-center px-0" : "justify-between px-3"
           )}
         >
           {isCollapsed ? (
@@ -92,21 +92,21 @@ export function SidebarNav() {
               <button
                 type="button"
                 onClick={toggleSidebar}
-                className="group relative grid h-11 w-11 place-items-center rounded-xl bg-primary/15 border border-primary/30 hover:border-primary/50 hover:bg-primary/25 transition-all duration-200 cursor-pointer shadow-xs hover:scale-105 active:scale-95"
+                className="group relative grid h-10 w-10 place-items-center rounded-xl bg-primary/15 border border-primary/30 hover:border-primary/50 hover:bg-primary/25 transition-all duration-200 cursor-pointer shadow-xs hover:scale-105 active:scale-95"
                 aria-label="Expand sidebar"
               >
                 <img
                   src="/icon.png"
                   alt="ActionFlow Icon"
-                  className="h-8 w-8 rounded-lg object-contain group-hover:hidden transition-transform"
+                  className="h-7 w-7 rounded-lg object-contain group-hover:hidden transition-transform"
                 />
                 <PanelLeftOpen className="h-5 w-5 hidden group-hover:block text-white transition-transform" />
               </button>
             </SidebarTooltip>
           ) : (
             <>
-              <Link to="/" className="flex items-center gap-3 min-w-0 group" aria-label="ActionFlow Home">
-                <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(0,168,132,0.45)]">
+              <Link to="/" className="flex items-center gap-2.5 min-w-0 group flex-1" aria-label="ActionFlow Home">
+                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(0,168,132,0.45)]">
                   <img
                     src="/icon.png"
                     alt="ActionFlow Icon"
@@ -114,7 +114,7 @@ export function SidebarNav() {
                   />
                 </div>
                 <div className="flex flex-col min-w-0 transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden">
-                  <span className="font-display text-base font-extrabold tracking-tight text-white block leading-tight">
+                  <span className="font-display text-sm font-extrabold tracking-tight text-white block leading-tight truncate">
                     ActionFlow
                   </span>
                   <span className="text-[11px] text-rail-foreground/70 font-medium truncate block">
@@ -132,7 +132,7 @@ export function SidebarNav() {
                 <button
                   type="button"
                   onClick={toggleSidebar}
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-rail-foreground/60 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-rail-foreground/60 hover:text-white hover:bg-white/10 transition-colors cursor-pointer ml-1.5"
                   aria-label="Collapse sidebar"
                 >
                   <PanelLeftClose className="h-4.5 w-4.5" />

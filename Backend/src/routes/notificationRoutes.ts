@@ -82,7 +82,7 @@ router.patch(
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const currentUserId = req.user!._id;
-      const { notificationId } = req.params;
+      const notificationId = String(req.params.notificationId || "");
 
       if (!mongoose.Types.ObjectId.isValid(notificationId)) {
         res.status(400).json({ error: "Invalid notification ID format" });

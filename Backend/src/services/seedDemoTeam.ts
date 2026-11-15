@@ -92,25 +92,7 @@ export async function seedDemoTeam(): Promise<void> {
       await Notification.deleteMany({ workspaceId: { $in: testWsIds } });
     }
 
-    // 1. Locate or create primary workspace: Soul Business Solutions
-    let workspace = await Workspace.findOne({ name: "Soul Business Solutions" });
-    if (!workspace) {
-      workspace = await Workspace.create({
-        name: "Soul Business Solutions",
-        slug: "soul-business-solutions",
-      });
-      console.log(`[SeedDemoTeam] Created workspace: "${workspace.name}" (${workspace._id})`);
-    }
-
-    // Clean up any remaining non-canonical members in Soul Business Solutions workspace
-    const canonicalUsers = await User.find({ email: { $in: canonicalEmails } });
-    const canonicalUserIds = canonicalUsers.map((u) => u._id);
-    await WorkspaceMember.deleteMany({
-      workspaceId: workspace._id,
-      userId: { $nin: canonicalUserIds },
-    });
-
-    // 2. Ensure each demo team member exists in User collection
+    // 1. Ensure each demo team member exists in User collection
     const userMap = new Map<string, IUser>();
 
     for (const member of DEMO_TEAM_MEMBERS) {
@@ -136,8 +118,35 @@ export async function seedDemoTeam(): Promise<void> {
         await user.save();
       }
       userMap.set(member.email.toLowerCase(), user);
+    }
 
-      // Ensure active workspace membership in Soul Business Solutions
+    const rajath = userMap.get("rajath@actionflow.com")!;
+
+    // 2. Locate or create primary workspace: Soul Business Solutions
+    let workspace = await Workspace.findOne({ name: "Soul Business Solutions" });
+    if (!workspace) {
+      workspace = await Workspace.create({
+        name: "Soul Business Solutions",
+        slug: "soul-business-solutions",
+        createdBy: rajath._id,
+      });
+      console.log(`[SeedDemoTeam] Created workspace: "${workspace.name}" (${workspace._id})`);
+    } else if (!workspace.createdBy) {
+      workspace.createdBy = rajath._id;
+      await workspace.save();
+    }
+
+    // Clean up any remaining non-canonical members in Soul Business Solutions workspace
+    const canonicalUsers = await User.find({ email: { $in: canonicalEmails } });
+    const canonicalUserIds = canonicalUsers.map((u) => u._id);
+    await WorkspaceMember.deleteMany({
+      workspaceId: workspace._id,
+      userId: { $nin: canonicalUserIds },
+    });
+
+    // 3. Ensure active workspace membership in Soul Business Solutions
+    for (const member of DEMO_TEAM_MEMBERS) {
+      const user = userMap.get(member.email.toLowerCase())!;
       await WorkspaceMember.findOneAndUpdate(
         {
           workspaceId: workspace._id,
@@ -157,7 +166,6 @@ export async function seedDemoTeam(): Promise<void> {
     }
 
     const allUserIds = DEMO_TEAM_MEMBERS.map((m) => userMap.get(m.email.toLowerCase())!._id);
-    const rajath = userMap.get("rajath@actionflow.com")!;
     const ankit = userMap.get("ankit@actionflow.com")!;
     const chirag = userMap.get("chirag@actionflow.com")!;
     const harsha = userMap.get("harsha@actionflow.com")!;
