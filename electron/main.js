@@ -76,6 +76,8 @@ async function startProductionServer() {
       PORT: String(port),
       HOST: "127.0.0.1",
       NODE_ENV: "production",
+      VITE_BACKEND_URL: "http://localhost:5001",
+      BACKEND_URL: "http://localhost:5001",
     },
     silent: false,
   });

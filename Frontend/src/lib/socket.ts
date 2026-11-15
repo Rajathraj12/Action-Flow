@@ -1,6 +1,9 @@
 import { io, Socket } from "socket.io-client";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+const BACKEND_URL =
+  import.meta.env.VITE_BACKEND_URL ||
+  (typeof process !== "undefined" && (process.env?.VITE_BACKEND_URL || process.env?.BACKEND_URL)) ||
+  "http://localhost:5001";
 
 let socket: Socket | null = null;
 let currentToken: string | null = null;

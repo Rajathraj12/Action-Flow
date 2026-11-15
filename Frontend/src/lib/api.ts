@@ -1,4 +1,7 @@
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+const BACKEND_URL =
+  import.meta.env.VITE_BACKEND_URL ||
+  (typeof process !== "undefined" && (process.env?.VITE_BACKEND_URL || process.env?.BACKEND_URL)) ||
+  "http://localhost:5001";
 
 let authToken: string | null = null;
 let activeWorkspaceId: string | null = null;
