@@ -248,13 +248,34 @@ function ChatApp() {
         const res = await api.getConversations();
         convs = res.conversations;
       }
-      setConversations(convs);
 
-      if (convs.length > 0) {
-        if (selectConvId && convs.some((c) => c.id === selectConvId)) {
+      // Deduplicate direct conversations by otherUser ID to prevent duplicate contact cards
+      const seenDirectUserIds = new Set<string>();
+      const dedupedConvs: BackendConversation[] = [];
+      for (const c of convs) {
+        const isGroup = c.type === "GROUP" || c.name === "General Team" || c.name === "Engineering & Product";
+        if (isGroup) {
+          dedupedConvs.push(c);
+        } else if (c.otherUser?.id) {
+          if (!seenDirectUserIds.has(c.otherUser.id)) {
+            seenDirectUserIds.add(c.otherUser.id);
+            dedupedConvs.push(c);
+          }
+        } else {
+          dedupedConvs.push(c);
+        }
+      }
+
+      setConversations(dedupedConvs);
+
+      if (dedupedConvs.length > 0) {
+        const savedActiveId = typeof window !== "undefined" ? localStorage.getItem("actionflow_active_conv_id") : null;
+        if (selectConvId && dedupedConvs.some((c) => c.id === selectConvId)) {
           setActiveId(selectConvId);
-        } else if (!activeId || !convs.some((c) => c.id === activeId)) {
-          setActiveId(convs[0].id);
+        } else if (savedActiveId && dedupedConvs.some((c) => c.id === savedActiveId)) {
+          setActiveId(savedActiveId);
+        } else if (!activeId || !dedupedConvs.some((c) => c.id === activeId)) {
+          setActiveId(dedupedConvs[0].id);
         }
       } else {
         setActiveId(null);
@@ -721,6 +742,9 @@ function ChatApp() {
 
   function openThread(id: string) {
     setActiveId(id);
+    try {
+      localStorage.setItem("actionflow_active_conv_id", id);
+    } catch {}
     setMobileOpen(true);
     setConversations((prev) =>
       prev.map((t) => (t.id === id ? { ...t, unread: 0 } : t))

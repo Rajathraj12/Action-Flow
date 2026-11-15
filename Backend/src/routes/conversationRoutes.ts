@@ -55,7 +55,21 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): P
       };
     });
 
-    res.json({ conversations: formatted });
+    // Deduplicate direct conversations by otherUser id (keeping the most recent)
+    const seenOtherUserIds = new Set<string>();
+    const dedupedFormatted = [];
+    for (const conv of formatted) {
+      if (conv.otherUser?.id) {
+        if (!seenOtherUserIds.has(conv.otherUser.id)) {
+          seenOtherUserIds.add(conv.otherUser.id);
+          dedupedFormatted.push(conv);
+        }
+      } else {
+        dedupedFormatted.push(conv);
+      }
+    }
+
+    res.json({ conversations: dedupedFormatted });
   } catch (error: any) {
     console.error("[ConversationRoutes] Failed to fetch conversations:", error);
     res.status(500).json({ error: error?.message || "Failed to fetch conversations" });

@@ -225,7 +225,21 @@ router.get(
           };
         });
 
-      res.json({ conversations: formatted });
+      // Deduplicate direct conversations by otherUser id (keeping the most recent)
+      const seenDirectOtherUsers = new Set<string>();
+      const dedupedFormatted = [];
+      for (const conv of formatted) {
+        if (conv.type === "DIRECT" && conv.otherUser?.id) {
+          if (!seenDirectOtherUsers.has(conv.otherUser.id)) {
+            seenDirectOtherUsers.add(conv.otherUser.id);
+            dedupedFormatted.push(conv);
+          }
+        } else {
+          dedupedFormatted.push(conv);
+        }
+      }
+
+      res.json({ conversations: dedupedFormatted });
     } catch (error: any) {
       console.error("[WorkspaceMessaging] Failed to list conversations:", error);
       res.status(500).json({ error: error?.message || "Failed to list conversations" });
