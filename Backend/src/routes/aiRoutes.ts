@@ -162,7 +162,8 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const { workspaceId, conversationId } = req.params;
+      const workspaceId = String(req.params.workspaceId || "");
+      const conversationId = String(req.params.conversationId || "");
       if (
         !mongoose.Types.ObjectId.isValid(workspaceId) ||
         !mongoose.Types.ObjectId.isValid(conversationId)
@@ -303,7 +304,7 @@ async function handleGetExtractions(req: AuthenticatedRequest, res: Response): P
       let sourceName = conv?.name;
       if (!sourceName && conv) {
         if (conv.type === "DIRECT" || conv.type === "direct") {
-          const other = conv.participants?.find(
+          const other = (conv.participants as unknown as any[])?.find(
             (p: any) => p._id.toString() !== req.user!._id.toString()
           );
           sourceName = other ? `Chat with ${(other as any).displayName}` : "Direct Chat";
