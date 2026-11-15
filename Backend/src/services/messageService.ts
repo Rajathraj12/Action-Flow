@@ -262,8 +262,10 @@ export async function sendMessageService(params: SendMessageParams): Promise<For
       io.to(room).emit("conversation:updated", conversationUpdatePayload);
       io.to(room).emit("conversation_updated", conversationUpdatePayload);
 
-      // Notify each active recipient's personal room for conversation list updates
+      // Notify each active recipient's personal room for conversation list updates and incoming messages
       for (const recipientId of recipientIds) {
+        io.to(`user:${recipientId}`).emit("message:new", formattedPayload);
+        io.to(`user:${recipientId}`).emit("message_received", formattedPayload);
         io.to(`user:${recipientId}`).emit("conversation:updated", conversationUpdatePayload);
         io.to(`user:${recipientId}`).emit("conversation_updated", conversationUpdatePayload);
       }

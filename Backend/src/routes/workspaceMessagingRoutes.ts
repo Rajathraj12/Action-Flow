@@ -620,7 +620,7 @@ router.get(
   async (req: WorkspaceAuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const workspaceId = req.workspace!._id;
-      const conversationId = req.params.conversationId;
+      const conversationId = String(req.params.conversationId || "");
       const currentUserId = req.user!._id;
 
       if (!mongoose.Types.ObjectId.isValid(conversationId)) {
@@ -710,7 +710,7 @@ router.patch(
   async (req: WorkspaceAuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const workspaceId = req.workspace!._id;
-      const conversationId = req.params.conversationId;
+      const conversationId = String(req.params.conversationId || "");
       const currentUserId = req.user!._id;
       const { name, description } = req.body;
 
@@ -804,7 +804,7 @@ router.post(
   async (req: WorkspaceAuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const workspaceId = req.workspace!._id;
-      const conversationId = req.params.conversationId;
+      const conversationId = String(req.params.conversationId || "");
       const currentUserId = req.user!._id;
       const { userId } = req.body;
 
@@ -934,8 +934,8 @@ router.delete(
   async (req: WorkspaceAuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const workspaceId = req.workspace!._id;
-      const conversationId = req.params.conversationId;
-      const targetUserId = req.params.userId;
+      const conversationId = String(req.params.conversationId || "");
+      const targetUserId = String(req.params.userId || "");
       const currentUserId = req.user!._id;
 
       if (!mongoose.Types.ObjectId.isValid(conversationId) || !mongoose.Types.ObjectId.isValid(targetUserId)) {
@@ -1055,7 +1055,7 @@ router.post(
   async (req: WorkspaceAuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const workspaceId = req.workspace!._id;
-      const conversationId = req.params.conversationId;
+      const conversationId = String(req.params.conversationId || "");
       const currentUserId = req.user!._id;
 
       if (!mongoose.Types.ObjectId.isValid(conversationId)) {
@@ -1165,8 +1165,8 @@ router.patch(
   async (req: WorkspaceAuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const workspaceId = req.workspace!._id;
-      const conversationId = req.params.conversationId;
-      const targetUserId = req.params.userId;
+      const conversationId = String(req.params.conversationId || "");
+      const targetUserId = String(req.params.userId || "");
       const currentUserId = req.user!._id;
       const { role } = req.body;
 
@@ -1284,7 +1284,7 @@ router.get(
   async (req: WorkspaceAuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const workspaceId = req.workspace!._id;
-      const conversationId = req.params.conversationId;
+      const conversationId = String(req.params.conversationId || "");
       const currentUserId = req.user!._id;
       const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
       const before = req.query.before as string;
@@ -1409,7 +1409,7 @@ router.post(
   async (req: WorkspaceAuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const workspaceId = req.workspace!._id;
-      const conversationId = req.params.conversationId;
+      const conversationId = String(req.params.conversationId || "");
       const currentUserId = req.user!._id;
       const { text } = req.body;
 
@@ -1476,7 +1476,7 @@ router.post(
   async (req: WorkspaceAuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const workspaceId = req.workspace!._id;
-      const conversationId = req.params.conversationId;
+      const conversationId = String(req.params.conversationId || "");
       const currentUserId = req.user!._id;
 
       if (!mongoose.Types.ObjectId.isValid(conversationId)) {

@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportError } from "../lib/error-reporting";
@@ -50,6 +50,12 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <p className="mt-2 text-sm text-muted-foreground">
           Something went wrong on our end. You can try refreshing or head back home.
         </p>
+        {error && (
+          <div className="mt-4 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-mono text-left overflow-auto max-h-48 select-text">
+            <p className="font-bold">{error.name}: {error.message}</p>
+            {error.stack && <pre className="mt-1 text-[10px] whitespace-pre-wrap">{error.stack}</pre>}
+          </div>
+        )}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
@@ -122,17 +128,54 @@ function RootShell({ children }: { children: ReactNode }) {
 
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
-import { WorkspaceProvider } from "@/context/WorkspaceContext";
+import { WorkspaceProvider, useWorkspace } from "@/context/WorkspaceContext";
 import { AuthModal } from "@/components/auth/AuthModal";
 
 function RootContent() {
   const { user, isLoading } = useAuth();
+  const { activeWorkspace } = useWorkspace();
+  const [isMacDesktop, setIsMacDesktop] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isElectron = Boolean((window as any).electronAPI?.isDesktop);
+      const isMac =
+        (window as any).electronAPI?.platform === "darwin" ||
+        /macintosh|mac os x/i.test(navigator.userAgent);
+      setIsMacDesktop(isElectron && isMac);
+    }
+  }, []);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background font-sans text-foreground">
-      <SidebarNav />
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+    <div className="flex flex-col h-screen w-full overflow-hidden bg-background font-sans text-foreground">
+      {/* macOS Desktop Window Titlebar & Drag Strip */}
+      {isMacDesktop && (
+        <header
+          className="h-9 w-full shrink-0 flex items-center justify-between bg-rail text-rail-foreground border-b border-rail-foreground/15 px-3 select-none text-xs z-50 transition-colors"
+          style={{ WebkitAppRegion: "drag" as any }}
+        >
+          {/* Reserved clearance for macOS window traffic lights (close, minimize, zoom) */}
+          <div className="w-20 shrink-0 pointer-events-none" />
+
+          {/* Centered window drag title */}
+          <div className="font-semibold tracking-tight text-[11px] text-rail-foreground/80 flex items-center gap-2 pointer-events-none">
+            <span className="font-bold text-white tracking-wide">ActionFlow</span>
+            <span className="text-rail-foreground/40">•</span>
+            <span className="text-rail-foreground/70 font-medium truncate max-w-[240px]">
+              {activeWorkspace?.name || "Team Workspace"}
+            </span>
+          </div>
+
+          {/* Symmetrical right clearance */}
+          <div className="w-20 shrink-0" />
+        </header>
+      )}
+
+      <div className="flex flex-1 min-h-0 w-full overflow-hidden">
+        <SidebarNav />
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        <Outlet />
+      </div>
       {!user && !isLoading && <AuthModal />}
     </div>
   );
