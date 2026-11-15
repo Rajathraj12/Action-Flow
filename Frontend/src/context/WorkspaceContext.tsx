@@ -23,29 +23,57 @@ interface WorkspaceContextType {
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
 
 const ACTIVE_WORKSPACE_KEY = "actionflow_active_workspace_id";
+const CACHED_ACTIVE_WS_KEY = "actionflow_cached_active_workspace";
+const CACHED_WS_LIST_KEY = "actionflow_cached_workspaces";
 
 export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, token } = useAuth();
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem(CACHED_WS_LIST_KEY);
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return [];
+  });
+  const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem(CACHED_ACTIVE_WS_KEY);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed?.id) {
+            setActiveWorkspaceId(parsed.id);
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return null;
+  });
+  const [isLoading, setIsLoading] = useState<boolean>(!activeWorkspace);
   const [error, setError] = useState<string | null>(null);
 
   const loadWorkspaces = useCallback(async () => {
     const activeToken = token || getApiToken();
-    if (!user || !activeToken) {
-      setWorkspaces([]);
-      setActiveWorkspace(null);
-      setActiveWorkspaceId(null);
+    if (!activeToken) {
+      if (!user) {
+        setWorkspaces([]);
+        setActiveWorkspace(null);
+        setActiveWorkspaceId(null);
+      }
       setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
     try {
       const res = await api.getWorkspaces();
       const list = res.workspaces || [];
       setWorkspaces(list);
+      try {
+        localStorage.setItem(CACHED_WS_LIST_KEY, JSON.stringify(list));
+      } catch {}
 
       if (list.length > 0) {
         const savedId = localStorage.getItem(ACTIVE_WORKSPACE_KEY);
@@ -54,10 +82,12 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setActiveWorkspace(selected);
         setActiveWorkspaceId(selected.id);
         localStorage.setItem(ACTIVE_WORKSPACE_KEY, selected.id);
+        localStorage.setItem(CACHED_ACTIVE_WS_KEY, JSON.stringify(selected));
       } else {
         setActiveWorkspace(null);
         setActiveWorkspaceId(null);
         localStorage.removeItem(ACTIVE_WORKSPACE_KEY);
+        localStorage.removeItem(CACHED_ACTIVE_WS_KEY);
       }
       setError(null);
     } catch (err: any) {
@@ -68,7 +98,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } finally {
       setIsLoading(false);
     }
-  }, [user, token]);
+  }, [token]);
 
   useEffect(() => {
     loadWorkspaces();
@@ -80,6 +110,9 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setActiveWorkspace(found);
       setActiveWorkspaceId(found.id);
       localStorage.setItem(ACTIVE_WORKSPACE_KEY, found.id);
+      try {
+        localStorage.setItem(CACHED_ACTIVE_WS_KEY, JSON.stringify(found));
+      } catch {}
     }
   };
 

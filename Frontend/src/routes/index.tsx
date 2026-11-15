@@ -142,12 +142,38 @@ function ChatApp() {
   const { activeWorkspace } = useWorkspace();
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const [conversations, setConversations] = useState<BackendConversation[]>([]);
+  const [conversations, setConversations] = useState<BackendConversation[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("actionflow_cached_conversations");
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return [];
+  });
   const conversationsRef = useRef<BackendConversation[]>(conversations);
   conversationsRef.current = conversations;
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<BackendMessage[]>([]);
-  const [loadingConversations, setLoadingConversations] = useState(true);
+  const [activeId, setActiveId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return localStorage.getItem("actionflow_active_conv_id");
+      } catch {}
+    }
+    return null;
+  });
+  const [messages, setMessages] = useState<BackendMessage[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const initialActiveId = localStorage.getItem("actionflow_active_conv_id");
+        if (initialActiveId) {
+          const cachedMsgs = sessionStorage.getItem(`actionflow_cached_msgs_${initialActiveId}`);
+          if (cachedMsgs) return JSON.parse(cachedMsgs);
+        }
+      } catch {}
+    }
+    return [];
+  });
+  const [loadingConversations, setLoadingConversations] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
   const [query, setQuery] = useState("");
@@ -227,12 +253,21 @@ function ChatApp() {
     return () => window.removeEventListener("click", handleClickOutside);
   }, []);
 
-  // Reset conversation state when switching users or workspaces
+  const lastUserRef = useRef(user?._id);
+  const lastWorkspaceRef = useRef(activeWorkspace?.id);
+
+  // Reset conversation state ONLY when switching to a different user or workspace
   useEffect(() => {
-    setActiveId(null);
-    setMessages([]);
-    setConversations([]);
-    setNetworkError(null);
+    const userChanged = lastUserRef.current && user?._id && lastUserRef.current !== user._id;
+    const wsChanged = lastWorkspaceRef.current && activeWorkspace?.id && lastWorkspaceRef.current !== activeWorkspace.id;
+    if (userChanged || wsChanged) {
+      setActiveId(null);
+      setMessages([]);
+      setConversations([]);
+      setNetworkError(null);
+    }
+    lastUserRef.current = user?._id;
+    lastWorkspaceRef.current = activeWorkspace?.id;
   }, [user?._id, activeWorkspace?.id]);
 
   // 1. Load Conversations from MongoDB (Workspace Scoped)
@@ -267,6 +302,9 @@ function ChatApp() {
       }
 
       setConversations(dedupedConvs);
+      try {
+        localStorage.setItem("actionflow_cached_conversations", JSON.stringify(dedupedConvs));
+      } catch {}
 
       if (dedupedConvs.length > 0) {
         const savedActiveId = typeof window !== "undefined" ? localStorage.getItem("actionflow_active_conv_id") : null;
@@ -627,6 +665,9 @@ function ChatApp() {
     fetchPromise
       .then((res) => {
         setMessages(res.messages);
+        try {
+          sessionStorage.setItem(`actionflow_cached_msgs_${activeId}`, JSON.stringify(res.messages));
+        } catch {}
         setNetworkError(null);
         setConversations((prev) =>
           prev.map((c) => (c.id === activeId ? { ...c, unread: 0 } : c))
