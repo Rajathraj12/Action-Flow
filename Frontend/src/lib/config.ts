@@ -1,4 +1,5 @@
 const ENV_BACKEND = import.meta.env.VITE_BACKEND_URL;
+const PRODUCTION_FALLBACK_BACKEND = "https://action-flow-802k.onrender.com";
 
 export function getBackendUrl(): string {
   if (typeof window !== "undefined") {
@@ -10,7 +11,10 @@ export function getBackendUrl(): string {
       }
     }
   }
-  return ENV_BACKEND || "http://localhost:5000";
+  if (!ENV_BACKEND || ENV_BACKEND.includes("your-backend-app")) {
+    return PRODUCTION_FALLBACK_BACKEND;
+  }
+  return ENV_BACKEND;
 }
 
 export const BACKEND_URL = getBackendUrl();
