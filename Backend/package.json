@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "tsx src/server.ts"
+    "start": "tsx src/server.ts",
+    "test:dsa": "tsx scripts/test-dsa.ts",
+    "benchmark:dsa": "tsx scripts/benchmark-dsa.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

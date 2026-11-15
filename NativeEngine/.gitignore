@@ -1,0 +1,11 @@
+build/
+node_modules/
+*.node
+*.obj
+*.o
+*.lib
+*.exp
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake

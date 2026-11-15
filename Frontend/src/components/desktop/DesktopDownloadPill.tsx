@@ -35,12 +35,7 @@ interface DesktopDownloadPillProps {
 function checkIsDesktopEnvironment(): boolean {
   if (typeof window === "undefined") return false;
 
-  // 0. Explicit user dismissal saved in localStorage
-  if (localStorage.getItem("actionflow_hide_desktop_download") === "true") {
-    return true;
-  }
-
-  // 1. Electron API & global flags
+  // 1. Electron API & global flags (real native desktop app)
   if (
     (window as any).electronAPI?.isDesktop ||
     (window as any).isDesktop ||
@@ -49,20 +44,13 @@ function checkIsDesktopEnvironment(): boolean {
     return true;
   }
 
-  // 2. Running on local development server / local desktop host (127.0.0.1 or localhost:8080)
-  const host = window.location.hostname.toLowerCase();
-  const port = window.location.port;
-  if (host === "localhost" || host === "127.0.0.1" || port === "8080") {
-    return true;
-  }
-
-  // 3. UserAgent signature (Electron or ActionFlowDesktop)
+  // 2. UserAgent signature (Electron or ActionFlowDesktop)
   const ua = (window.navigator?.userAgent || "").toLowerCase();
   if (ua.includes("electron") || ua.includes("actionflowdesktop")) {
     return true;
   }
 
-  // 4. Desktop query params, URL flags or hash
+  // 3. Desktop query params, URL flags or hash
   const href = window.location.href.toLowerCase();
   if (
     href.includes("desktop=true") ||
@@ -73,31 +61,12 @@ function checkIsDesktopEnvironment(): boolean {
     return true;
   }
 
-  // 5. Standalone window display mode (PWA / Chrome-Edge --app=... mode)
-  try {
-    if (
-      window.matchMedia("(display-mode: standalone)").matches ||
-      window.matchMedia("(display-mode: window-controls-overlay)").matches ||
-      (window.navigator as any).standalone === true
-    ) {
-      return true;
-    }
-  } catch {}
-
-  // 6. DOM attribute set by desktop preload
+  // 4. DOM attribute set by desktop preload script
   if (
     document.documentElement.getAttribute("data-desktop-app") === "true" ||
     document.body?.getAttribute("data-desktop-app") === "true"
   ) {
     return true;
-  }
-
-  // 7. Standalone window detection (no browser chrome / toolbars)
-  if (window.outerHeight > 200 && window.innerHeight > 200) {
-    const chromeDiff = window.outerHeight - window.innerHeight;
-    if (chromeDiff >= 0 && chromeDiff < 45 && Math.abs(window.outerWidth - window.innerWidth) < 25) {
-      return true;
-    }
   }
 
   return false;
@@ -315,23 +284,6 @@ export function DesktopDownloadPill({ className, isCollapsed = false }: DesktopD
                 </button>
               );
             })}
-
-            <div className="pt-2 mt-2 border-t border-slate-700/50">
-              <button
-                type="button"
-                onClick={() => {
-                  try {
-                    localStorage.setItem("actionflow_hide_desktop_download", "true");
-                  } catch {}
-                  setIsDesktopApp(true);
-                  setShowMenu(false);
-                  toast.info("Download shortcut hidden.");
-                }}
-                className="w-full text-center py-1 text-[11px] text-slate-400 hover:text-slate-200 hover:underline cursor-pointer"
-              >
-                Don't show download button
-              </button>
-            </div>
           </div>
         </>
       )}

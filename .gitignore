@@ -56,3 +56,7 @@ env/
 
 # Electron packaging outputs
 release/
+
+# Documents
+*.docx
+

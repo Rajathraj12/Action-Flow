@@ -1,6 +1,13 @@
 # Multi-stage production container with Python 3.11 and Node.js 22
 FROM python:3.11-slim-bookworm
 
+# Install build tools for C++ Native Engine compilation
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy Node.js 22, npm & npx directly from official Node image (zero apt-get network failure risk)
 COPY --from=node:22-bookworm-slim /usr/local/bin/node /usr/local/bin/node
 COPY --from=node:22-bookworm-slim /usr/local/lib/node_modules /usr/local/lib/node_modules
@@ -13,11 +20,15 @@ WORKDIR /app
 COPY AI-Service/requirements.txt ./AI-Service/
 RUN pip install --no-cache-dir -r ./AI-Service/requirements.txt
 
-# 2. Install Node.js Backend dependencies
+# 2. Compile C++ NativeEngine with Node-API (graceful fallback if build fails)
+COPY NativeEngine/ ./NativeEngine/
+RUN cd NativeEngine && npm install && (npx node-gyp rebuild || true)
+
+# 3. Install Node.js Backend dependencies
 COPY Backend/package*.json ./Backend/
 RUN cd Backend && npm install --omit=dev
 
-# 3. Copy application files
+# 4. Copy application files
 COPY AI-Service/ ./AI-Service/
 COPY Backend/ ./Backend/
 

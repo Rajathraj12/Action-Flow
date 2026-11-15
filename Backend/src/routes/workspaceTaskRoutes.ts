@@ -13,6 +13,7 @@ import { User, IUser } from "../models/User.js";
 import { getIO } from "../socket/socketHandler.js";
 import { createNotification } from "../services/notificationService.js";
 import { escapeRegex } from "../utils/regex.js";
+import { DsaEngine, TaskDependencyNode, TaskDependencyEdge } from "../services/dsaEngine.js";
 
 const router = Router();
 
@@ -54,6 +55,9 @@ function formatTask(task: any) {
     sourceMessageId: task.sourceMessageId ? task.sourceMessageId.toString() : null,
     sourceConversationId: task.sourceConversationId ? task.sourceConversationId.toString() : null,
     sourceSnippet: task.sourceSnippet || null,
+    dependencies: (task.dependencies || []).map((d: any) =>
+      typeof d === "object" && d?._id ? d._id.toString() : d.toString()
+    ),
     createdAt: task.createdAt,
     updatedAt: task.updatedAt,
   };
@@ -79,6 +83,7 @@ router.post(
         dueDate,
         sourceMessageId,
         sourceConversationId,
+        dependencies,
       } = req.body;
 
       // 1. Title validation
@@ -198,6 +203,32 @@ router.post(
         sourceSnippet = message.text.slice(0, 300);
       }
 
+      // 5b. Dependency validation (if supplied)
+      let resolvedDependencies: Types.ObjectId[] = [];
+      if (dependencies !== undefined) {
+        if (!Array.isArray(dependencies)) {
+          res.status(400).json({ error: "dependencies must be an array of task IDs" });
+          return;
+        }
+        for (const depId of dependencies) {
+          if (!mongoose.Types.ObjectId.isValid(depId)) {
+            res.status(400).json({ error: `Invalid dependency ID: ${depId}` });
+            return;
+          }
+        }
+        if (dependencies.length > 0) {
+          const depTasks = await Task.find({
+            _id: { $in: dependencies },
+            workspaceId,
+          });
+          if (depTasks.length !== dependencies.length) {
+            res.status(400).json({ error: "One or more dependencies do not exist in this workspace" });
+            return;
+          }
+          resolvedDependencies = dependencies.map((d: string) => new Types.ObjectId(d));
+        }
+      }
+
       // 6. Create Task
       const newTask = await Task.create({
         workspaceId,
@@ -208,6 +239,7 @@ router.post(
         priority: resolvedPriority,
         status: "TODO",
         dueDate: resolvedDueDate,
+        dependencies: resolvedDependencies,
         sourceMessageId: resolvedSourceMessageId,
         sourceConversationId: resolvedSourceConvId,
         sourceSnippet,
@@ -724,7 +756,7 @@ router.patch(
       const workspaceId = req.workspace!._id;
       const currentUserId = req.user!._id;
       const taskId = String(req.params.taskId || "");
-      const { title, description, priority, dueDate } = req.body;
+      const { title, description, priority, dueDate, dependencies } = req.body;
 
       if (!mongoose.Types.ObjectId.isValid(taskId)) {
         res.status(400).json({ error: "Invalid task ID format" });
@@ -780,6 +812,59 @@ router.patch(
           }
           task.dueDate = d;
         }
+      }
+
+      if (dependencies !== undefined) {
+        if (!Array.isArray(dependencies)) {
+          res.status(400).json({ error: "dependencies must be an array of task IDs" });
+          return;
+        }
+        for (const depId of dependencies) {
+          if (!mongoose.Types.ObjectId.isValid(depId)) {
+            res.status(400).json({ error: `Invalid dependency ID: ${depId}` });
+            return;
+          }
+          if (depId.toString() === taskId) {
+            res.status(400).json({ error: "Self-dependency detected: A task cannot depend on itself." });
+            return;
+          }
+        }
+
+        if (dependencies.length > 0) {
+          const depTasks = await Task.find({
+            _id: { $in: dependencies },
+            workspaceId,
+          });
+          if (depTasks.length !== dependencies.length) {
+            res.status(400).json({ error: "One or more dependencies do not exist in this workspace" });
+            return;
+          }
+        }
+
+        // Cycle check with DSA Engine before committing
+        const allWorkspaceTasks = await Task.find({ workspaceId }).select("_id dependencies title priority").lean();
+        const nodes: TaskDependencyNode[] = allWorkspaceTasks.map((t) => ({
+          id: t._id.toString(),
+          title: t.title,
+        }));
+        const edges: TaskDependencyEdge[] = [];
+        for (const t of allWorkspaceTasks) {
+          const tId = t._id.toString();
+          const tDeps = tId === taskId ? dependencies : (t.dependencies || []).map((d: any) => d.toString());
+          for (const d of tDeps) {
+            edges.push({ fromTaskId: d, toTaskId: tId });
+          }
+        }
+        const cycleResult = DsaEngine.analyzeDependencies(nodes, edges);
+        if (cycleResult.hasCycle) {
+          res.status(400).json({
+            error: "Circular dependency detected! Update rejected.",
+            cyclePath: cycleResult.cyclePath,
+          });
+          return;
+        }
+
+        task.dependencies = dependencies.map((d: string) => new Types.ObjectId(d));
       }
 
       await task.save();
@@ -1085,6 +1170,186 @@ router.delete(
       console.error("[WorkspaceTask] Error deleting task:", error);
       res.status(500).json({ error: error?.message || "Failed to delete task" });
     }
+  }
+);
+
+// ==========================================
+// J. TASK DEPENDENCY ANALYSIS & TOPOLOGICAL ORDERING (C++ DSA Engine)
+// GET /api/workspaces/:workspaceId/tasks/dependency-graph
+// ==========================================
+router.get(
+  "/:workspaceId/tasks/dependency-graph",
+  requireAuth,
+  requireWorkspaceMember,
+  async (req: WorkspaceAuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const workspaceId = req.workspace!._id;
+
+      // 1. Fetch all active tasks in workspace
+      const tasks = await Task.find({ workspaceId })
+        .populate<{ createdBy: IUser }>("createdBy", "displayName email initials")
+        .populate<{ assigneeId: IUser }>("assigneeId", "displayName email initials")
+        .lean();
+
+      // 2. Build task nodes and directed dependency edges
+      // Edge: Prerequisite (depId) -> Dependent (t._id)
+      const taskNodes: TaskDependencyNode[] = tasks.map((t) => ({
+        id: t._id.toString(),
+        title: t.title,
+        priority: t.priority === "URGENT" ? 3 : t.priority === "HIGH" ? 2 : t.priority === "MEDIUM" ? 1 : 0,
+      }));
+
+      const edges: TaskDependencyEdge[] = [];
+      const taskMap = new Map<string, any>(tasks.map((t) => [t._id.toString(), t]));
+
+      for (const t of tasks) {
+        const dependentId = t._id.toString();
+        const deps = t.dependencies || [];
+        for (const dep of deps) {
+          const prereqId = typeof dep === "object" && (dep as any)?._id ? (dep as any)._id.toString() : dep.toString();
+          if (taskMap.has(prereqId)) {
+            edges.push({
+              fromTaskId: prereqId,
+              toTaskId: dependentId,
+            });
+          }
+        }
+      }
+
+      // 3. Execute analysis through DSA Engine (C++ native with TS fallback)
+      const analysis = DsaEngine.analyzeDependencies(taskNodes, edges);
+
+      // 4. Identify blocked vs actionable tasks based on status of prerequisites
+      const blockedTaskIds: string[] = [];
+      const readyTaskIds: string[] = [];
+
+      for (const t of tasks) {
+        if (t.status === "DONE") continue;
+        const deps = t.dependencies || [];
+        const hasUnfinishedPrereq = deps.some((dep: any) => {
+          const prereqId = typeof dep === "object" && dep?._id ? dep._id.toString() : dep.toString();
+          const prereqTask = taskMap.get(prereqId);
+          return prereqTask && prereqTask.status !== "DONE";
+        });
+
+        if (hasUnfinishedPrereq) {
+          blockedTaskIds.push(t._id.toString());
+        } else {
+          readyTaskIds.push(t._id.toString());
+        }
+      }
+
+      res.json({
+        success: analysis.success,
+        hasCycle: analysis.hasCycle,
+        cyclePath: analysis.cyclePath,
+        sortedTaskIds: analysis.sortedTaskIds,
+        sortedTasks: analysis.sortedTaskIds.map((id) => taskMap.get(id) ? formatTask(taskMap.get(id)) : null).filter(Boolean),
+        blockedTaskIds,
+        readyToExecuteTaskIds: readyTaskIds,
+        independentTaskIds: analysis.independentTaskIds,
+        totalTasks: tasks.length,
+        totalDependencies: edges.length,
+        executionTimeMs: analysis.executionTimeMs,
+        engineUsed: analysis.engineUsed,
+        engineStatus: DsaEngine.getEngineStatus(),
+        errorMessage: analysis.errorMessage || null,
+      });
+    } catch (error: any) {
+      console.error("[WorkspaceTask] Error analyzing task dependency graph:", error);
+      res.status(500).json({ error: error?.message || "Failed to analyze task dependencies" });
+    }
+  }
+);
+
+// ==========================================
+// K. VALIDATE PROPOSED TASK DEPENDENCIES (Cycle Detection Pre-Flight)
+// POST /api/workspaces/:workspaceId/tasks/validate-dependencies
+// ==========================================
+router.post(
+  "/:workspaceId/tasks/validate-dependencies",
+  requireAuth,
+  requireWorkspaceMember,
+  async (req: WorkspaceAuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const workspaceId = req.workspace!._id;
+      const { taskId, proposedDependencies } = req.body;
+
+      if (!Array.isArray(proposedDependencies)) {
+        res.status(400).json({ error: "proposedDependencies must be an array of task IDs" });
+        return;
+      }
+
+      // Fetch all tasks in workspace
+      const tasks = await Task.find({ workspaceId }).select("_id title priority dependencies").lean();
+      const taskMap = new Map<string, any>(tasks.map((t) => [t._id.toString(), t]));
+
+      // Build simulated graph
+      const taskNodes: TaskDependencyNode[] = tasks.map((t) => ({
+        id: t._id.toString(),
+        title: t.title,
+      }));
+
+      // Add temporary task node if creating a new task
+      if (taskId && !taskMap.has(taskId)) {
+        taskNodes.push({ id: taskId, title: "Proposed New Task" });
+      }
+
+      const edges: TaskDependencyEdge[] = [];
+      for (const t of tasks) {
+        const currentId = t._id.toString();
+        // If this is the task being edited, use proposed dependencies instead
+        const deps = currentId === taskId ? proposedDependencies : (t.dependencies || []);
+        for (const dep of deps) {
+          const prereqId = typeof dep === "object" && (dep as any)?._id ? (dep as any)._id.toString() : dep.toString();
+          edges.push({
+            fromTaskId: prereqId,
+            toTaskId: currentId,
+          });
+        }
+      }
+
+      // If creating a new task with temporary ID
+      if (taskId && !taskMap.has(taskId)) {
+        for (const depId of proposedDependencies) {
+          edges.push({
+            fromTaskId: String(depId),
+            toTaskId: taskId,
+          });
+        }
+      }
+
+      const analysis = DsaEngine.analyzeDependencies(taskNodes, edges);
+
+      res.json({
+        isValid: !analysis.hasCycle && analysis.success,
+        hasCycle: analysis.hasCycle,
+        cyclePath: analysis.cyclePath,
+        engineUsed: analysis.engineUsed,
+        executionTimeMs: analysis.executionTimeMs,
+        errorMessage: analysis.errorMessage || null,
+      });
+    } catch (error: any) {
+      console.error("[WorkspaceTask] Error validating dependencies:", error);
+      res.status(500).json({ error: error?.message || "Failed to validate dependencies" });
+    }
+  }
+);
+
+// ==========================================
+// L. DSA ENGINE DIAGNOSTIC STATUS
+// GET /api/workspaces/:workspaceId/tasks/dsa-status
+// ==========================================
+router.get(
+  "/:workspaceId/tasks/dsa-status",
+  requireAuth,
+  requireWorkspaceMember,
+  async (req: WorkspaceAuthenticatedRequest, res: Response): Promise<void> => {
+    res.json({
+      status: "ok",
+      ...DsaEngine.getEngineStatus(),
+      timestamp: new Date().toISOString(),
+    });
   }
 );
 

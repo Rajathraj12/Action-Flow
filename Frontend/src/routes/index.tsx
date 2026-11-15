@@ -56,6 +56,7 @@ import { DeleteMessageModal } from "@/components/chat/DeleteMessageModal";
 import { GroupInfoModal } from "@/components/chat/GroupInfoModal";
 import { CreateTaskModal } from "@/components/tasks/CreateTaskModal";
 import { AiTaskReviewModal } from "@/components/tasks/AiTaskReviewModal";
+import { DynamicIslandTasks } from "@/components/tasks/DynamicIslandTasks";
 import { notifyDesktop, updateDesktopBadge } from "@/lib/notifications";
 import type { AiDetectionResponse } from "@/lib/api";
 
@@ -1265,6 +1266,11 @@ function ChatApp() {
                     )}
                   </p>
                 </div>
+              </div>
+
+              {/* Center: Real-Time Dynamic Island for Ongoing Tasks */}
+              <div className="flex items-center justify-center flex-1 mx-2 lg:mx-4">
+                <DynamicIslandTasks onCreateTaskClick={() => setIsCreateTaskModalOpen(true)} />
               </div>
 
               {/* Thread Action Buttons with smooth hover */}

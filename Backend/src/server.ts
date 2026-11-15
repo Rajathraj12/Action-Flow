@@ -1,4 +1,6 @@
+import path from "path";
 import dotenv from "dotenv";
+dotenv.config({ path: path.resolve(process.cwd(), "Backend/.env") });
 dotenv.config();
 
 import express from "express";
