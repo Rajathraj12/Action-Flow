@@ -112,13 +112,16 @@ async function createWindow() {
     console.log(`[Renderer Console] ${message} (${sourceId}:${line})`);
   });
 
+  const customUA = mainWindow.webContents.getUserAgent() + " ActionFlowDesktop/1.0.0";
+  mainWindow.webContents.setUserAgent(customUA);
+
   if (isDev) {
-    const devUrl = process.env.ELECTRON_START_URL || "http://localhost:8080";
+    const devUrl = (process.env.ELECTRON_START_URL || "http://localhost:8080") + "?desktop=true";
     await mainWindow.loadURL(devUrl);
   } else {
     try {
       const port = await startProductionServer();
-      await mainWindow.loadURL(`http://127.0.0.1:${port}`);
+      await mainWindow.loadURL(`http://127.0.0.1:${port}?desktop=true`);
     } catch (err) {
       console.error("[Electron] Production server startup error:", err);
     }

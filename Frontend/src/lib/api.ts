@@ -1,4 +1,4 @@
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+import { getBackendUrl } from "./config";
 
 let authToken: string | null = null;
 let activeWorkspaceId: string | null = null;
@@ -31,7 +31,8 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     headers.set("x-workspace-id", activeWorkspaceId);
   }
 
-  const url = `${BACKEND_URL}${endpoint}`;
+  const backendBase = getBackendUrl();
+  const url = `${backendBase}${endpoint}`;
   let response: Response;
 
   try {
@@ -41,7 +42,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     });
   } catch (netErr: any) {
     throw new Error(
-      `Network error connecting to backend at ${BACKEND_URL}. Ensure the backend server is running.`
+      `Network error connecting to backend at ${backendBase}. Ensure the backend server is running.`
     );
   }
 

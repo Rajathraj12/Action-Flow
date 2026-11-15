@@ -16,6 +16,7 @@ import { useWorkspace } from "@/context/WorkspaceContext";
 
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { GlobalSearchModal } from "@/components/search/GlobalSearchModal";
+import { DesktopDownloadPill } from "@/components/desktop/DesktopDownloadPill";
 import {
   Tooltip,
   TooltipTrigger,
@@ -269,6 +270,9 @@ export function SidebarNav() {
             active={currentPath === "/settings"}
             isCollapsed={isCollapsed}
           />
+
+          {/* Desktop App Download Pill */}
+          <DesktopDownloadPill isCollapsed={isCollapsed} />
 
           {/* User Profile Card */}
           {user && (

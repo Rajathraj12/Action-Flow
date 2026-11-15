@@ -56,7 +56,6 @@ import { DeleteMessageModal } from "@/components/chat/DeleteMessageModal";
 import { GroupInfoModal } from "@/components/chat/GroupInfoModal";
 import { CreateTaskModal } from "@/components/tasks/CreateTaskModal";
 import { AiTaskReviewModal } from "@/components/tasks/AiTaskReviewModal";
-import { DesktopDownloadPill } from "@/components/desktop/DesktopDownloadPill";
 import { notifyDesktop, updateDesktopBadge } from "@/lib/notifications";
 import type { AiDetectionResponse } from "@/lib/api";
 
@@ -1125,9 +1124,6 @@ function ChatApp() {
             })
           )}
         </div>
-
-        {/* WhatsApp-Style Desktop App Download Banner */}
-        <DesktopDownloadPill />
       </aside>
 
       {/* Main Chat Thread Area */}

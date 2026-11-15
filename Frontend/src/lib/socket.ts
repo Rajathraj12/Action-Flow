@@ -1,6 +1,5 @@
 import { io, Socket } from "socket.io-client";
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+import { getBackendUrl } from "./config";
 
 let socket: Socket | null = null;
 let currentToken: string | null = null;
@@ -27,7 +26,7 @@ export function initSocketClient(
   currentToken = token;
   onStatusChange?.("connecting");
 
-  socket = io(BACKEND_URL, {
+  socket = io(getBackendUrl(), {
     auth: { token },
     transports: ["websocket", "polling"],
     reconnection: true,

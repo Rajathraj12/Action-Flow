@@ -4,56 +4,59 @@ import fs from "fs";
 
 const router = Router();
 
-// Locate the project release directory
-const RELEASE_DIR = path.resolve(process.cwd(), "../release");
-const FRONTEND_DOWNLOADS_DIR = path.resolve(process.cwd(), "../Frontend/public/downloads");
-
 const PLATFORM_FILES: Record<string, { filename: string; fallbackFilename: string }> = {
   mac: {
     filename: "ActionFlow-1.0.0-arm64.dmg",
     fallbackFilename: "ActionFlow-1.0.0-arm64-mac.zip",
   },
   windows: {
-    filename: "ActionFlow-1.0.0-windows.zip",
+    filename: "ActionFlow-1.0.0-windows.exe",
     fallbackFilename: "ActionFlow-1.0.0-windows.zip",
   },
   win: {
-    filename: "ActionFlow-1.0.0-windows.zip",
+    filename: "ActionFlow-1.0.0-windows.exe",
     fallbackFilename: "ActionFlow-1.0.0-windows.zip",
-  },
-  linux: {
-    filename: "ActionFlow-1.0.0-linux.zip",
-    fallbackFilename: "ActionFlow-1.0.0-linux.zip",
   },
 };
 
+function findCandidateFile(filename: string): string | null {
+  const possibleDirs = [
+    path.resolve(process.cwd(), "Frontend/public/downloads"),
+    path.resolve(process.cwd(), "../Frontend/public/downloads"),
+    path.resolve(process.cwd(), "public/downloads"),
+    path.resolve(process.cwd(), "../release"),
+    path.resolve(process.cwd(), "release"),
+  ];
+
+  for (const dir of possibleDirs) {
+    const candidate = path.join(dir, filename);
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
 router.get("/:platform", (req: Request, res: Response) => {
-  const platform = String(req.params.platform || "mac").toLowerCase();
-  const info = PLATFORM_FILES[platform] || PLATFORM_FILES.mac;
+  const platform = String(req.params.platform || "windows").toLowerCase();
+  const info = PLATFORM_FILES[platform] || PLATFORM_FILES.windows;
 
-  // 1. Try Frontend/public/downloads/
-  let candidatePath = path.join(FRONTEND_DOWNLOADS_DIR, info.filename);
-  if (!fs.existsSync(candidatePath)) {
-    // 2. Try release/
-    candidatePath = path.join(RELEASE_DIR, info.filename);
+  let filePath = findCandidateFile(info.filename);
+  if (!filePath && info.fallbackFilename) {
+    filePath = findCandidateFile(info.fallbackFilename);
   }
 
-  if (fs.existsSync(candidatePath)) {
-    res.setHeader("Content-Disposition", `attachment; filename="${info.filename}"`);
-    res.setHeader("Content-Type", "application/zip");
-    return res.sendFile(candidatePath);
-  }
-
-  // Fallback to mac zip if available
-  const macZip = path.join(FRONTEND_DOWNLOADS_DIR, "ActionFlow-1.0.0-arm64-mac.zip");
-  if (fs.existsSync(macZip)) {
-    res.setHeader("Content-Disposition", `attachment; filename="${info.filename}"`);
-    res.setHeader("Content-Type", "application/zip");
-    return res.sendFile(macZip);
+  if (filePath && fs.existsSync(filePath)) {
+    const downloadFilename = path.basename(filePath);
+    const isExe = downloadFilename.endsWith(".exe");
+    const isDmg = downloadFilename.endsWith(".dmg");
+    res.setHeader("Content-Disposition", `attachment; filename="${downloadFilename}"`);
+    res.setHeader("Content-Type", isExe ? "application/octet-stream" : (isDmg ? "application/x-apple-diskimage" : "application/zip"));
+    return res.sendFile(filePath);
   }
 
   return res.status(404).json({
-    error: `Desktop bundle for platform '${platform}' is not available yet. Please run 'npm run dist:${platform}' to build it.`,
+    error: `Desktop bundle for platform '${platform}' is not available yet. Please run 'npm run dist:win' to build it.`,
   });
 });
 
