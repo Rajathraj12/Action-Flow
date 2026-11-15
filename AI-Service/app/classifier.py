@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Dict, Any, Tuple
 import numpy as np
 
@@ -48,6 +49,11 @@ def classify_text(message: str) -> ClassificationResponse:
         logger.error(f"Error during model prediction: {err}")
         raise RuntimeError(f"Model prediction failed: {err}")
 
+    # Heuristic override for explicit self-commitments
+    SELF_COMMITMENT_PAT = r"^(i'll|i\s*will|i\s*can|let\s*me|i\s*am\s*going\s*to|i'm\s*going\s*to|main\s*karunga|main\s*dekh\s*lunga)\b|\b(assign\s*to\s*me|i'm\s*on\s*it|i\s*am\s*on\s*it|leave\s*it\s*to\s*me)\b"
+    if re.search(SELF_COMMITMENT_PAT, text, re.IGNORECASE):
+        category = "self_commitment"
+
     # Calculate calibrated confidence using temperature-scaled softmax over decision function
     confidence = 0.85
     try:
@@ -67,6 +73,9 @@ def classify_text(message: str) -> ClassificationResponse:
     except Exception as conf_err:
         logger.debug(f"Could not compute probability distribution: {conf_err}")
         confidence = 0.85
+
+    if category == "self_commitment":
+        confidence = max(confidence, 0.95)
 
     is_task_candidate = category in TASK_CANDIDATE_CATEGORIES
     needs_confirmation = category in CONFIRMATION_REQUIRED_CATEGORIES

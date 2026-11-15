@@ -348,9 +348,25 @@ export async function detectTaskFromMessage(params: {
   };
 }
 
+function formatIsoToDateDisplay(isoDate: string, timeStr?: string | null): string {
+  const parts = isoDate.split("T")[0].split("-");
+  if (parts.length === 3) {
+    const [y, m, d] = parts;
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const idx = parseInt(m, 10) - 1;
+    if (idx >= 0 && idx < 12) {
+      const base = `${d.padStart(2, "0")} ${months[idx]} ${y}`;
+      return timeStr ? `${base}, ${timeStr}` : base;
+    }
+  }
+  return timeStr ? `${isoDate}, ${timeStr}` : isoDate;
+}
+
 /**
  * Fast real-time AI scan for a single message string.
  */
+
+
 export async function fastAutoDetectTask(
   text: string,
   senderName: string = "Teammate",
@@ -383,7 +399,9 @@ export async function fastAutoDetectTask(
       title: t.title || text.slice(0, 60),
       assigneeName: t.assignee || null,
       priority: t.priority ? String(t.priority).toUpperCase() : "MEDIUM",
-      deadlineText: t.deadline_text || null,
+      deadlineText: t.deadline_date
+        ? (t.deadline_text && /\d{2}\s+[A-Za-z]{3}\s+\d{4}/.test(t.deadline_text) ? t.deadline_text : formatIsoToDateDisplay(t.deadline_date))
+        : (t.deadline_text || (isTaskCandidate ? "ASAP" : null)),
       deadlineDate: t.deadline_date || null,
       confidence: typeof t.confidence === "number" ? t.confidence : confidence,
     }));
@@ -398,22 +416,123 @@ export async function fastAutoDetectTask(
     // Fast regex heuristic fallback if AI service is temporarily busy
     const textSnippet = text.trim();
     const isTaskLike =
-      /\b(please|can you|fix|update|prepare|send|review|deploy|by tomorrow|by friday|urgent|asap|verify)\b/i.test(
+      /\b(please|can you|could you|schedule|meeting|client meeting|call|fix|update|prepare|send|review|deploy|by tomorrow|by monday|by friday|urgent|asap|verify)\b/i.test(
         textSnippet
       );
 
+    let extractedAssignee: string | null = null;
+    if (teamMembers && teamMembers.length > 0) {
+      for (const tm of teamMembers) {
+        if (!tm) continue;
+        const re = new RegExp(`\\b${tm}\\b`, "i");
+        if (re.test(textSnippet)) {
+          extractedAssignee = tm;
+          break;
+        }
+      }
+    }
+
+    let deadlineText: string | null = null;
+    let deadlineDate: string | null = null;
+
+    const timeMatch = textSnippet.match(/\b(?:at\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm))\b/i);
+    const extractedTime = timeMatch ? timeMatch[1].toUpperCase() : null;
+
+function formatToLocalDateString(dateObj: Date): string {
+  const offset = dateObj.getTimezoneOffset();
+  let targetTime = dateObj.getTime();
+  if (offset === 0) {
+    targetTime += 330 * 60 * 1000;
+  }
+  const adjusted = new Date(targetTime);
+  const y = adjusted.getFullYear();
+  const m = String(adjusted.getMonth() + 1).padStart(2, "0");
+  const day = String(adjusted.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+    // Support relative days ("two days from now", "in 2 days", "within 3 days", etc.)
+    const relDaysMatch = textSnippet.match(
+      /\b((?:by|before|in|within|after)\s+(?:a\s+)?)?(\d+|a|an|one|two|couple(?:\s+of)?|three|few|four|five|six|seven|eight|nine|ten)\s+days?(?:\s+(?:from\s+now|later))?\b/i
+    );
+    if (relDaysMatch) {
+      const wordMap: Record<string, number> = {
+        a: 1, an: 1, one: 1, two: 2, couple: 2, "couple of": 2,
+        three: 3, few: 3, four: 4, five: 5, six: 6, seven: 7,
+        eight: 8, nine: 9, ten: 10,
+      };
+      const numRaw = relDaysMatch[2].toLowerCase();
+      const num = /^\d+$/.test(numRaw) ? parseInt(numRaw, 10) : (wordMap[numRaw] || 2);
+      const d = new Date();
+      d.setDate(d.getDate() + num);
+      deadlineDate = formatToLocalDateString(d);
+      deadlineText = formatIsoToDateDisplay(deadlineDate, extractedTime);
+    } else {
+      const weekdayMatch = textSnippet.match(
+        /\b(?:by|before|on|for)?\s*(monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)\b/i
+      );
+      const keywordMatch = textSnippet.match(
+        /\b(day\s*after\s*tomorrow|parso|tomorrow|kal|today|tonight|eod|end\s*of\s*day|aaj)\b/i
+      );
+      const refDate = new Date();
+
+      if (weekdayMatch) {
+        const weekdayMap: Record<string, number> = {
+          sunday: 0, sun: 0, monday: 1, mon: 1, tuesday: 2, tue: 2,
+          wednesday: 3, wed: 3, thursday: 4, thu: 4, friday: 5, fri: 5, saturday: 6, sat: 6,
+        };
+        const targetWd = weekdayMap[weekdayMatch[1].toLowerCase()];
+        const curWd = refDate.getDay();
+        let diff = (targetWd - curWd + 7) % 7;
+        if (diff === 0) diff = 7;
+        const d = new Date(refDate);
+        d.setDate(d.getDate() + diff);
+        deadlineDate = formatToLocalDateString(d);
+        deadlineText = formatIsoToDateDisplay(deadlineDate, extractedTime);
+      } else if (keywordMatch) {
+        const kw = keywordMatch[0].toLowerCase();
+        const d = new Date(refDate);
+        if (/day\s*after\s*tomorrow|parso/i.test(kw)) {
+          d.setDate(d.getDate() + 2);
+        } else if (/tomorrow|kal/i.test(kw)) {
+          d.setDate(d.getDate() + 1);
+        }
+        deadlineDate = formatToLocalDateString(d);
+        deadlineText = formatIsoToDateDisplay(deadlineDate, extractedTime);
+      } else {
+        const deadlineMatch = textSnippet.match(
+          /\b(by\s+\w+|for\s+\w+(?:\s+at\s+\d+(?::\d+)?\s*(?:am|pm)?)?|next\s+week)\b/i
+        );
+        if (deadlineMatch) {
+          deadlineText = deadlineMatch[0];
+        }
+      }
+    }
+
+    // Clean title by stripping leading name callouts like "Harsha, " or "Hey Rajath: "
+    let cleanTitle = textSnippet;
+    if (extractedAssignee) {
+      cleanTitle = cleanTitle.replace(new RegExp(`^${extractedAssignee}[,:]?\\s*`, "i"), "");
+    }
+    cleanTitle = cleanTitle.replace(/^(please|can you|could you)\s+/i, "");
+    if (deadlineText) {
+      cleanTitle = cleanTitle.replace(new RegExp(`\\s*${deadlineText}\\s*`, "i"), " ");
+    }
+    cleanTitle = cleanTitle.replace(/\s+/g, " ").trim();
+    cleanTitle = cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1, 80).trim();
+
     return {
       isTaskCandidate: isTaskLike,
-      category: isTaskLike ? "clear_task" : "not_task",
-      confidence: 0.7,
+      category: isTaskLike ? "looks_like_task" : "not_task",
+      confidence: 0.85,
       tasks: isTaskLike
         ? [
             {
-              title: textSnippet.slice(0, 75).trim(),
-              assigneeName: null,
+              title: cleanTitle || textSnippet.slice(0, 75).trim(),
+              assigneeName: extractedAssignee,
               priority: /asap|urgent/i.test(textSnippet) ? "URGENT" : "MEDIUM",
-              deadlineText: null,
-              deadlineDate: null,
+              deadlineText: deadlineText || (isTaskLike ? "ASAP" : null),
+              deadlineDate,
             },
           ]
         : [],
@@ -447,12 +566,13 @@ export async function scanConversationMessages(
       { "aiTaskDetection.isTaskCandidate": false },
       { "aiTaskDetection.confidence": { $lte: 0.75 } },
     ],
-  }).limit(50);
+  }).populate<{ sender: IUser }>("sender", "displayName initials email").limit(50);
 
   const results: Record<string, any> = {};
 
   for (const msg of unscannedMessages) {
-    const detection = await fastAutoDetectTask(msg.text, "Teammate", teamMemberNames);
+    const senderDisplayName = (msg.sender as any)?.displayName || "Teammate";
+    const detection = await fastAutoDetectTask(msg.text, senderDisplayName, teamMemberNames);
     const aiData = {
       ...detection,
       detectedAt: new Date(),

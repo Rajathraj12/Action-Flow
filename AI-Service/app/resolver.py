@@ -20,6 +20,26 @@ WEEKDAYS = {
     "sun": 6,
 }
 
+WORD_TO_NUM = {
+    "a": 1,
+    "an": 1,
+    "one": 1,
+    "two": 2,
+    "couple": 2,
+    "couple of": 2,
+    "three": 3,
+    "few": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+}
+
 PRIORITY_PATTERNS = [
     (r"\b(asap|urgent|urgently|emergency|critical)\b", "urgent"),
     (r"\b(high\s*priority|highest\s*priority|important)\b", "high"),
@@ -29,15 +49,19 @@ PRIORITY_PATTERNS = [
 
 
 def parse_reference_datetime(timestamp_str: Optional[str]) -> datetime:
+    tz_ist = timezone(timedelta(hours=5, minutes=30))
     if not timestamp_str:
-        return datetime.now(timezone(timedelta(hours=5, minutes=30)))
+        return datetime.now(tz_ist)
 
     try:
         # Standard ISO 8601 parse
         clean = timestamp_str.replace("Z", "+00:00")
-        return datetime.fromisoformat(clean)
+        dt = datetime.fromisoformat(clean)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(tz_ist)
     except Exception:
-        return datetime.now(timezone(timedelta(hours=5, minutes=30)))
+        return datetime.now(tz_ist)
 
 
 def resolve_deadline(
@@ -53,6 +77,55 @@ def resolve_deadline(
     ref_weekday = ref_date.weekday()
 
     text_lower = message_text.lower()
+
+    # 0. Relative days (e.g. "two days from now", "in 2 days", "within 3 days", "3 days later", "after two days")
+    m_rel_days = re.search(
+        r"\b((?:by|before|in|within|after)\s+(?:a\s+)?)?(\d+|a|an|one|two|couple(?:\s+of)?|three|few|four|five|six|seven|eight|nine|ten)\s+days?(?:\s+(?:from\s+now|later))?\b",
+        text_lower,
+    )
+    if m_rel_days:
+        matched_str = m_rel_days.group(0).strip()
+        num_raw = m_rel_days.group(2).lower()
+        num = int(num_raw) if num_raw.isdigit() else WORD_TO_NUM.get(num_raw, 2)
+        target = ref_date + timedelta(days=num)
+        return matched_str, target.isoformat()
+
+    # 0b. Relative weeks (e.g. "two weeks from now", "in 2 weeks", "a week from now", "within two weeks")
+    m_rel_weeks = re.search(
+        r"\b((?:by|before|in|within|after)\s+(?:a\s+)?)?(\d+|a|an|one|two|couple(?:\s+of)?|three|few|four)\s+weeks?(?:\s+(?:from\s+now|later))?\b",
+        text_lower,
+    )
+    if m_rel_weeks:
+        matched_str = m_rel_weeks.group(0).strip()
+        num_raw = m_rel_weeks.group(2).lower()
+        num = int(num_raw) if num_raw.isdigit() else WORD_TO_NUM.get(num_raw, 1)
+        target = ref_date + timedelta(weeks=num)
+        return matched_str, target.isoformat()
+
+    # 0c. Relative months (e.g. "in a month", "two months from now")
+    m_rel_months = re.search(
+        r"\b((?:by|before|in|within|after)\s+(?:a\s+)?)?(\d+|a|an|one|two|three)\s+months?(?:\s+(?:from\s+now|later))?\b",
+        text_lower,
+    )
+    if m_rel_months:
+        matched_str = m_rel_months.group(0).strip()
+        num_raw = m_rel_months.group(2).lower()
+        num = int(num_raw) if num_raw.isdigit() else WORD_TO_NUM.get(num_raw, 1)
+        target = ref_date + timedelta(days=30 * num)
+        return matched_str, target.isoformat()
+
+    # 0d. Relative hours (e.g. "in 24 hours", "within 48 hours")
+    m_rel_hours = re.search(
+        r"\b((?:by|before|in|within)\s+)?(\d+|a|an|one|two|three|four|five|six|eight|twelve|24|48)\s+hours?\b",
+        text_lower,
+    )
+    if m_rel_hours:
+        matched_str = m_rel_hours.group(0).strip()
+        num_raw = m_rel_hours.group(2).lower()
+        num = int(num_raw) if num_raw.isdigit() else WORD_TO_NUM.get(num_raw, 24)
+        days = 2 if num >= 40 else (1 if num >= 18 else 0)
+        target = ref_date + timedelta(days=days)
+        return matched_str, target.isoformat()
 
     # 1. Day after tomorrow / Parso
     m_parso = re.search(r"\b(day\s*after\s*tomorrow|parso|parson)\b", text_lower)
@@ -158,13 +231,15 @@ def resolve_assignee(
     clean_members = [m.strip() for m in team_members if m and m.strip()]
 
     # 1. Self-commitment: Assignee is the sender
-    if is_self_commitment and sender:
-        sender_clean = sender.strip()
-        # Find exact or first-name match for sender in roster
-        for m in clean_members:
-            if m.lower() == sender_clean.lower() or m.lower().startswith(sender_clean.lower() + " "):
-                return m, False, None
-        return sender_clean, False, None
+    if is_self_commitment:
+        if sender and sender.strip().lower() != "teammate":
+            sender_clean = sender.strip()
+            # Find exact or first-name match for sender in roster
+            for m in clean_members:
+                if m.lower() == sender_clean.lower() or m.lower().startswith(sender_clean.lower() + " "):
+                    return m, False, None
+            return sender_clean, False, None
+        return None, False, None
 
     if not candidate_name or not candidate_name.strip():
         return None, False, None

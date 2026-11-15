@@ -150,33 +150,18 @@ export async function sendMessageService(params: SendMessageParams): Promise<For
     }
   }
 
-  // Run real-time AI task detection
-  let aiTaskDetection: any = undefined;
-  try {
-    let teamMemberNames: string[] = [];
-    if (conversation.workspaceId) {
-      const members = await WorkspaceMember.find({
-        workspaceId: conversation.workspaceId,
-        status: "ACTIVE",
-      }).populate<{ userId: IUser }>("userId", "displayName");
-      teamMemberNames = members
-        .filter((m) => m.userId && (m.userId as any).displayName)
-        .map((m) => (m.userId as any).displayName.trim());
-    } else if (conversation.participants?.length) {
-      const users = await User.find({ _id: { $in: conversation.participants } }).select("displayName");
-      teamMemberNames = users.map((u) => u.displayName.trim());
+  // Resolve sender details early so payload formatting has access
+  let senderName = params.senderDisplayName;
+  let senderInitials = params.senderInitials;
+  if (!senderName || !senderInitials) {
+    const senderUser = await User.findById(senderId).select("displayName initials");
+    if (senderUser) {
+      senderName = senderName || senderUser.displayName;
+      senderInitials = senderInitials || senderUser.initials;
     }
-
-    const detected = await fastAutoDetectTask(trimmedText, senderName || "Teammate", teamMemberNames);
-    aiTaskDetection = {
-      ...detected,
-      detectedAt: new Date(),
-    };
-  } catch {
-    // Non-blocking
   }
 
-  // 5. Persist message in MongoDB before broadcasting
+  // 5. Persist message in MongoDB immediately (Zero latency, unblocked by AI analysis)
   const savedMessage = await Message.create({
     conversationId: conversation._id,
     workspaceId: conversation.workspaceId,
@@ -189,7 +174,7 @@ export async function sendMessageService(params: SendMessageParams): Promise<For
     deletedForUsers: [],
     deliveredAt,
     readAt,
-    aiTaskDetection,
+    aiTaskDetection: undefined,
   });
 
   // 6. Update conversation metadata
@@ -226,17 +211,6 @@ export async function sendMessageService(params: SendMessageParams): Promise<For
     minute: "2-digit",
   });
 
-  // Get sender details if not supplied
-  let senderName = params.senderDisplayName;
-  let senderInitials = params.senderInitials;
-  if (!senderName || !senderInitials) {
-    const senderUser = await User.findById(senderId).select("displayName initials");
-    if (senderUser) {
-      senderName = senderName || senderUser.displayName;
-      senderInitials = senderInitials || senderUser.initials;
-    }
-  }
-
   const formattedPayload: FormattedMessagePayload = {
     id: savedMessage._id.toString(),
     conversationId: conversation._id.toString(),
@@ -264,6 +238,17 @@ export async function sendMessageService(params: SendMessageParams): Promise<For
       // Emit Phase 2 & 3 standard events AND aliases
       io.to(room).emit("message:new", formattedPayload);
       io.to(room).emit("message_received", formattedPayload);
+
+      // Also broadcast to workspace room so manager dashboard and workspace views receive new messages and AI extractions in real time
+      const wsRoom = `workspace:${workspaceId.toString()}`;
+      io.to(wsRoom).emit("message:new", formattedPayload);
+      if (formattedPayload.aiTaskDetection?.isTaskCandidate) {
+        io.to(wsRoom).emit("ai:task_candidate", {
+          message: formattedPayload,
+          detection: formattedPayload.aiTaskDetection,
+          workspaceId: workspaceId.toString(),
+        });
+      }
 
       const conversationUpdatePayload = {
         conversationId: conversation._id.toString(),
@@ -324,6 +309,75 @@ export async function sendMessageService(params: SendMessageParams): Promise<For
   } catch (socketError) {
     console.warn("[MessageService] Real-time broadcast skipped or failed:", socketError);
   }
+
+  // 9. Asynchronous Background AI Task Detection
+  // The message is delivered to chat participants instantly (< 10ms).
+  // AI analysis runs asynchronously in the background and broadcasts the detection pill once resolved.
+  (async () => {
+    try {
+      let teamMemberNames: string[] = [];
+      if (conversation.workspaceId) {
+        const members = await WorkspaceMember.find({
+          workspaceId: conversation.workspaceId,
+          status: "ACTIVE",
+        }).populate<{ userId: IUser }>("userId", "displayName");
+        teamMemberNames = members
+          .filter((m) => m.userId && (m.userId as any).displayName)
+          .map((m) => (m.userId as any).displayName.trim());
+      } else if (conversation.participants?.length) {
+        const users = await User.find({ _id: { $in: conversation.participants } }).select("displayName");
+        teamMemberNames = users.map((u) => u.displayName.trim());
+      }
+
+      const detected = await fastAutoDetectTask(trimmedText, senderName || "Teammate", teamMemberNames);
+      if (detected) {
+        const aiTaskDetection = {
+          ...detected,
+          detectedAt: new Date(),
+        };
+
+        // Update message document in MongoDB
+        await Message.updateOne(
+          { _id: savedMessage._id },
+          { $set: { aiTaskDetection } }
+        );
+
+        // Broadcast real-time AI detection updates to the chat room and workspace dashboard
+        const io = getIO();
+        if (io) {
+          const room = `conversation:${conversation._id.toString()}`;
+          const wsRoom = `workspace:${workspaceId.toString()}`;
+
+          const aiEventPayload = {
+            messageId: savedMessage._id.toString(),
+            conversationId: conversation._id.toString(),
+            workspaceId: workspaceId.toString(),
+            aiTaskDetection,
+          };
+
+          io.to(room).emit("message:ai_detected", aiEventPayload);
+          io.to(room).emit("message:updated", {
+            id: savedMessage._id.toString(),
+            conversationId: conversation._id.toString(),
+            aiTaskDetection,
+          });
+
+          if (aiTaskDetection.isTaskCandidate) {
+            io.to(wsRoom).emit("ai:task_candidate", {
+              message: {
+                ...formattedPayload,
+                aiTaskDetection,
+              },
+              detection: aiTaskDetection,
+              workspaceId: workspaceId.toString(),
+            });
+          }
+        }
+      }
+    } catch (bgErr: any) {
+      console.warn("[MessageService] Background AI detection warning:", bgErr?.message || bgErr);
+    }
+  })();
 
   return formattedPayload;
 }

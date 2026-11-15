@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import re
+from datetime import date
 from typing import Any, Dict, List, Optional, Tuple
 
 from .classifier import classify_text
@@ -18,6 +19,8 @@ CLEAN_TITLE_PREFIXES = [
 REMOVE_TRAILING_DEADLINES = [
     r"\s+(by|before|on|for)\s+(today|tonight|tomorrow|yesterday|eod|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)('s\s*(call|demo|review|meeting|sync))?(\s*(morning|evening|afternoon|night))?.*$",
     r"\s+(today|tonight|tomorrow|parso|kal|aaj)(\s*(morning|evening|afternoon|night|tak))?.*$",
+    r"\s+((?:by|before|in|within|after)\s+(?:a\s+)?)?(\d+|a|an|one|two|couple(?:\s+of)?|three|few|four|five|six|seven|eight|nine|ten)\s+(days?|weeks?|months?)(?:\s+(from\s+now|later))?.*$",
+    r"\s+(\d+|one|two|three|four|five)\s+days?\s+from\s+now.*$",
     r"\s+asap\s*.*$",
 ]
 
@@ -34,8 +37,8 @@ def clean_task_title(text: str, assignee_name: Optional[str] = None) -> str:
         cleaned = re.sub(rf"^(hey\s+)?{re.escape(assignee_name)}[,\s:]*", "", cleaned, flags=re.IGNORECASE)
         cleaned = re.sub(rf"^(hey\s+)?{re.escape(first)}[,\s:]*", "", cleaned, flags=re.IGNORECASE)
 
-    # Remove general leading name pattern like "Name, " if matching a single word
-    cleaned = re.sub(r"^[A-Z][a-z]+[,\s:]+", "", cleaned)
+    # Remove general leading name pattern like "Name, " if followed by a comma or colon
+    cleaned = re.sub(r"^[A-Z][a-z]+[,:]\s*", "", cleaned)
 
     # Remove polite imperatives and helper words
     for prefix in CLEAN_TITLE_PREFIXES:
@@ -116,6 +119,20 @@ def extract_candidate_name_from_clause(
     return None
 
 
+def format_deadline_display(d_text: Optional[str], d_date: Optional[str], text_clause: str) -> Optional[str]:
+    if not d_date:
+        return d_text
+    try:
+        parsed_d = date.fromisoformat(d_date.split("T")[0])
+        formatted = parsed_d.strftime("%d %b %Y")
+        time_m = re.search(r"\b(?:at\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm))\b", text_clause, flags=re.IGNORECASE)
+        if time_m:
+            formatted += f", {time_m.group(1).upper()}"
+        return formatted
+    except Exception:
+        return d_text
+
+
 def extract_tasks_deterministic(
     message: str,
     category: str,
@@ -164,6 +181,7 @@ def extract_tasks_deterministic(
 
         # 3. Extract and Resolve Deadline
         d_text, d_date = resolve_deadline(clause, timestamp)
+        display_deadline = format_deadline_display(d_text, d_date, clause)
 
         # 4. Extract Priority
         prio = resolve_priority(clause)
@@ -183,7 +201,7 @@ def extract_tasks_deterministic(
             TaskSuggestion(
                 title=title,
                 assignee=resolved_assignee,
-                deadline_text=d_text,
+                deadline_text=display_deadline,
                 deadline_date=d_date,
                 priority=prio,
                 confidence=round(task_conf, 2),
@@ -236,11 +254,12 @@ def extract_tasks_llm(
             task_list = []
             for item in data.get("tasks", []):
                 d_text, d_date = resolve_deadline(item.get("deadline_text") or message, timestamp)
+                display_deadline = format_deadline_display(d_text, d_date, message)
                 task_list.append(
                     TaskSuggestion(
                         title=item.get("title", "Task"),
                         assignee=item.get("assignee"),
-                        deadline_text=d_text,
+                        deadline_text=display_deadline,
                         deadline_date=d_date,
                         priority=item.get("priority"),
                         confidence=0.95,

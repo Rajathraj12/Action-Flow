@@ -113,6 +113,7 @@ export interface BackendConversation {
 
 export interface BackendMessage {
   id: string;
+  localKey?: string;
   from: "me" | "them";
   text: string;
   time: string;

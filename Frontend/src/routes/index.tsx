@@ -282,12 +282,59 @@ function ChatApp() {
     const handleMessageReceived = (newMsg: any) => {
       if (newMsg.conversationId === activeId) {
         setMessages((prev) => {
-          if (prev.some((m) => m.id === newMsg.id)) return prev;
+          // 1. If message already exists by real server ID:
+          const existingIdx = prev.findIndex((m) => m.id === newMsg.id);
+          if (existingIdx !== -1) {
+            return prev.map((m, idx) =>
+              idx === existingIdx
+                ? {
+                    ...m,
+                    ...newMsg,
+                    localKey: m.localKey || m.id,
+                    aiTaskDetection: newMsg.aiTaskDetection || m.aiTaskDetection,
+                  }
+                : m
+            );
+          }
+
+          // 2. If this is our own message that was added optimistically, reconcile in place
           const isMe = newMsg.senderId === user?._id;
+          if (isMe) {
+            const pendingOptimisticIndex = prev.findIndex(
+              (m) =>
+                m.from === "me" &&
+                (m.id.startsWith("client-") || m.id.startsWith("temp-")) &&
+                m.text.trim() === (newMsg.text || "").trim()
+            );
+
+            if (pendingOptimisticIndex !== -1) {
+              return prev.map((m, idx) =>
+                idx === pendingOptimisticIndex
+                  ? {
+                      ...m,
+                      id: newMsg.id,
+                      status: newMsg.status || "sent",
+                      createdAt: newMsg.createdAt || m.createdAt,
+                      time: newMsg.time || m.time,
+                      aiTaskDetection: newMsg.aiTaskDetection || m.aiTaskDetection,
+                      localKey: m.localKey || m.id,
+                      sender: {
+                        id: newMsg.senderId || m.sender.id,
+                        displayName: newMsg.senderName || m.sender.displayName,
+                        initials: newMsg.senderInitials || m.sender.initials,
+                      },
+                    }
+                  : m
+              );
+            }
+          }
+
+          // 3. Genuine new message from someone else (or other tab)
           return [
             ...prev,
             {
               id: newMsg.id,
+              localKey: newMsg.id,
               from: isMe ? "me" : "them",
               text: newMsg.text,
               time: newMsg.time,
@@ -326,6 +373,18 @@ function ChatApp() {
 
         return [updated, ...prev.filter((c) => c.id !== newMsg.conversationId)];
       });
+    };
+
+    const handleAiDetected = (data: { messageId: string; conversationId: string; aiTaskDetection: any }) => {
+      if (data.conversationId === activeId) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === data.messageId
+              ? { ...m, aiTaskDetection: data.aiTaskDetection }
+              : m
+          )
+        );
+      }
     };
 
     const handleMessageEdited = (data: {
@@ -458,35 +517,35 @@ function ChatApp() {
     };
 
     socket.on("message:new", handleMessageReceived);
-    socket.on("message_received", handleMessageReceived);
+    socket.on("message:ai_detected", handleAiDetected);
+    socket.on("message:updated", (data: any) => {
+      if (data?.id && data.aiTaskDetection) {
+        handleAiDetected({ messageId: data.id, conversationId: data.conversationId, aiTaskDetection: data.aiTaskDetection });
+      }
+    });
     socket.on("message_edited", handleMessageEdited);
     socket.on("message_deleted", handleMessageDeleted);
     socket.on("message_deleted_for_me", handleMessageDeletedForMe);
     socket.on("conversation:read-updated", handleMessagesRead);
-    socket.on("messages_read", handleMessagesRead);
     socket.on("messages_delivered", handleMessagesDelivered);
     socket.on("conversation:updated", handleConversationUpdated);
-    socket.on("conversation_updated", handleConversationUpdated);
     socket.on("group:member_added", handleGroupMemberEvent);
     socket.on("group:member_removed", handleGroupMemberEvent);
-    socket.on("group:updated", handleConversationUpdated);
     socket.on("presence:updated", (data: any) => handleUserStatusChanged({ userId: data.userId, online: data.online }));
     socket.on("user_status_changed", handleUserStatusChanged);
 
     return () => {
       socket.off("message:new", handleMessageReceived);
-      socket.off("message_received", handleMessageReceived);
+      socket.off("message:ai_detected", handleAiDetected);
+      socket.off("message:updated");
       socket.off("message_edited", handleMessageEdited);
       socket.off("message_deleted", handleMessageDeleted);
       socket.off("message_deleted_for_me", handleMessageDeletedForMe);
       socket.off("conversation:read-updated", handleMessagesRead);
-      socket.off("messages_read", handleMessagesRead);
       socket.off("messages_delivered", handleMessagesDelivered);
       socket.off("conversation:updated", handleConversationUpdated);
-      socket.off("conversation_updated", handleConversationUpdated);
       socket.off("group:member_added", handleGroupMemberEvent);
       socket.off("group:member_removed", handleGroupMemberEvent);
-      socket.off("group:updated", handleConversationUpdated);
       socket.off("presence:updated");
       socket.off("user_status_changed", handleUserStatusChanged);
     };
@@ -667,12 +726,11 @@ function ChatApp() {
   // 4. Send or Edit Message Handler
   async function handleSend() {
     const text = draft.trim();
-    if (!text || !activeId || sending) return;
-
-    setSending(true);
+    if (!text || !activeId) return;
 
     // If we are currently editing an existing message
     if (editingMessage) {
+      setSending(true);
       try {
         const res = await api.editMessage(activeId, editingMessage.id, text);
         setMessages((prev) =>
@@ -700,8 +758,46 @@ function ChatApp() {
       return;
     }
 
-    // Normal message send
+    // Normal message send with instant, smooth zero-flicker optimistic rendering
+    const localKey = `client-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const optimisticMsg: BackendMessage = {
+      id: localKey,
+      localKey,
+      from: "me",
+      text,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      createdAt: new Date().toISOString(),
+      status: "sent",
+      sender: {
+        id: user?._id || "",
+        displayName: user?.displayName || "You",
+        initials: user?.initials || "U",
+      },
+    };
+
+    // Immediately clear draft and preserve focus so typing is uninterrupted
     setDraft("");
+    inputRef.current?.focus();
+
+    // Optimistically insert message
+    setMessages((prev) => [...prev, optimisticMsg]);
+    setTimeout(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    }, 10);
+
+    setConversations((prev) => {
+      const found = prev.find((c) => c.id === activeId);
+      if (!found) return prev;
+      const updated = {
+        ...found,
+        lastMessageText: text,
+        lastMessageTime: optimisticMsg.createdAt,
+      };
+      return [updated, ...prev.filter((c) => c.id !== activeId)];
+    });
+
     try {
       const res = activeWorkspace?.id
         ? await api.sendWorkspaceMessage(activeWorkspace.id, activeId, text)
@@ -709,25 +805,32 @@ function ChatApp() {
       const newMsg = res.message;
 
       setMessages((prev) => {
-        if (prev.some((m) => m.id === newMsg.id)) return prev;
-        return [...prev, newMsg];
-      });
+        // If message was already reconciled by incoming Socket.IO event:
+        const serverMatchIdx = prev.findIndex((m) => m.id === newMsg.id);
+        if (serverMatchIdx !== -1) {
+          return prev.map((m, idx) =>
+            idx === serverMatchIdx
+              ? { ...m, ...newMsg, localKey: m.localKey || localKey }
+              : m
+          );
+        }
 
-      setConversations((prev) => {
-        const found = prev.find((c) => c.id === activeId);
-        if (!found) return prev;
-        const updated = {
-          ...found,
-          lastMessageText: text,
-          lastMessageTime: newMsg.createdAt,
-        };
-        return [updated, ...prev.filter((c) => c.id !== activeId)];
+        // Reconcile optimistic placeholder in place with real server ID, preserving stable localKey
+        const optimisticIdx = prev.findIndex((m) => m.id === localKey || m.localKey === localKey);
+        if (optimisticIdx !== -1) {
+          return prev.map((m, idx) =>
+            idx === optimisticIdx
+              ? { ...m, ...newMsg, id: newMsg.id, localKey }
+              : m
+          );
+        }
+
+        return [...prev, { ...newMsg, localKey }];
       });
     } catch (err: any) {
       console.error("[ChatApp] Failed to send message:", err);
+      setMessages((prev) => prev.filter((m) => m.id !== localKey && m.localKey !== localKey));
       setNetworkError(err.message || "Failed to deliver message. Check backend connection.");
-    } finally {
-      setSending(false);
     }
   }
 
@@ -1219,7 +1322,7 @@ function ChatApp() {
 
                     return (
                       <div
-                        key={m.id}
+                        key={m.localKey || m.id}
                         id={`msg-${m.id}`}
                         className={cn(
                           "group relative max-w-[85%] md:max-w-[72%]",
@@ -1560,18 +1663,18 @@ function ChatApp() {
                       ? "Edit your message... (Esc to cancel)"
                       : `Message ${active.name}...`
                   }
-                  disabled={sending}
+                  disabled={sending && !!editingMessage}
                   className="max-h-32 min-h-12 flex-1 resize-none rounded-2xl border border-border/60 bg-muted/60 px-4 py-3.5 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary/50 focus:bg-card focus:shadow-xs disabled:opacity-50"
                 />
 
                 <button
                   type="submit"
-                  disabled={!draft.trim() || sending}
+                  disabled={!draft.trim() && !editingMessage}
                   className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-tr from-primary to-emerald-600 text-primary-foreground shadow-md transition-all duration-200 hover:from-primary/95 hover:to-emerald-500 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:hover:scale-100 cursor-pointer mb-0.5"
                   aria-label={editingMessage ? "Save edit" : "Send message"}
                   title={editingMessage ? "Save edit (Enter)" : "Send message (Enter)"}
                 >
-                  {sending ? (
+                  {sending && editingMessage ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : editingMessage ? (
                     <Check className="h-5 w-5 stroke-[2.5]" />

@@ -50,6 +50,21 @@ interface AiTaskReviewModalProps {
   onManualCreateRequested?: () => void;
 }
 
+function formatDeadlineDisplay(dueDate?: string, originalText?: string | null): string {
+  if (dueDate) {
+    const parts = dueDate.split("T")[0].split("-");
+    if (parts.length === 3) {
+      const [y, m, d] = parts;
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const monthIdx = parseInt(m, 10) - 1;
+      if (monthIdx >= 0 && monthIdx < 12) {
+        return `${d.padStart(2, "0")} ${months[monthIdx]} ${y}`;
+      }
+    }
+  }
+  return originalText || "No deadline";
+}
+
 export function AiTaskReviewModal({
   open,
   onOpenChange,
@@ -69,7 +84,11 @@ export function AiTaskReviewModal({
   useEffect(() => {
     if (open && detectionData) {
       setError(null);
-      setEditingIndex(null);
+      if (detectionData.needsConfirmation) {
+        setEditingIndex(0);
+      } else {
+        setEditingIndex(null);
+      }
 
       if (workspaceId) {
         setLoadingColleagues(true);
@@ -171,6 +190,14 @@ export function AiTaskReviewModal({
       return;
     }
 
+    if (!t.assigneeId) {
+      setEditingIndex(index);
+      setError("Please select a colleague to assign this task to before approving.");
+
+      
+      return;
+    }
+
     setSubmittingIndex(index);
     setError(null);
 
@@ -230,10 +257,17 @@ export function AiTaskReviewModal({
               </div>
             </div>
 
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-purple-500 animate-pulse" />
-              AI Detected
-            </span>
+            {detectionData.needsConfirmation ? (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center gap-1.5 border border-amber-500/20">
+                <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                Review Required
+              </span>
+            ) : (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-purple-500 animate-pulse" />
+                AI Detected
+              </span>
+            )}
           </div>
         </div>
 
@@ -242,6 +276,20 @@ export function AiTaskReviewModal({
             <div className="rounded-xl p-3 bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 shrink-0" />
               <span>{error}</span>
+            </div>
+          )}
+
+          {detectionData.warnings && detectionData.warnings.length > 0 && (
+            <div className="rounded-xl p-3 bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs flex items-start gap-2.5">
+              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-500" />
+              <div className="space-y-1">
+                <span className="font-bold">Ambiguity / Attention Needed:</span>
+                <ul className="list-disc pl-4 space-y-0.5">
+                  {detectionData.warnings.map((w, i) => (
+                    <li key={i}>{w}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
           )}
 
@@ -320,9 +368,14 @@ export function AiTaskReviewModal({
                             onChange={(e) =>
                               handleTaskFieldChange(idx, "assigneeId", e.target.value)
                             }
-                            className="w-full h-8 rounded-lg border border-border bg-background px-2 text-xs font-medium focus:ring-1 focus:ring-primary"
+                            className={cn(
+                              "w-full h-8 rounded-lg border px-2 text-xs font-medium focus:ring-1 focus:ring-primary transition-all",
+                              !task.assigneeId || task.assigneeName === "Unassigned"
+                                ? "border-amber-500/70 bg-amber-500/10 text-amber-900 dark:text-amber-100 font-semibold ring-1 ring-amber-500/30"
+                                : "border-border bg-background"
+                            )}
                           >
-                            <option value="">Unassigned</option>
+                            <option value="">⚠️ Unassigned — Choose colleague...</option>
                             {colleagues.map((c) => (
                               <option key={c._id} value={c._id}>
                                 {c.displayName}
@@ -367,24 +420,33 @@ export function AiTaskReviewModal({
                       </div>
                     ) : (
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <div className="grid h-5 w-5 place-items-center rounded-full bg-primary/20 text-[10px] font-bold text-primary">
-                            {task.assigneeInitials}
+                        {!task.assigneeId || task.assigneeName === "Unassigned" ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-400 font-bold text-xs animate-pulse">
+                              <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                              Assignee: Unassigned (Action Required)
+                            </span>
                           </div>
-                          <span>
-                            Assignee:{" "}
-                            <strong className="text-foreground">
-                              {task.assigneeName}
-                            </strong>
-                          </span>
-                        </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5">
+                            <div className="grid h-5 w-5 place-items-center rounded-full bg-primary/20 text-[10px] font-bold text-primary">
+                              {task.assigneeInitials}
+                            </div>
+                            <span>
+                              Assignee:{" "}
+                              <strong className="text-foreground">
+                                {task.assigneeName}
+                              </strong>
+                            </span>
+                          </div>
+                        )}
 
                         <div className="flex items-center gap-1">
                           <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                           <span>
                             Deadline:{" "}
                             <strong className="text-foreground">
-                              {task.dueDate || task.originalDeadlineText || "No deadline"}
+                              {formatDeadlineDisplay(task.dueDate, task.originalDeadlineText)}
                             </strong>
                           </span>
                         </div>

@@ -209,16 +209,23 @@ async function handleGetExtractions(req: AuthenticatedRequest, res: Response): P
 
     // 1. Find all active conversations in this workspace
     const conversations = await Conversation.find({ workspaceId })
-      .populate<{ participants: IUser }>("participants", "displayName initials email")
+      .populate<{ participants: IUser[] }>("participants", "displayName initials email")
       .lean();
 
     const conversationIds = conversations.map((c) => c._id);
 
-    // 2. Find messages that AI identified as task candidates
+    // 2. Find messages that AI identified as task candidates or contain clear action keywords
     const candidateMessages = await Message.find({
       conversationId: { $in: conversationIds },
       isDeletedForEveryone: false,
-      "aiTaskDetection.isTaskCandidate": true,
+      $or: [
+        { "aiTaskDetection.isTaskCandidate": true },
+        {
+          text: {
+            $regex: /\b(schedule|meeting|client meeting|call|fix|update|prepare|send|review|deploy|by tomorrow|by monday|by friday|urgent|asap|verify)\b/i,
+          },
+        },
+      ],
     })
       .sort({ createdAt: -1 })
       .limit(30)
@@ -258,10 +265,39 @@ async function handleGetExtractions(req: AuthenticatedRequest, res: Response): P
       .filter((mem) => (mem.userId as any)?.displayName)
       .map((mem) => (mem.userId as any).displayName.trim());
 
+    // Evaluate any pending message that lacks complete AI detection or was previously marked false
+    await Promise.all(
+      pendingMessages.map(async (m) => {
+        if (!m.aiTaskDetection || !m.aiTaskDetection.isTaskCandidate || !m.aiTaskDetection.tasks?.length) {
+          try {
+            const detected = await fastAutoDetectTask(
+              m.text,
+              (m.sender as any)?.displayName || "Teammate",
+              teamMemberNames
+            );
+            if (detected.isTaskCandidate && detected.tasks?.length) {
+              m.aiTaskDetection = { ...detected, detectedAt: new Date() };
+              Message.updateOne(
+                { _id: m._id },
+                { $set: { aiTaskDetection: m.aiTaskDetection } }
+              ).exec().catch(() => {});
+            }
+          } catch (scanErr) {
+            console.warn("[ActionFlow AI] Auto-detection scan error on message:", scanErr);
+          }
+        }
+      })
+    );
+
+    // Filter down to validated task candidates
+    const validTaskMessages = pendingMessages.filter(
+      (m) => m.aiTaskDetection?.isTaskCandidate && m.aiTaskDetection?.tasks?.length
+    );
+
     const convMap = new Map(conversations.map((c) => [c._id.toString(), c]));
 
     // Synchronously format extractions from database - takes ~5ms!
-    const extractions = pendingMessages.map((m) => {
+    const extractions = validTaskMessages.map((m) => {
       const aiDetection = m.aiTaskDetection;
       const conv = convMap.get(m.conversationId.toString());
       let sourceName = conv?.name;
@@ -277,45 +313,82 @@ async function handleGetExtractions(req: AuthenticatedRequest, res: Response): P
       }
 
       const rawTask = aiDetection?.tasks?.[0];
-      const suggestedName = rawTask?.assigneeName || null;
+      const rawSuggestedName = rawTask?.assigneeName || null;
+      // Ignore placeholder names like "Teammate", "Someone", "Anyone", "Unassigned"
+      const suggestedName = (rawSuggestedName && !/^(teammate|someone|anyone|unassigned)$/i.test(rawSuggestedName.trim()))
+        ? rawSuggestedName.trim()
+        : null;
 
-      // Find matching workspace member with strict priority: exact match before prefix match
-      let matchedMember: any = null;
-      if (suggestedName) {
-        const cleanSug = suggestedName.trim().toLowerCase();
-        // 1. Exact match on full displayName or first name
-        matchedMember = members.find((mem) => {
+      // Check if this is an explicit self-commitment from the sender (e.g. "I'll do it", "I will finish...")
+      const isSelfCommitment =
+        aiDetection?.category === "self_commitment" ||
+        /\b(i'll|i\s+will|i\s+can|let\s+me|assign\s+to\s+me|on\s+it|i\s+am\s+on\s+it|i'm\s+on\s+it|i\s+got\s+this|main\s+karunga)\b/i.test(m.text);
+
+      let assigneeDisplayName = "Unassigned";
+      let assigneeId: string | undefined = undefined;
+      let assigneeInitials = "?";
+
+      if (isSelfCommitment) {
+        // Priority 1: Self-commitment belongs directly to the message's sender
+        const senderIdStr = (m.sender as any)?._id?.toString() || (m.sender as any)?.toString() || (m as any).senderId?.toString();
+        const senderMember = members.find((mem) => {
           const u = mem.userId as any;
-          if (!u?.displayName) return false;
-          const cleanName = u.displayName.trim().toLowerCase();
-          const firstName = cleanName.split(/\s+/)[0];
-          return cleanName === cleanSug || firstName === cleanSug;
+          return u?._id?.toString() === senderIdStr;
         });
 
-        // 2. Prefix match only if no exact match exists
-        if (!matchedMember) {
+        if (senderMember) {
+          assigneeDisplayName = (senderMember.userId as any).displayName;
+          assigneeId = (senderMember.userId as any)._id.toString();
+          assigneeInitials = (senderMember.userId as any).initials || "U";
+        } else if (m.sender && (m.sender as any).displayName) {
+          assigneeDisplayName = (m.sender as any).displayName;
+          assigneeId = (m.sender as any)._id?.toString() || senderIdStr;
+          assigneeInitials = (m.sender as any).initials || "U";
+        } else if (req.user) {
+          assigneeDisplayName = req.user.displayName;
+          assigneeId = req.user._id.toString();
+          assigneeInitials = req.user.initials || "U";
+        }
+      } else {
+        // Priority 2: Directed task assignment matching workspace member
+        let matchedMember: any = null;
+        if (suggestedName) {
+          const cleanSug = suggestedName.trim().toLowerCase();
+          // Exact match on full displayName or first name
           matchedMember = members.find((mem) => {
             const u = mem.userId as any;
             if (!u?.displayName) return false;
             const cleanName = u.displayName.trim().toLowerCase();
-            return cleanName.startsWith(cleanSug + " ") || cleanName.startsWith(cleanSug);
+            const firstName = cleanName.split(/\s+/)[0];
+            return cleanName === cleanSug || firstName === cleanSug;
           });
+
+          // Prefix match only if no exact match exists
+          if (!matchedMember) {
+            matchedMember = members.find((mem) => {
+              const u = mem.userId as any;
+              if (!u?.displayName) return false;
+              const cleanName = u.displayName.trim().toLowerCase();
+              return cleanName.startsWith(cleanSug + " ") || cleanName.startsWith(cleanSug);
+            });
+          }
+        }
+
+        if (matchedMember) {
+          assigneeDisplayName = (matchedMember.userId as any).displayName;
+          assigneeId = (matchedMember.userId as any)._id.toString();
+          assigneeInitials = (matchedMember.userId as any).initials || "U";
+        } else {
+          // If no member matched or candidate was ambiguous / someone / unassigned
+          assigneeDisplayName = "Unassigned";
+          assigneeId = undefined;
+          assigneeInitials = "?";
         }
       }
 
-      const assigneeDisplayName = matchedMember
-        ? (matchedMember.userId as any).displayName
-        : suggestedName || (m.sender as any)?.displayName || "Teammate";
+      const isUnassigned = assigneeDisplayName === "Unassigned" || !assigneeId;
 
-      const assigneeId = matchedMember
-        ? (matchedMember.userId as any)._id.toString()
-        : undefined;
-
-      const assigneeInitials = matchedMember
-        ? (matchedMember.userId as any).initials || "U"
-        : (m.sender as any)?.initials || "U";
-
-      const confidenceVal = rawTask?.confidence ?? aiDetection?.confidence;
+      const confidenceVal = (rawTask as any)?.confidence ?? aiDetection?.confidence;
       let confidencePct = 88;
       if (typeof confidenceVal === "number") {
         if (confidenceVal > 1) {
@@ -329,15 +402,137 @@ async function handleGetExtractions(req: AuthenticatedRequest, res: Response): P
         }
       }
 
+      let resolvedDeadline = rawTask?.deadlineText || "ASAP";
+      let resolvedDeadlineDate = rawTask?.deadlineDate || null;
+      let resolvedTitle = rawTask?.title || m.text.slice(0, 60);
+
+      // Helper to format Date into local YYYY-MM-DD
+      const formatToLocalDateString = (dateObj: Date): string => {
+        const offset = dateObj.getTimezoneOffset();
+        let targetTime = dateObj.getTime();
+        if (offset === 0) {
+          targetTime += 330 * 60 * 1000;
+        }
+        const adjusted = new Date(targetTime);
+        const y = adjusted.getFullYear();
+        const m = String(adjusted.getMonth() + 1).padStart(2, "0");
+        const day = String(adjusted.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+      };
+
+      // Helper to format ISO date into clean display date e.g. "04 Nov 2026"
+      const formatIsoToDateDisplay = (isoDate: string, timeStr?: string | null): string => {
+        const parts = isoDate.split("T")[0].split("-");
+        if (parts.length === 3) {
+          const [y, m, d] = parts;
+          const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          const idx = parseInt(m, 10) - 1;
+          if (idx >= 0 && idx < 12) {
+            const base = `${d.padStart(2, "0")} ${months[idx]} ${y}`;
+            return timeStr ? `${base}, ${timeStr}` : base;
+          }
+        }
+        return timeStr ? `${isoDate}, ${timeStr}` : isoDate;
+      };
+
+      // Extract explicit time mention if present (e.g. "11 AM", "at 4:30 pm")
+      const timeMatch = m.text.match(/\b(?:at\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm))\b/i);
+      const extractedTime = timeMatch ? timeMatch[1].toUpperCase() : null;
+
+      // Check if text has explicit relative deadline that was missed or defaulted to ASAP
+      const relDeadlineMatch = m.text.match(
+        /\b((?:by|before|in|within|after)\s+(?:a\s+)?)?(\d+|a|an|one|two|couple(?:\s+of)?|three|few|four|five|six|seven|eight|nine|ten)\s+(?:days?|weeks?|months?)(?:\s+(?:from\s+now|later))?\b/i
+      );
+      if (relDeadlineMatch && (resolvedDeadline === "ASAP" || !rawTask?.deadlineDate || !rawTask?.deadlineText || /days?\s+from\s+now|in\s+\d+|on\s+\w+/i.test(resolvedDeadline))) {
+        const wordMap: Record<string, number> = {
+          a: 1, an: 1, one: 1, two: 2, couple: 2, "couple of": 2,
+          three: 3, few: 3, four: 4, five: 5, six: 6, seven: 7,
+          eight: 8, nine: 9, ten: 10,
+        };
+        const numRaw = relDeadlineMatch[2].toLowerCase();
+        const num = /^\d+$/.test(numRaw) ? parseInt(numRaw, 10) : (wordMap[numRaw] || 2);
+        const d = new Date(m.createdAt || Date.now());
+        if (/week/i.test(relDeadlineMatch[0])) {
+          d.setDate(d.getDate() + num * 7);
+        } else if (/month/i.test(relDeadlineMatch[0])) {
+          d.setMonth(d.getMonth() + num);
+        } else {
+          d.setDate(d.getDate() + num);
+        }
+        resolvedDeadlineDate = formatToLocalDateString(d);
+
+        // Also clean trailing deadline from title if it was erroneously kept in title
+        const rawPhrase = relDeadlineMatch[0].trim();
+        if (resolvedTitle.toLowerCase().includes(rawPhrase.toLowerCase())) {
+          resolvedTitle = resolvedTitle.replace(new RegExp(`\\s*${rawPhrase}\\s*`, "i"), " ").trim();
+        }
+      }
+
+      // Check for weekdays in text (e.g. "on Friday", "Monday")
+      const weekdayMatch = m.text.match(
+        /\b(?:by|before|on|for)?\s*(monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)\b/i
+      );
+      const keywordMatch = m.text.match(
+        /\b(day\s*after\s*tomorrow|parso|tomorrow|kal|today|tonight|eod|end\s*of\s*day|aaj)\b/i
+      );
+      const refDate = new Date(m.createdAt || Date.now());
+
+      if (!resolvedDeadlineDate) {
+        if (weekdayMatch) {
+          const weekdayMap: Record<string, number> = {
+            sunday: 0, sun: 0, monday: 1, mon: 1, tuesday: 2, tue: 2,
+            wednesday: 3, wed: 3, thursday: 4, thu: 4, friday: 5, fri: 5, saturday: 6, sat: 6,
+          };
+          const targetWd = weekdayMap[weekdayMatch[1].toLowerCase()];
+          const curWd = refDate.getDay();
+          let diff = (targetWd - curWd + 7) % 7;
+          if (diff === 0) diff = 7;
+          const d = new Date(refDate);
+          d.setDate(d.getDate() + diff);
+          resolvedDeadlineDate = formatToLocalDateString(d);
+        } else if (keywordMatch) {
+          const kw = keywordMatch[0].toLowerCase();
+          const d = new Date(refDate);
+          if (/day\s*after\s*tomorrow|parso/i.test(kw)) {
+            d.setDate(d.getDate() + 2);
+          } else if (/tomorrow|kal/i.test(kw)) {
+            d.setDate(d.getDate() + 1);
+          }
+          resolvedDeadlineDate = formatToLocalDateString(d);
+        }
+      }
+
+      // Always format resolvedDeadline as a calendar date when a date is resolved!
+      if (resolvedDeadlineDate) {
+        resolvedDeadline = formatIsoToDateDisplay(resolvedDeadlineDate, extractedTime);
+      } else {
+        const isoMatch = (rawTask?.deadlineText || "").match(/^\d{4}-\d{2}-\d{2}/);
+        if (isoMatch) {
+          resolvedDeadlineDate = isoMatch[0];
+          resolvedDeadline = formatIsoToDateDisplay(resolvedDeadlineDate, extractedTime);
+        }
+      }
+
+      // If title lost its imperative verb (e.g. "The deployment" from "Complete the deployment")
+      const firstOriginalWord = m.text.trim().split(/\s+/)[0];
+      if (/^(complete|finish|deploy|review|update|fix|check|prepare|send|write|test)\b/i.test(firstOriginalWord)) {
+        if (/^(the|a|an)\s+/i.test(resolvedTitle)) {
+          const capWord = firstOriginalWord.charAt(0).toUpperCase() + firstOriginalWord.slice(1).toLowerCase();
+          resolvedTitle = `${capWord} ${resolvedTitle}`.slice(0, 70);
+        }
+      }
+
       return {
         id: m._id.toString(),
         messageId: m._id.toString(),
         conversationId: m.conversationId.toString(),
-        title: rawTask?.title || m.text.slice(0, 60),
+        title: resolvedTitle,
         assignee: assigneeDisplayName,
         assigneeId,
         assigneeInitials,
-        deadline: rawTask?.deadlineText || "ASAP",
+        isUnassigned,
+        deadline: resolvedDeadline,
+        deadlineDate: resolvedDeadlineDate,
         priority: rawTask?.priority || "MEDIUM",
         source: sourceName || "Direct Chat",
         context: m.text,
