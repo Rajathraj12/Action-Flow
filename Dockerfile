@@ -1,20 +1,17 @@
-# ActionFlow Production Container (Node.js 22 + Python 3 ML Pipeline)
-FROM node:22-bullseye-slim
+# Multi-stage production container with Python 3.11 and Node.js 22
+FROM python:3.11-slim-bookworm
 
-# Install Python 3, pip, and system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-pip \
-    python3-dev \
-    build-essential \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# Copy Node.js 22, npm & npx directly from official Node image (zero apt-get network failure risk)
+COPY --from=node:22-bookworm-slim /usr/local/bin/node /usr/local/bin/node
+COPY --from=node:22-bookworm-slim /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
 WORKDIR /app
 
 # 1. Install Python ML dependencies
 COPY AI-Service/requirements.txt ./AI-Service/
-RUN pip3 install --no-cache-dir -r ./AI-Service/requirements.txt
+RUN pip install --no-cache-dir -r ./AI-Service/requirements.txt
 
 # 2. Install Node.js Backend dependencies
 COPY Backend/package*.json ./Backend/
@@ -31,9 +28,4 @@ ENV PORT=5000
 
 EXPOSE 5000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-  CMD curl -f http://localhost:5000/api/health || exit 1
-
 CMD ["npm", "start"]
-
