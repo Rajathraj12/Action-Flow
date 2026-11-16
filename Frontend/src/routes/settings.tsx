@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Bell, Key, Sparkles, CheckSquare, Users, HelpCircle, Monitor, ChevronRight } from "lucide-react";
+import { Bell, Key, Sparkles, CheckSquare, Users, HelpCircle, Monitor, ChevronRight, Menu } from "lucide-react";
+import { openMobileNav } from "@/lib/mobile-nav";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { TeamAndRolesTab } from "@/components/workspace/TeamAndRolesTab";
@@ -35,8 +36,17 @@ function SettingsPage() {
       <div className="flex flex-1 h-full w-full">
         {/* Settings List / Sidebar */}
         <aside className="flex w-full flex-col border-r border-border bg-card/80 backdrop-blur-md md:w-[26rem] shrink-0">
-          <header className="flex h-16 items-center gap-3 border-b border-border/80 px-6">
-            <h1 className="font-display text-lg font-bold tracking-tight text-foreground">Settings</h1>
+          <header className="flex h-16 items-center gap-3 border-b border-border/80 px-4 sm:px-6">
+            <button
+              type="button"
+              onClick={openMobileNav}
+              className="grid h-9 w-9 place-items-center rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground md:hidden cursor-pointer transition-colors shadow-2xs"
+              title="Open Navigation Menu"
+              aria-label="Open Navigation Menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <h1 className="font-display text-base sm:text-lg font-bold tracking-tight text-foreground">Settings</h1>
           </header>
 
         <div className="flex-1 overflow-y-auto py-2 custom-scrollbar">

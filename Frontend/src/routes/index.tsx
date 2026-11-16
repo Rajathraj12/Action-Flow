@@ -36,6 +36,7 @@ import {
   Bell,
   AlertCircle,
   HelpCircle,
+  Menu,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -61,6 +62,14 @@ import { CreateTaskModal } from "@/components/tasks/CreateTaskModal";
 import { AiTaskReviewModal } from "@/components/tasks/AiTaskReviewModal";
 import { DynamicIslandTasks } from "@/components/tasks/DynamicIslandTasks";
 import { NotificationHelpModal } from "@/components/notifications/NotificationHelpModal";
+import { openMobileNav } from "@/lib/mobile-nav";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import {
   notifyDesktop,
   updateDesktopBadge,
@@ -223,21 +232,18 @@ function ChatApp() {
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [isChatSidebarCollapsed, setIsChatSidebarCollapsed] = useState(false);
 
-  // WhatsApp-style Desktop Notifications State
-  const [notifyPermission, setNotifyPermission] = useState<NotificationPermission | "unsupported">(() => {
-    return getNotificationPermissionStatus();
-  });
-  const [showDesktopNotifyBanner, setShowDesktopNotifyBanner] = useState(() => {
-    if (typeof window === "undefined") return false;
-    if (isDesktopApp()) return false;
-    if (!("Notification" in window)) return false;
-    return Notification.permission !== "granted";
-  });
+  // WhatsApp-style Desktop Notifications State (SSR-safe initial defaults to avoid hydration mismatch)
+  const [notifyPermission, setNotifyPermission] = useState<NotificationPermission | "unsupported">("default");
+  const [showDesktopNotifyBanner, setShowDesktopNotifyBanner] = useState<boolean>(false);
   const [isNotifyHelpModalOpen, setIsNotifyHelpModalOpen] = useState(false);
 
   useEffect(() => {
-    if (isDesktopApp()) {
-      setShowDesktopNotifyBanner(false);
+    if (typeof window !== "undefined") {
+      const status = getNotificationPermissionStatus();
+      setNotifyPermission(status);
+      if (!isDesktopApp() && "Notification" in window && Notification.permission !== "granted") {
+        setShowDesktopNotifyBanner(true);
+      }
     }
   }, []);
 
@@ -1069,15 +1075,26 @@ function ChatApp() {
           isChatSidebarCollapsed && "md:w-0 md:border-r-0 md:overflow-hidden md:opacity-0 pointer-events-none"
         )}
       >
-        <header className="border-b border-border/80 px-5 pb-3 bg-card/60 backdrop-blur-md">
+        <header className="border-b border-border/80 px-4 sm:px-5 pb-3 bg-card/60 backdrop-blur-md">
           <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
+              {/* Mobile Navigation Drawer Toggle */}
+              <button
+                type="button"
+                onClick={openMobileNav}
+                className="grid h-9 w-9 place-items-center rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground md:hidden cursor-pointer transition-colors shadow-2xs"
+                title="Open Navigation Menu"
+                aria-label="Open Navigation Menu"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+
               <img
                 src="/logo.png"
                 alt="ActionFlow"
-                className="h-10 w-10 rounded-xl object-contain shadow-xs"
+                className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain shadow-xs"
               />
-              <span className="font-display font-extrabold text-lg tracking-tight text-foreground">
+              <span className="font-display font-extrabold text-base sm:text-lg tracking-tight text-foreground">
                 ActionFlow
               </span>
             </div>
@@ -1330,23 +1347,26 @@ function ChatApp() {
         {active ? (
           <>
             {/* Thread Header */}
-            <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/80 bg-card/85 backdrop-blur-md px-4 md:px-6 shadow-2xs z-10">
+            <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/80 bg-card/85 backdrop-blur-md px-2.5 sm:px-4 md:px-6 shadow-2xs z-10 gap-1.5 sm:gap-3">
               <div
                 onClick={() => {
                   if (active.type === "GROUP") setIsGroupInfoModalOpen(true);
                 }}
                 className={cn(
-                  "flex items-center gap-3 min-w-0",
+                  "flex items-center gap-2 sm:gap-3 min-w-0 shrink",
                   active.type === "GROUP" && "cursor-pointer group/header"
                 )}
               >
+                {/* Mobile Back Button to return to conversation list */}
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     setMobileOpen(false);
                   }}
-                  className="-ml-1 grid h-9 w-9 place-items-center rounded-xl text-muted-foreground hover:bg-muted md:hidden cursor-pointer transition-colors"
+                  className="-ml-1 grid h-9 w-9 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-muted md:hidden cursor-pointer transition-colors"
                   aria-label="Back to conversations"
+                  title="Back to conversations"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
@@ -1358,7 +1378,7 @@ function ChatApp() {
                     e.stopPropagation();
                     setIsChatSidebarCollapsed(!isChatSidebarCollapsed);
                   }}
-                  className="hidden md:grid h-9 w-9 place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer transition-colors"
+                  className="hidden md:grid h-9 w-9 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer transition-colors"
                   title={isChatSidebarCollapsed ? "Show conversation list" : "Hide conversation list"}
                   aria-label={isChatSidebarCollapsed ? "Show conversation list" : "Hide conversation list"}
                 >
@@ -1371,104 +1391,181 @@ function ChatApp() {
 
                 <Avatar initials={active.initials} online={active.online} isGroup={active.type === "GROUP"} size="lg" />
 
-                <div className="min-w-0">
+                <div className="min-w-0 max-w-[130px] sm:max-w-[220px] md:max-w-[320px]">
                   <p className={cn(
                     "truncate font-display text-sm font-bold text-foreground tracking-tight",
                     active.type === "GROUP" && "group-hover/header:text-primary transition-colors"
                   )}>
                     {active.name}
                   </p>
-                  <p className="truncate text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                  <p className="truncate text-[11px] sm:text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                     {active.type === "GROUP" ? (
-                      <span className="text-primary font-semibold flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {active.participantCount || active.participants?.length || 2} members • View info
+                      <span className="text-primary font-semibold flex items-center gap-1 truncate">
+                        <Users className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{active.participantCount || active.participants?.length || 2} members</span>
                       </span>
                     ) : active.online ? (
                       <>
-                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Active now</span>
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold truncate">Active now</span>
                       </>
                     ) : (
-                      <span>{active.role}</span>
+                      <span className="truncate">{active.role}</span>
                     )}
                   </p>
                 </div>
               </div>
 
               {/* Center: Real-Time Dynamic Island for Ongoing Tasks */}
-              <div className="flex items-center justify-center flex-1 mx-2 lg:mx-4">
+              <div className="flex items-center justify-center shrink-0 mx-1">
                 <DynamicIslandTasks onCreateTaskClick={() => setIsCreateTaskModalOpen(true)} />
               </div>
 
-              {/* Thread Action Buttons with smooth hover */}
-              <div className="flex items-center gap-1 text-muted-foreground">
-                {active.type === "GROUP" && (
+              {/* Thread Action Buttons */}
+              <div className="flex items-center shrink-0">
+                {/* Mobile: Clean 3-Dots Dropdown Menu (Prevents Clutter) */}
+                <div className="md:hidden">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="grid h-9 w-9 place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95 transition-all cursor-pointer"
+                        title="Conversation options"
+                        aria-label="Conversation options"
+                      >
+                        <MoreVertical className="h-5 w-5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-56 p-1.5 shadow-xl rounded-2xl border border-border/80 bg-card/95 backdrop-blur-xl z-50 animate-in fade-in-0 zoom-in-95 duration-150"
+                    >
+                      {active.type === "GROUP" && (
+                        <DropdownMenuItem
+                          onClick={() => setIsGroupInfoModalOpen(true)}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer"
+                        >
+                          <Users className="h-4 w-4 text-primary" />
+                          <span>Group Info & Members</span>
+                        </DropdownMenuItem>
+                      )}
+
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setInChatSearchOpen(!inChatSearchOpen);
+                          if (inChatSearchOpen) setInChatSearchQuery("");
+                        }}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer"
+                      >
+                        <Search className="h-4 w-4 text-muted-foreground" />
+                        <span>Search Messages</span>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        onClick={() => setIsNewChatModalOpen(true)}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer"
+                      >
+                        <UserPlus className="h-4 w-4 text-muted-foreground" />
+                        <span>New Conversation</span>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        onClick={async () => {
+                          const status = getNotificationPermissionStatus();
+                          if (status === "granted") {
+                            sendTestNotification();
+                          } else {
+                            await requestNotificationPermission();
+                          }
+                        }}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer"
+                      >
+                        <Bell className="h-4 w-4 text-muted-foreground" />
+                        <span>Test Desktop Alert</span>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator className="my-1 bg-border/60" />
+
+                      <DropdownMenuItem
+                        onClick={openMobileNav}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer text-primary"
+                      >
+                        <Menu className="h-4 w-4" />
+                        <span>Open Navigation Sidebar</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {/* Desktop Thread Action Buttons */}
+                <div className="hidden md:flex items-center gap-1 text-muted-foreground">
+                  {active.type === "GROUP" && (
+                    <button
+                      type="button"
+                      onClick={() => setIsGroupInfoModalOpen(true)}
+                      className="grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 hover:bg-primary/10 hover:text-primary hover:scale-105 active:scale-95 cursor-pointer text-primary"
+                      title="Group details & member management"
+                    >
+                      <Users className="h-4.5 w-4.5" />
+                    </button>
+                  )}
+                  {/* Search in this chat */}
                   <button
                     type="button"
-                    onClick={() => setIsGroupInfoModalOpen(true)}
-                    className="grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 hover:bg-primary/10 hover:text-primary hover:scale-105 active:scale-95 cursor-pointer text-primary"
-                    title="Group details & member management"
+                    onClick={() => {
+                      setInChatSearchOpen(!inChatSearchOpen);
+                      if (inChatSearchOpen) setInChatSearchQuery("");
+                    }}
+                    className={cn(
+                      "grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 cursor-pointer",
+                      inChatSearchOpen
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95"
+                    )}
+                    title="Search messages in conversation"
                   >
-                    <Users className="h-4.5 w-4.5" />
+                    <Search className="h-4 w-4" />
                   </button>
-                )}
-                {/* Search in this chat */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setInChatSearchOpen(!inChatSearchOpen);
-                    if (inChatSearchOpen) setInChatSearchQuery("");
-                  }}
-                  className={cn(
-                    "grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 cursor-pointer",
-                    inChatSearchOpen
-                      ? "bg-primary text-primary-foreground shadow-xs"
-                      : "hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95"
-                  )}
-                  title="Search messages in conversation"
-                >
-                  <Search className="h-4 w-4" />
-                </button>
 
-                <button
-                  type="button"
-                  className="grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 cursor-pointer"
-                  title="Voice Call (Mock)"
-                >
-                  <Phone className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  className="grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 cursor-pointer"
-                  title="Video Call (Mock)"
-                >
-                  <Video className="h-4 w-4" />
-                </button>
-                <div className="h-4 w-[1px] bg-border/60 mx-1" />
-                <button
-                  type="button"
-                  onClick={() => setIsNewChatModalOpen(true)}
-                  className="grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 cursor-pointer"
-                  title="New conversation"
-                >
-                  <UserPlus className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const status = getNotificationPermissionStatus();
-                    if (status === "granted") {
-                      sendTestNotification();
-                    } else {
-                      await requestNotificationPermission();
-                    }
-                  }}
-                  className="grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 cursor-pointer"
-                  title="Test Windows Desktop Notification"
-                >
-                  <Bell className="h-4 w-4" />
-                </button>
+                  <button
+                    type="button"
+                    className="grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 cursor-pointer"
+                    title="Voice Call (Mock)"
+                  >
+                    <Phone className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    className="grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 cursor-pointer"
+                    title="Video Call (Mock)"
+                  >
+                    <Video className="h-4 w-4" />
+                  </button>
+                  <div className="h-4 w-[1px] bg-border/60 mx-1" />
+                  <button
+                    type="button"
+                    onClick={() => setIsNewChatModalOpen(true)}
+                    className="grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 cursor-pointer"
+                    title="New conversation"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const status = getNotificationPermissionStatus();
+                      if (status === "granted") {
+                        sendTestNotification();
+                      } else {
+                        await requestNotificationPermission();
+                      }
+                    }}
+                    className="grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 cursor-pointer"
+                    title="Test Windows Desktop Notification"
+                  >
+                    <Bell className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </header>
 

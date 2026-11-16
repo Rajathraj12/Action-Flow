@@ -25,7 +25,9 @@ import {
   Flame,
   ArrowUpRight,
   Activity,
+  Menu,
 } from "lucide-react";
+import { openMobileNav } from "@/lib/mobile-nav";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
@@ -391,14 +393,25 @@ function DashboardPage() {
       <div className="pointer-events-none absolute top-1/2 -left-40 h-96 w-96 rounded-full bg-purple-500/10 blur-3xl" />
 
       {/* Header */}
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/80 bg-card/70 backdrop-blur-md px-6 z-10">
-        <div className="flex items-center gap-3">
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/80 bg-card/70 backdrop-blur-md px-4 sm:px-6 z-10">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* Mobile Navigation Drawer Toggle */}
+          <button
+            type="button"
+            onClick={openMobileNav}
+            className="grid h-9 w-9 place-items-center rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground md:hidden cursor-pointer transition-colors shadow-2xs"
+            title="Open Navigation Menu"
+            aria-label="Open Navigation Menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+
           <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-primary/25 to-primary/10 text-primary shadow-xs border border-primary/20">
             <LayoutDashboard className="h-5 w-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="font-display text-lg font-bold tracking-tight text-foreground">
+              <h1 className="font-display text-base sm:text-lg font-bold tracking-tight text-foreground">
                 Manager Dashboard
               </h1>
               <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">

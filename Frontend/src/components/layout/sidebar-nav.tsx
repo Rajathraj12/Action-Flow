@@ -9,6 +9,8 @@ import {
   Search,
   PanelLeftClose,
   PanelLeftOpen,
+  X,
+  Menu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
@@ -23,6 +25,7 @@ import {
   TooltipContent,
   TooltipProvider,
 } from "@/components/ui/tooltip";
+import { openMobileNav, closeMobileNav } from "@/lib/mobile-nav";
 
 export function SidebarNav() {
   const location = useLocation();
@@ -30,15 +33,33 @@ export function SidebarNav() {
   const { user, logout } = useAuth();
   const { activeWorkspace, userRole } = useWorkspace();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // Collapsible sidebar state with local storage persistence (default: expanded)
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+  // Listen for global mobile drawer toggle
+  useEffect(() => {
+    function handleToggleMobile(e: any) {
+      setIsMobileOpen((prev) => (typeof e?.detail === "boolean" ? e.detail : !prev));
+    }
+    window.addEventListener("actionflow:toggle-mobile-nav", handleToggleMobile);
+    return () => window.removeEventListener("actionflow:toggle-mobile-nav", handleToggleMobile);
+  }, []);
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [currentPath]);
+
+  // Collapsible sidebar state (default: false to match SSR initial render, then hydrated from localStorage)
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+
+  useEffect(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("actionflow_sidebar_collapsed");
-      return saved === "true";
+      if (saved === "true") {
+        setIsCollapsed(true);
+      }
     }
-    return false;
-  });
+  }, []);
 
   const toggleSidebar = () => {
     setIsCollapsed((prev) => {
@@ -155,26 +176,34 @@ export function SidebarNav() {
                 to="/settings"
                 className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-primary to-emerald-600 text-xs font-black text-white shadow-xs hover:scale-105 hover:shadow-[0_0_14px_rgba(0,168,132,0.4)] transition-all cursor-pointer"
                 aria-label="Workspace Settings"
+                suppressHydrationWarning
               >
-                {activeWorkspace ? activeWorkspace.name.slice(0, 2).toUpperCase() : "SB"}
+                {activeWorkspace ? activeWorkspace.name.slice(0, 2).toUpperCase() : "SO"}
               </Link>
             </SidebarTooltip>
           ) : (
             <SidebarTooltip
-              label="Workspace Settings"
+              label={activeWorkspace?.name || "Soul Business Solutions"}
               description="Manage members, permissions & workspace settings"
               side="bottom"
             >
               <Link
                 to="/settings"
                 className="flex items-center justify-between gap-2.5 rounded-xl border border-rail-foreground/15 bg-white/5 p-2 transition-all duration-200 hover:bg-white/10 hover:border-primary/50 cursor-pointer group shadow-xs w-full"
+                suppressHydrationWarning
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary to-emerald-600 text-xs font-black text-white shadow-xs">
-                    {activeWorkspace ? activeWorkspace.name.slice(0, 2).toUpperCase() : "SB"}
+                  <div
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary to-emerald-600 text-xs font-black text-white shadow-xs"
+                    suppressHydrationWarning
+                  >
+                    {activeWorkspace ? activeWorkspace.name.slice(0, 2).toUpperCase() : "SO"}
                   </div>
                   <div className="min-w-0 transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden">
-                    <span className="font-bold text-xs text-white truncate block leading-tight">
+                    <span
+                      className="font-bold text-xs text-white truncate block leading-tight"
+                      suppressHydrationWarning
+                    >
                       {activeWorkspace?.name || "Soul Business Solutions"}
                     </span>
                     <span className="text-[10px] text-rail-foreground/70 flex items-center gap-1 mt-0.5 font-medium">
@@ -336,6 +365,182 @@ export function SidebarNav() {
         {/* Global Search Modal */}
         <GlobalSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       </nav>
+
+      {/* Mobile Slide-Over Navigation Drawer (Active on < md mobile screens) */}
+      {isMobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          {/* Backdrop Blur Overlay */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in-0 duration-200"
+            onClick={() => setIsMobileOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Slide-out Drawer Panel */}
+          <div className="relative flex w-72 max-w-[85vw] flex-col bg-gradient-to-b from-rail via-rail/95 to-rail pb-4 text-rail-foreground shadow-2xl z-50 animate-in slide-in-from-left duration-200 overflow-y-auto custom-scrollbar border-r border-rail-foreground/15">
+            {/* Header with Brand & Close Button */}
+            <div className="flex h-16 w-full items-center justify-between px-4 border-b border-rail-foreground/10 shrink-0">
+              <Link
+                to="/"
+                onClick={() => setIsMobileOpen(false)}
+                className="flex items-center gap-2.5 min-w-0"
+              >
+                <img
+                  src="/icon.png"
+                  alt="ActionFlow"
+                  className="h-8 w-8 rounded-xl object-contain shadow-sm"
+                />
+                <div className="flex flex-col min-w-0">
+                  <span className="font-display text-sm font-extrabold tracking-tight text-white truncate">
+                    ActionFlow
+                  </span>
+                  <span className="text-[10px] text-rail-foreground/70 font-medium truncate">
+                    Team Collaboration
+                  </span>
+                </div>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => setIsMobileOpen(false)}
+                className="grid h-8 w-8 place-items-center rounded-lg text-rail-foreground/70 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                aria-label="Close Navigation"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Active Workspace Card */}
+            <div className="pt-3 pb-1 px-3 shrink-0">
+              <Link
+                to="/settings"
+                onClick={() => setIsMobileOpen(false)}
+                className="flex items-center justify-between gap-2.5 rounded-xl border border-rail-foreground/15 bg-white/5 p-2.5 transition-all hover:bg-white/10 cursor-pointer shadow-xs w-full"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary to-emerald-600 text-xs font-black text-white shadow-xs"
+                    suppressHydrationWarning
+                  >
+                    {activeWorkspace ? activeWorkspace.name.slice(0, 2).toUpperCase() : "SO"}
+                  </div>
+                  <div className="min-w-0">
+                    <span
+                      className="font-bold text-xs text-white truncate block"
+                      suppressHydrationWarning
+                    >
+                      {activeWorkspace?.name || "Soul Business Solutions"}
+                    </span>
+                    <span className="text-[10px] text-rail-foreground/70 flex items-center gap-1 mt-0.5 font-medium">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      {userRole ? `${userRole}` : "Active"}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] text-rail-foreground/60 font-bold px-1.5 py-0.5 rounded bg-white/10 shrink-0">
+                  SBS
+                </span>
+              </Link>
+            </div>
+
+            <div className="h-px w-[calc(100%-1.5rem)] mx-auto bg-rail-foreground/10 my-1.5 shrink-0" />
+
+            {/* Navigation Links */}
+            <div className="flex flex-col gap-1 w-full px-3 pt-1 shrink-0">
+              <NavButton
+                to="/"
+                icon={<MessageSquare className="h-4.5 w-4.5" />}
+                label="Messages"
+                description="Team conversations, DMs & groups"
+                active={currentPath === "/"}
+                isCollapsed={false}
+              />
+              <NavButton
+                to="/tasks"
+                icon={<CheckSquare className="h-4.5 w-4.5" />}
+                label="My Tasks"
+                description="View, filter & manage assigned tasks"
+                active={currentPath === "/tasks"}
+                isCollapsed={false}
+              />
+              <NavButton
+                to="/dashboard"
+                icon={<LayoutDashboard className="h-4.5 w-4.5" />}
+                label="Manager Dashboard"
+                description="Team workload, deadlines & analytics"
+                active={currentPath === "/dashboard"}
+                isCollapsed={false}
+              />
+            </div>
+
+            {/* Bottom Tools */}
+            <div className="mt-auto flex flex-col gap-1.5 w-full pt-3 px-3 border-t border-rail-foreground/10 shrink-0">
+              {/* Global Search Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileOpen(false);
+                  setIsSearchOpen(true);
+                }}
+                className="flex items-center justify-between w-full rounded-xl px-3 py-2.5 text-xs font-semibold text-rail-foreground/80 hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Search className="h-4.5 w-4.5" />
+                  <span>Global Search</span>
+                </div>
+                <span className="text-[10px] font-mono text-rail-foreground/60 bg-white/10 px-1.5 py-0.5 rounded">
+                  Ctrl+K
+                </span>
+              </button>
+
+              {/* Central Notification Center */}
+              <NotificationCenter isSidebarExpanded={true} />
+
+              {/* Settings */}
+              <NavButton
+                to="/settings"
+                icon={<Settings className="h-4.5 w-4.5" />}
+                label="Settings"
+                description="Workspace settings, team & profile"
+                badge={userRole ? userRole : undefined}
+                active={currentPath === "/settings"}
+                isCollapsed={false}
+              />
+
+              {/* User Profile Card */}
+              {user && (
+                <div className="pt-2 mt-1 border-t border-rail-foreground/15 w-full shrink-0">
+                  <div className="flex items-center justify-between rounded-xl bg-white/5 border border-rail-foreground/15 p-2 transition-all shadow-xs">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="relative grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gradient-to-tr from-primary to-teal-400 text-xs font-bold text-white shadow-xs">
+                        {user.initials || "U"}
+                        <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-rail shadow-xs" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="truncate text-xs font-bold text-white block">
+                          {user.displayName}
+                        </span>
+                        <span className="truncate text-[10px] text-rail-foreground/70 block">
+                          {userRole ? `${userRole}` : "Team Member"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => logout()}
+                      className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-rail-foreground/60 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      title="Sign Out"
+                    >
+                      <LogOut className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </TooltipProvider>
   );
 }

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import {
   Bell,
+  BellRing,
+  BellOff,
   CheckCircle2,
   Clock,
   MessageSquare,
@@ -35,7 +37,11 @@ export function NotificationPreferencesTab() {
       .getNotificationPreferences()
       .then((res) => {
         if (mounted && res.preferences) {
-          setPrefs(res.preferences);
+          const raw = res.preferences as any;
+          setPrefs({
+            ...raw,
+            dueDateReminders: raw.dueDateReminders ?? raw.taskReminders ?? true,
+          });
         }
       })
       .catch((err) => {
@@ -50,6 +56,77 @@ export function NotificationPreferencesTab() {
     };
   }, []);
 
+  const masterKeys: (keyof NotificationPreferences)[] = [
+    "taskAssigned",
+    "taskStatusChanged",
+    "taskCompleted",
+    "dueDateReminders",
+    "directMessages",
+    "groupMessages",
+    "browserNotifications",
+  ];
+
+  const activeCount = masterKeys.filter((k) => Boolean(prefs[k])).length;
+  const totalCount = masterKeys.length;
+  const isMasterOn = activeCount > 0;
+  const isAllOn = activeCount === totalCount;
+
+  const handleSetAll = async (targetState: boolean) => {
+    const prevPrefs = { ...prefs };
+    const nextPrefs: NotificationPreferences = {
+      ...prefs,
+      taskAssigned: targetState,
+      taskStatusChanged: targetState,
+      taskCompleted: targetState,
+      dueDateReminders: targetState,
+      directMessages: targetState,
+      groupMessages: targetState,
+      browserNotifications: targetState,
+    };
+
+    setPrefs(nextPrefs);
+    setSavingKey("master");
+
+    try {
+      if (
+        targetState &&
+        typeof window !== "undefined" &&
+        "Notification" in window &&
+        Notification.permission === "default"
+      ) {
+        Notification.requestPermission().catch(() => {});
+      }
+
+      const res = await api.updateNotificationPreferences({
+        taskAssigned: targetState,
+        taskStatusChanged: targetState,
+        taskCompleted: targetState,
+        dueDateReminders: targetState,
+        directMessages: targetState,
+        groupMessages: targetState,
+        browserNotifications: targetState,
+      });
+
+      if (res.preferences) {
+        const raw = res.preferences as any;
+        setPrefs({
+          ...raw,
+          dueDateReminders: raw.dueDateReminders ?? raw.taskReminders ?? targetState,
+        });
+      }
+      toast.success(
+        targetState
+          ? "All notifications turned ON"
+          : "All notifications turned OFF (Muted)"
+      );
+    } catch (err: any) {
+      setPrefs(prevPrefs);
+      toast.error(err.message || "Failed to update notification settings");
+    } finally {
+      setSavingKey(null);
+    }
+  };
+
   const handleToggle = async (key: keyof NotificationPreferences) => {
     const nextValue = !prefs[key];
     const prevValue = prefs[key];
@@ -60,7 +137,13 @@ export function NotificationPreferencesTab() {
 
     try {
       const res = await api.updateNotificationPreferences({ [key]: nextValue });
-      setPrefs(res.preferences);
+      if (res.preferences) {
+        const raw = res.preferences as any;
+        setPrefs((current) => ({
+          ...raw,
+          dueDateReminders: raw.dueDateReminders ?? raw.taskReminders ?? (key === "dueDateReminders" ? nextValue : current.dueDateReminders),
+        }));
+      }
       toast.success("Preferences updated");
     } catch (err: any) {
       // Revert on error
@@ -128,6 +211,130 @@ export function NotificationPreferencesTab() {
           <Sparkles className="h-3.5 w-3.5" />
           <span>Test OS Notification</span>
         </button>
+      </div>
+
+      {/* Master Notifications Hero Card */}
+      <div className="mx-6 p-4 sm:p-5 rounded-2xl bg-card border border-border/80 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div
+            className={cn(
+              "grid h-12 w-12 place-items-center rounded-2xl shrink-0 transition-all duration-300",
+              isMasterOn
+                ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                : "bg-muted text-muted-foreground"
+            )}
+          >
+            {isMasterOn ? (
+              <BellRing className="h-6 w-6 animate-pulse" />
+            ) : (
+              <BellOff className="h-6 w-6" />
+            )}
+          </div>
+          <div className="flex flex-col gap-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm sm:text-base font-bold text-foreground">
+                Master Notifications
+              </span>
+              <span
+                className={cn(
+                  "text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider inline-flex items-center gap-1.5",
+                  isAllOn
+                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25"
+                    : isMasterOn
+                    ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25"
+                    : "bg-muted text-muted-foreground border border-border"
+                )}
+              >
+                <span
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    isAllOn
+                      ? "bg-emerald-500 animate-ping"
+                      : isMasterOn
+                      ? "bg-amber-500"
+                      : "bg-muted-foreground"
+                  )}
+                />
+                {isAllOn
+                  ? "All ON (7/7)"
+                  : isMasterOn
+                  ? `Partially ON (${activeCount}/${totalCount})`
+                  : "All OFF (Muted)"}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {isMasterOn
+                ? "Turn off to silence all task updates, direct chat messages, and Windows desktop popups."
+                : "Turn on to enable all alerts across tasks, direct messages, and system notifications."}
+            </p>
+          </div>
+        </div>
+
+        {/* Master Action Buttons & Big Switch */}
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-border/60">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={savingKey === "master"}
+              onClick={() => handleSetAll(false)}
+              className={cn(
+                "px-3 py-1.5 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 border cursor-pointer",
+                !isMasterOn
+                  ? "bg-destructive/15 text-destructive border-destructive/30 font-bold"
+                  : "bg-muted/70 hover:bg-muted text-muted-foreground border-border/60 hover:text-foreground"
+              )}
+              title="Turn all notifications OFF"
+            >
+              <BellOff className="h-3.5 w-3.5" />
+              <span>Turn OFF</span>
+            </button>
+            <button
+              type="button"
+              disabled={savingKey === "master"}
+              onClick={() => handleSetAll(true)}
+              className={cn(
+                "px-3 py-1.5 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 border cursor-pointer",
+                isAllOn
+                  ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold"
+                  : "bg-primary/10 hover:bg-primary/20 text-primary border-primary/20"
+              )}
+              title="Turn all notifications ON"
+            >
+              <BellRing className="h-3.5 w-3.5" />
+              <span>Turn ON</span>
+            </button>
+          </div>
+
+          <div className="h-6 w-px bg-border/60 hidden sm:block" />
+
+          {/* Master Toggle Switch */}
+          <div
+            onClick={() => {
+              if (savingKey !== "master") {
+                handleSetAll(!isMasterOn);
+              }
+            }}
+            className="flex items-center gap-2 cursor-pointer select-none"
+            title={isMasterOn ? "Click to turn all OFF" : "Click to turn all ON"}
+          >
+            {savingKey === "master" && (
+              <RefreshCw className="h-4 w-4 animate-spin text-primary" />
+            )}
+            <div
+              className={cn(
+                "relative inline-flex h-7 w-13 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out cursor-pointer",
+                isMasterOn ? "bg-primary" : "bg-muted"
+              )}
+            >
+              <div
+                className={cn(
+                  "pointer-events-none inline-block h-6 w-6 transform rounded-full bg-background shadow-md transition duration-200 ease-in-out",
+                  isMasterOn ? "translate-x-6" : "translate-x-0"
+                )}
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Tasks & Workflow Section */}

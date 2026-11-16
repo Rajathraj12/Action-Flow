@@ -201,7 +201,7 @@ export function DynamicIslandTasks({ className, onCreateTaskClick }: DynamicIsla
           <Flame className={cn("h-3.5 w-3.5 text-amber-400", ongoingTasks.length > 0 && "animate-pulse")} />
           <span className="text-xs font-bold tracking-tight">
             {ongoingTasks.length}{" "}
-            <span className="text-slate-300 font-medium hidden sm:inline">
+            <span className="text-slate-300 font-medium hidden md:inline">
               {ongoingTasks.length === 1 ? "Ongoing Task" : "Ongoing Tasks"}
             </span>
           </span>
@@ -209,11 +209,11 @@ export function DynamicIslandTasks({ className, onCreateTaskClick }: DynamicIsla
 
         {/* Urgent or live indicator chip */}
         {urgentCount > 0 ? (
-          <span className="hidden lg:inline-flex items-center px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-red-500/30 text-red-300 border border-red-500/40 animate-pulse">
+          <span className="hidden xl:inline-flex items-center px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-red-500/30 text-red-300 border border-red-500/40 animate-pulse">
             {urgentCount} Urgent
           </span>
         ) : (
-          <span className="hidden lg:inline-flex items-center px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+          <span className="hidden xl:inline-flex items-center px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
             Live
           </span>
         )}

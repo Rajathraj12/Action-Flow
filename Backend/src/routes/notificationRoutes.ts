@@ -142,7 +142,13 @@ router.get(
     try {
       const currentUserId = req.user!._id;
       const preferences = await getUserNotificationPreferences(currentUserId);
-      res.json({ preferences });
+      const prefsObj: any = (preferences as any).toObject ? (preferences as any).toObject() : preferences;
+      res.json({
+        preferences: {
+          ...prefsObj,
+          dueDateReminders: prefsObj.dueDateReminders ?? prefsObj.taskReminders ?? true,
+        },
+      });
     } catch (error: any) {
       console.error("[NotificationRoutes] Error getting preferences:", error);
       res.status(500).json({ error: error?.message || "Failed to get notification preferences" });
@@ -163,9 +169,13 @@ router.patch(
       const updates = req.body || {};
 
       const updated = await updateUserNotificationPreferences(currentUserId, updates);
+      const updatedObj: any = (updated as any).toObject ? (updated as any).toObject() : updated;
       res.json({
         success: true,
-        preferences: updated,
+        preferences: {
+          ...updatedObj,
+          dueDateReminders: updatedObj.dueDateReminders ?? updatedObj.taskReminders ?? true,
+        },
       });
     } catch (error: any) {
       console.error("[NotificationRoutes] Error updating preferences:", error);

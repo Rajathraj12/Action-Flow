@@ -403,6 +403,11 @@ export async function updateUserNotificationPreferences(
     }
   }
 
+  // Support dueDateReminders alias
+  if ((updates as any).dueDateReminders !== undefined && sanitized.taskReminders === undefined) {
+    sanitized.taskReminders = Boolean((updates as any).dueDateReminders);
+  }
+
   const prefs = await NotificationPreference.findOneAndUpdate(
     { userId: userObjId },
     { $set: sanitized },

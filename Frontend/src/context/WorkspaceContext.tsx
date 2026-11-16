@@ -28,32 +28,31 @@ const CACHED_WS_LIST_KEY = "actionflow_cached_workspaces";
 
 export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, token } = useAuth();
-  const [workspaces, setWorkspaces] = useState<Workspace[]>(() => {
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Restore cached workspace from localStorage after initial hydration (prevents SSR mismatch)
+  useEffect(() => {
     if (typeof window !== "undefined") {
       try {
-        const cached = localStorage.getItem(CACHED_WS_LIST_KEY);
-        if (cached) return JSON.parse(cached);
-      } catch {}
-    }
-    return [];
-  });
-  const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem(CACHED_ACTIVE_WS_KEY);
-        if (cached) {
-          const parsed = JSON.parse(cached);
+        const cachedWs = localStorage.getItem(CACHED_WS_LIST_KEY);
+        if (cachedWs) {
+          setWorkspaces(JSON.parse(cachedWs));
+        }
+        const cachedActive = localStorage.getItem(CACHED_ACTIVE_WS_KEY);
+        if (cachedActive) {
+          const parsed = JSON.parse(cachedActive);
           if (parsed?.id) {
             setActiveWorkspaceId(parsed.id);
-            return parsed;
+            setActiveWorkspace(parsed);
+            setIsLoading(false);
           }
         }
       } catch {}
     }
-    return null;
-  });
-  const [isLoading, setIsLoading] = useState<boolean>(!activeWorkspace);
-  const [error, setError] = useState<string | null>(null);
+  }, []);
 
   const loadWorkspaces = useCallback(async () => {
     const activeToken = token || getApiToken();

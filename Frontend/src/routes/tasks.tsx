@@ -18,6 +18,7 @@ import {
   Loader2,
   RotateCcw,
   Sparkles,
+  Menu,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,7 @@ import {
 import { CreateTaskModal } from "@/components/tasks/CreateTaskModal";
 import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
 import { TaskCalendarView } from "@/components/tasks/TaskCalendarView";
+import { openMobileNav } from "@/lib/mobile-nav";
 
 export const Route = createFileRoute("/tasks")({
   head: () => ({
@@ -274,13 +276,24 @@ function TasksPage() {
       <div className="pointer-events-none absolute bottom-0 right-0 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl" />
 
       {/* Header */}
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/80 bg-card/60 backdrop-blur-md px-6 z-10">
-        <div className="flex items-center gap-3">
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/80 bg-card/60 backdrop-blur-md px-4 sm:px-6 z-10">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* Mobile Navigation Drawer Toggle */}
+          <button
+            type="button"
+            onClick={openMobileNav}
+            className="grid h-9 w-9 place-items-center rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground md:hidden cursor-pointer transition-colors shadow-2xs"
+            title="Open Navigation Menu"
+            aria-label="Open Navigation Menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+
           <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/15 text-primary shadow-xs">
             <CheckSquare className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="font-display text-lg font-bold tracking-tight text-foreground">
+            <h1 className="font-display text-base sm:text-lg font-bold tracking-tight text-foreground">
               My Tasks
             </h1>
             <p className="text-[11px] text-muted-foreground hidden sm:block">
