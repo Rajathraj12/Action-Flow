@@ -33,6 +33,9 @@ import {
   ChevronDown,
   PanelLeftClose,
   PanelLeftOpen,
+  Bell,
+  AlertCircle,
+  HelpCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -57,7 +60,15 @@ import { GroupInfoModal } from "@/components/chat/GroupInfoModal";
 import { CreateTaskModal } from "@/components/tasks/CreateTaskModal";
 import { AiTaskReviewModal } from "@/components/tasks/AiTaskReviewModal";
 import { DynamicIslandTasks } from "@/components/tasks/DynamicIslandTasks";
-import { notifyDesktop, updateDesktopBadge } from "@/lib/notifications";
+import { NotificationHelpModal } from "@/components/notifications/NotificationHelpModal";
+import {
+  notifyDesktop,
+  updateDesktopBadge,
+  requestNotificationPermission,
+  sendTestNotification,
+  getNotificationPermissionStatus,
+  isDesktopApp,
+} from "@/lib/notifications";
 import type { AiDetectionResponse } from "@/lib/api";
 
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "🔥", "🎉", "🚀", "🙌", "✨", "😊", "👀", "💯", "👏"];
@@ -211,6 +222,54 @@ function ChatApp() {
   const [aiDetectingMessageId, setAiDetectingMessageId] = useState<string | null>(null);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [isChatSidebarCollapsed, setIsChatSidebarCollapsed] = useState(false);
+
+  // WhatsApp-style Desktop Notifications State
+  const [notifyPermission, setNotifyPermission] = useState<NotificationPermission | "unsupported">(() => {
+    return getNotificationPermissionStatus();
+  });
+  const [showDesktopNotifyBanner, setShowDesktopNotifyBanner] = useState(() => {
+    if (typeof window === "undefined") return false;
+    if (isDesktopApp()) return false;
+    if (!("Notification" in window)) return false;
+    return Notification.permission !== "granted";
+  });
+  const [isNotifyHelpModalOpen, setIsNotifyHelpModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (isDesktopApp()) {
+      setShowDesktopNotifyBanner(false);
+    }
+  }, []);
+
+  const handleEnableDesktopNotifications = async () => {
+    const current = getNotificationPermissionStatus();
+    if (current === "denied") {
+      setIsNotifyHelpModalOpen(true);
+      toast.error("Notifications are blocked in your browser", {
+        description: "Click the lock/settings icon in your browser URL bar to allow notifications.",
+      });
+      return;
+    }
+
+    toast.info("Notification Prompt Opened", {
+      description: "Click 'Allow' on the browser prompt near the top-left address bar.",
+    });
+
+    const perm = await requestNotificationPermission();
+    setNotifyPermission(perm || "unsupported");
+
+    if (perm === "granted") {
+      setShowDesktopNotifyBanner(false);
+      toast.success("Windows Notifications Enabled!", {
+        description: "You'll now receive WhatsApp-style desktop alerts even when outside this tab.",
+      });
+    } else if (perm === "denied") {
+      setIsNotifyHelpModalOpen(true);
+      toast.error("Notifications are blocked in your browser", {
+        description: "Click the site settings/lock icon in your browser URL bar to allow notifications.",
+      });
+    }
+  };
 
   // Phase 6: In-chat message search
   const [inChatSearchOpen, setInChatSearchOpen] = useState(false);
@@ -1101,6 +1160,75 @@ function ChatApp() {
           </div>
         </header>
 
+        {/* WhatsApp-Style Windows Desktop Notifications Banner */}
+        {showDesktopNotifyBanner && (
+          <div
+            className={cn(
+              "border-b px-4 py-2.5 flex items-center justify-between gap-3 animate-in slide-in-from-top-1 transition-all",
+              notifyPermission === "denied"
+                ? "bg-amber-500/15 dark:bg-amber-950/40 border-amber-500/30"
+                : "bg-sky-500/15 dark:bg-sky-950/40 border-sky-500/30"
+            )}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div
+                className={cn(
+                  "grid h-7 w-7 place-items-center rounded-xl text-white shrink-0 shadow-2xs",
+                  notifyPermission === "denied" ? "bg-amber-500" : "bg-sky-500"
+                )}
+              >
+                {notifyPermission === "denied" ? (
+                  <AlertCircle className="h-3.5 w-3.5" />
+                ) : (
+                  <Bell className="h-3.5 w-3.5" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-foreground truncate">
+                  {notifyPermission === "denied"
+                    ? "Notifications are blocked"
+                    : "Get notified of new messages"}
+                </p>
+                {notifyPermission === "denied" ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsNotifyHelpModalOpen(true)}
+                    className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold hover:underline block text-left cursor-pointer"
+                  >
+                    Click to unblock in browser settings &rsaquo;
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleEnableDesktopNotifications}
+                    className="text-[11px] text-sky-600 dark:text-sky-400 font-semibold hover:underline block text-left cursor-pointer"
+                  >
+                    Turn on Windows desktop notifications &rsaquo;
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setIsNotifyHelpModalOpen(true)}
+                className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted/50 cursor-pointer"
+                title="Notification Help & Troubleshooting"
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDesktopNotifyBanner(false)}
+                className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted/50 cursor-pointer"
+                title="Dismiss"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Network Error Alert */}
         {networkError && (
           <div className="bg-destructive/15 text-destructive text-xs px-4 py-2 border-b border-destructive/20 flex items-center justify-between animate-in slide-in-from-top-1">
@@ -1325,6 +1453,21 @@ function ChatApp() {
                   title="New conversation"
                 >
                   <UserPlus className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const status = getNotificationPermissionStatus();
+                    if (status === "granted") {
+                      sendTestNotification();
+                    } else {
+                      await requestNotificationPermission();
+                    }
+                  }}
+                  className="grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 cursor-pointer"
+                  title="Test Windows Desktop Notification"
+                >
+                  <Bell className="h-4 w-4" />
                 </button>
               </div>
             </header>
@@ -1953,6 +2096,11 @@ function ChatApp() {
             setIsCreateTaskModalOpen(true);
           }
         }}
+      />
+      {/* Windows Desktop Notifications Troubleshooting & Help Modal */}
+      <NotificationHelpModal
+        open={isNotifyHelpModalOpen}
+        onOpenChange={setIsNotifyHelpModalOpen}
       />
     </>
   );

@@ -25,6 +25,7 @@ interface CreateTaskModalProps {
   onOpenChange: (open: boolean) => void;
   workspaceId?: string;
   currentUserId?: string;
+  initialDueDate?: string;
   sourceMessage?: {
     id: string;
     conversationId: string;
@@ -39,6 +40,7 @@ export function CreateTaskModal({
   onOpenChange,
   workspaceId,
   currentUserId,
+  initialDueDate,
   sourceMessage,
   onTaskCreated,
 }: CreateTaskModalProps) {
@@ -69,7 +71,7 @@ export function CreateTaskModal({
       }
 
       setPriority("MEDIUM");
-      setDueDate("");
+      setDueDate(initialDueDate || "");
       setAssigneeId(currentUserId || "");
 
       // Load workspace colleagues

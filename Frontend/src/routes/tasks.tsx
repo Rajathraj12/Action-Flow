@@ -7,6 +7,7 @@ import {
   CircleDot,
   Clock,
   Calendar,
+  LayoutList,
   Plus,
   Search,
   Filter,
@@ -35,6 +36,7 @@ import {
 } from "@/lib/socket";
 import { CreateTaskModal } from "@/components/tasks/CreateTaskModal";
 import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
+import { TaskCalendarView } from "@/components/tasks/TaskCalendarView";
 
 export const Route = createFileRoute("/tasks")({
   head: () => ({
@@ -62,10 +64,22 @@ function TasksPage() {
   const [assigneeFilter, setAssigneeFilter] = useState<string>("ALL");
   const [members, setMembers] = useState<any[]>([]);
 
+  // View Mode: List vs Calendar
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [createTaskDate, setCreateTaskDate] = useState<string | undefined>(undefined);
+
   // Modals
   const [selectedTask, setSelectedTask] = useState<BackendTask | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  const handleCreateTaskOnDate = useCallback((date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    setCreateTaskDate(`${y}-${m}-${d}`);
+    setIsCreateOpen(true);
+  }, []);
 
   // Fetch tasks from backend
   const fetchTasks = useCallback(async () => {
@@ -275,14 +289,51 @@ function TasksPage() {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsCreateOpen(true)}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition-all active:scale-95 cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          <span>New Task</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          {/* View Toggle: List vs Google Calendar */}
+          <div className="flex items-center rounded-xl bg-muted/60 p-0.5 border border-border/70 shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                viewMode === "list"
+                  ? "bg-card text-foreground shadow-xs font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="List View"
+            >
+              <LayoutList className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">List</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("calendar")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                viewMode === "calendar"
+                  ? "bg-card text-primary shadow-xs font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="Calendar View"
+            >
+              <Calendar className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Calendar</span>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setCreateTaskDate(undefined);
+              setIsCreateOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition-all active:scale-95 cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            <span>New Task</span>
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 overflow-y-auto p-6 md:p-8 z-10 custom-scrollbar">
@@ -453,8 +504,17 @@ function TasksPage() {
             </div>
           </div>
 
-          {/* Task Cards List */}
-          {loading ? (
+          {/* Conditional View: Google Calendar View vs List View */}
+          {viewMode === "calendar" ? (
+            <TaskCalendarView
+              tasks={tasks}
+              onSelectTask={(task) => {
+                setSelectedTask(task);
+                setIsDetailOpen(true);
+              }}
+              onCreateTaskOnDate={handleCreateTaskOnDate}
+            />
+          ) : loading ? (
             <div className="rounded-2xl border border-border bg-card/40 p-16 text-center backdrop-blur-xs flex flex-col items-center justify-center gap-3">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="text-xs text-muted-foreground font-medium">
@@ -707,6 +767,7 @@ function TasksPage() {
         onOpenChange={setIsCreateOpen}
         workspaceId={activeWorkspace?.id}
         currentUserId={user?._id}
+        initialDueDate={createTaskDate}
         onTaskCreated={(newTask) => {
           fetchTasks();
           toast.success(`Task "${newTask.title}" created successfully!`);

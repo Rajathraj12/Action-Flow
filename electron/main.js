@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, ipcMain, Notification, Menu, nativeImage } = require("electron");
+const { app, BrowserWindow, shell, ipcMain, Notification, Menu, nativeImage, session } = require("electron");
 const path = require("path");
 const net = require("net");
 const http = require("http");
@@ -294,6 +294,15 @@ function setupMenu() {
 }
 
 app.whenReady().then(() => {
+  if (session && session.defaultSession) {
+    session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+      if (permission === "notifications") {
+        callback(true);
+      } else {
+        callback(false);
+      }
+    });
+  }
   setupMenu();
   createWindow();
 
