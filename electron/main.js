@@ -1,29 +1,15 @@
 const { app, BrowserWindow, shell, ipcMain, Notification, Menu, nativeImage, session } = require("electron");
 const path = require("path");
-const net = require("net");
-const http = require("http");
-const { fork } = require("child_process");
 
 app.setName("ActionFlow");
 if (process.platform === "win32") {
   app.setAppUserModelId("com.actionflow.desktop");
 }
 
-const isDev = process.env.NODE_ENV === "development" || (app && !app.isPackaged);
 let mainWindow = null;
-let serverProcess = null;
 
-// Find an open local port
-function getAvailablePort() {
-  return new Promise((resolve, reject) => {
-    const srv = net.createServer();
-    srv.listen(0, "127.0.0.1", () => {
-      const port = srv.address().port;
-      srv.close(() => resolve(port));
-    });
-    srv.on("error", reject);
-  });
-}
+// Target cloud production URL (hosted on Vercel & connected to Render backend)
+const CLOUD_APP_URL = (process.env.ELECTRON_START_URL || "https://action-flow-messenger.vercel.app/") + "?desktop=true";
 
 // Single application instance lock
 const gotTheLock = app.requestSingleInstanceLock();
@@ -37,56 +23,6 @@ if (!gotTheLock) {
       mainWindow.focus();
     }
   });
-}
-
-function waitForServerReady(port, maxAttempts = 40) {
-  return new Promise((resolve) => {
-    let attempts = 0;
-    const check = () => {
-      attempts++;
-      const req = http.get(`http://127.0.0.1:${port}/`, (res) => {
-        if (res.statusCode && res.statusCode < 500) {
-          resolve(true);
-        } else if (attempts < maxAttempts) {
-          setTimeout(check, 250);
-        } else {
-          resolve(false);
-        }
-      });
-      req.on("error", () => {
-        if (attempts < maxAttempts) {
-          setTimeout(check, 250);
-        } else {
-          resolve(false);
-        }
-      });
-      req.setTimeout(500, () => req.destroy());
-    };
-    check();
-  });
-}
-
-async function startProductionServer() {
-  const port = await getAvailablePort();
-  const serverPath = path.join(__dirname, "../Frontend/.output/server/index.mjs");
-
-  serverProcess = fork(serverPath, [], {
-    env: {
-      ...process.env,
-      PORT: String(port),
-      HOST: "127.0.0.1",
-      NODE_ENV: "production",
-    },
-    silent: false,
-  });
-
-  serverProcess.on("error", (err) => {
-    console.error("[Electron Server] Failed to start production server:", err);
-  });
-
-  // Wait until server is fully responsive and returning 200 OK
-  await waitForServerReady(port);
-  return port;
 }
 
 async function createWindow() {
@@ -115,20 +51,24 @@ async function createWindow() {
   const customUA = mainWindow.webContents.getUserAgent() + " ActionFlowDesktop/1.0.0";
   mainWindow.webContents.setUserAgent(customUA);
 
-  if (isDev) {
-    const devUrl = (process.env.ELECTRON_START_URL || "https://action-flow-messenger.vercel.app/") + "?desktop=true";
-    await mainWindow.loadURL(devUrl);
-  } else {
-    try {
-      const port = await startProductionServer();
-      await mainWindow.loadURL(`http://127.0.0.1:${port}?desktop=true`);
-    } catch (err) {
-      console.error("[Electron] Production server startup error:", err);
-    }
+  // Load cloud deployed ActionFlow directly from Vercel / Render
+  try {
+    await mainWindow.loadURL(CLOUD_APP_URL);
+  } catch (err) {
+    console.error("[Electron] Initial loadURL error:", err);
   }
 
-  if (isDev) {
-    // Open DevTools only during development
+  // Gracefully retry if user was offline or reconnecting
+  mainWindow.webContents.on("did-fail-load", (event, errorCode, errorDescription, validatedURL) => {
+    console.error(`[Electron] Page failed to load: ${errorDescription} (${errorCode}) at ${validatedURL}`);
+    setTimeout(() => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.loadURL(CLOUD_APP_URL).catch(() => {});
+      }
+    }, 4000);
+  });
+
+  if (process.env.OPEN_DEVTOOLS === "true") {
     mainWindow.webContents.openDevTools({ mode: "right" });
   }
 
@@ -137,21 +77,13 @@ async function createWindow() {
     mainWindow.focus();
   });
 
-  // Fallback in case ready-to-show is delayed
-  setTimeout(() => {
-    if (mainWindow && !mainWindow.isVisible()) {
-      mainWindow.show();
-      mainWindow.focus();
-    }
-  }, 2000);
-
   // Fallback to guarantee window visibility
   setTimeout(() => {
     if (mainWindow && !mainWindow.isVisible()) {
       mainWindow.show();
       mainWindow.focus();
     }
-  }, 2500);
+  }, 2000);
 
   // Open external links (http/https) in user's default browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -314,18 +246,7 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
-  if (serverProcess) {
-    serverProcess.kill();
-    serverProcess = null;
-  }
   if (process.platform !== "darwin") {
     app.quit();
-  }
-});
-
-app.on("before-quit", () => {
-  if (serverProcess) {
-    serverProcess.kill();
-    serverProcess = null;
   }
 });

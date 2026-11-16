@@ -74,7 +74,8 @@ function checkIsDesktopEnvironment(): boolean {
 
 export function DesktopDownloadPill({ className, isCollapsed = false }: DesktopDownloadPillProps) {
   const [platform, setPlatform] = useState<PlatformInfo>(PLATFORMS.windows);
-  const [isDesktopApp, setIsDesktopApp] = useState<boolean>(() => checkIsDesktopEnvironment());
+  // Default to false on initial render to prevent SSR hydration mismatch, then sync on mount
+  const [isDesktopApp, setIsDesktopApp] = useState<boolean>(false);
   const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
