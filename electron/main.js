@@ -116,7 +116,7 @@ async function createWindow() {
   mainWindow.webContents.setUserAgent(customUA);
 
   if (isDev) {
-    const devUrl = (process.env.ELECTRON_START_URL || "http://localhost:8080") + "?desktop=true";
+    const devUrl = (process.env.ELECTRON_START_URL || "https://action-flow-messenger.vercel.app/") + "?desktop=true";
     await mainWindow.loadURL(devUrl);
   } else {
     try {
