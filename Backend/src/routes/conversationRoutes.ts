@@ -29,6 +29,31 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): P
 
     const formatted = conversations.map((conv) => {
       const membership = membershipMap.get(conv._id.toString());
+      const isGroup = conv.type === "GROUP" || (conv as any).type === "group" || (conv.participants && conv.participants.length > 2) || !!conv.name;
+
+      if (isGroup) {
+        const groupInitials = (conv.name || "Group")
+          .split(" ")
+          .map((w) => w[0])
+          .join("")
+          .slice(0, 2)
+          .toUpperCase();
+
+        return {
+          id: conv._id.toString(),
+          type: "GROUP" as const,
+          name: conv.name || "Group Chat",
+          role: "Group Chat",
+          initials: groupInitials,
+          online: false,
+          unread: membership?.unreadCount || 0,
+          lastMessageText: conv.lastMessageText || "No messages yet",
+          lastMessageTime: conv.lastMessageAt || conv.createdAt,
+          participantCount: conv.participants?.length || 2,
+          otherUser: null,
+        };
+      }
+
       // The other participant in a direct conversation
       const otherUser = conv.participants.find(
         (p) => p._id.toString() !== currentUserId?.toString()
@@ -36,6 +61,7 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): P
 
       return {
         id: conv._id.toString(),
+        type: "DIRECT" as const,
         name: otherUser ? otherUser.displayName : "Unknown Contact",
         role: otherUser ? otherUser.role : "Team Member",
         initials: otherUser ? otherUser.initials : "U",
@@ -55,11 +81,13 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): P
       };
     });
 
-    // Deduplicate direct conversations by otherUser id (keeping the most recent)
+    // Deduplicate direct conversations by otherUser id (keeping the most recent), while keeping ALL groups
     const seenOtherUserIds = new Set<string>();
     const dedupedFormatted = [];
     for (const conv of formatted) {
-      if (conv.otherUser?.id) {
+      if (conv.type === "GROUP") {
+        dedupedFormatted.push(conv);
+      } else if (conv.otherUser?.id) {
         if (!seenOtherUserIds.has(conv.otherUser.id)) {
           seenOtherUserIds.add(conv.otherUser.id);
           dedupedFormatted.push(conv);

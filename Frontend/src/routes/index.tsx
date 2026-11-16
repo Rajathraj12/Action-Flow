@@ -160,7 +160,7 @@ function formatDisplayTime(dateString?: string): string {
 
 function ChatApp() {
   const { user, token, isLoading: authLoading } = useAuth();
-  const { activeWorkspace } = useWorkspace();
+  const { activeWorkspace, isLoading: workspaceLoading } = useWorkspace();
   const search = Route.useSearch();
   const navigate = useNavigate();
 
@@ -325,6 +325,10 @@ function ChatApp() {
       setLoadingConversations(false);
       return;
     }
+    // If workspace is still resolving, hold off to prevent querying direct chats before workspace groups
+    if (workspaceLoading) {
+      return;
+    }
     try {
       setLoadingConversations(true);
       setNetworkError(null);
@@ -380,12 +384,19 @@ function ChatApp() {
   };
 
   useEffect(() => {
+    // Crucial: Wait until both Auth AND Workspace initialization are complete.
+    // If we fetch before workspace resolves, individual direct chats are returned first
+    // without workspace group chats (e.g. General Team), causing individual chats to pop first.
+    if (authLoading || (token && workspaceLoading)) {
+      return;
+    }
+
     if (token) {
       loadConversations(search?.conversationId);
-    } else if (!authLoading) {
+    } else {
       setLoadingConversations(false);
     }
-  }, [token, authLoading, user?._id, activeWorkspace?.id, search?.conversationId]);
+  }, [token, authLoading, workspaceLoading, user?._id, activeWorkspace?.id, search?.conversationId]);
 
   // 2. Real-Time Socket.IO Setup with WhatsApp Edit, Delete, Read & Delivered Events
   useEffect(() => {

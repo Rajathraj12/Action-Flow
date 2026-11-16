@@ -83,7 +83,7 @@ export async function sendMessageService(params: SendMessageParams): Promise<For
       participants: senderId,
     });
     if (conversation && !conversation.workspaceId) {
-      conversation.workspaceId = workspaceId;
+      conversation.workspaceId = new mongoose.Types.ObjectId(workspaceId as any);
       await conversation.save();
     }
   }
