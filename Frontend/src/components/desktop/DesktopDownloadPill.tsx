@@ -105,7 +105,8 @@ export function DesktopDownloadPill({ className, isCollapsed = false }: DesktopD
       description: targetPlatform.filename,
     });
 
-    const downloadUrl = `${BACKEND_URL}/api/downloads/${targetPlatform.pathKey}`;
+    // Download static installer asset directly from the frontend host (Vercel CDN or local Vite public)
+    const downloadUrl = `/downloads/${targetPlatform.filename}`;
     const link = document.createElement("a");
     link.href = downloadUrl;
     link.setAttribute("download", targetPlatform.filename);

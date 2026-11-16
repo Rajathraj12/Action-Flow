@@ -21,9 +21,11 @@ const PLATFORM_FILES: Record<string, { filename: string; fallbackFilename: strin
 
 function findCandidateFile(filename: string): string | null {
   const possibleDirs = [
+    path.resolve(process.cwd(), "public/downloads"),
+    path.resolve(process.cwd(), "Backend/public/downloads"),
+    path.resolve(process.cwd(), "../Backend/public/downloads"),
     path.resolve(process.cwd(), "Frontend/public/downloads"),
     path.resolve(process.cwd(), "../Frontend/public/downloads"),
-    path.resolve(process.cwd(), "public/downloads"),
     path.resolve(process.cwd(), "../release"),
     path.resolve(process.cwd(), "release"),
   ];
@@ -53,6 +55,18 @@ router.get("/:platform", (req: Request, res: Response) => {
     res.setHeader("Content-Disposition", `attachment; filename="${downloadFilename}"`);
     res.setHeader("Content-Type", isExe ? "application/octet-stream" : (isDmg ? "application/x-apple-diskimage" : "application/zip"));
     return res.sendFile(filePath);
+  }
+
+  // Fallback: If deployed and referer or FRONTEND_URL is available, redirect to static frontend bundle
+  const referer = req.headers.referer || req.headers.origin;
+  if (referer) {
+    try {
+      const origin = new URL(String(referer)).origin;
+      return res.redirect(`${origin}/downloads/${info.filename}`);
+    } catch {}
+  }
+  if (process.env.FRONTEND_URL) {
+    return res.redirect(`${process.env.FRONTEND_URL}/downloads/${info.filename}`);
   }
 
   return res.status(404).json({
