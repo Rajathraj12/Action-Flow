@@ -5,7 +5,7 @@
   "main": "electron/main.js",
   "scripts": {
     "frontend:dev": "npm --prefix Frontend run dev",
-    "frontend:build": "cross-env NITRO_PRESET=node-server npm --prefix Frontend run build && mkdir -p Frontend/.output/server/node_modules && cp -r Frontend/node_modules/tslib Frontend/.output/server/node_modules/",
+    "frontend:build": "cross-env NITRO_PRESET=node-server npm --prefix Frontend run build && node -e \"const fs=require('fs'); fs.mkdirSync('Frontend/.output/server/node_modules/tslib', {recursive:true}); fs.cpSync('Frontend/node_modules/tslib', 'Frontend/.output/server/node_modules/tslib', {recursive:true});\"",
     "backend:dev": "npm --prefix Backend run dev",
     "ai:dev": "cd AI-Service && ./.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000",
     "electron:start": "electron .",
@@ -19,10 +19,15 @@
   "build": {
     "appId": "com.actionflow.desktop",
     "productName": "ActionFlow",
+    "electronDist": "node_modules/electron/dist",
     "directories": {
       "output": "release"
     },
     "afterPack": "electron/afterPack.js",
+    "asar": true,
+    "asarUnpack": [
+      "Frontend/.output/**/*"
+    ],
     "files": [
       "electron/**/*",
       "Frontend/.output/**/*",
@@ -63,7 +68,8 @@
           ]
         }
       ],
-      "icon": "electron/assets/icon.png"
+      "icon": "electron/assets/icon.png",
+      "signAndEditExecutable": false
     },
     "linux": {
       "target": [

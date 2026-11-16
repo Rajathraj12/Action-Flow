@@ -1,5 +1,9 @@
 const { app, BrowserWindow, shell, ipcMain, Notification, Menu, nativeImage, session } = require("electron");
 const path = require("path");
+const fs = require("fs");
+const net = require("net");
+const http = require("http");
+const { fork } = require("child_process");
 
 app.setName("ActionFlow");
 if (process.platform === "win32") {
@@ -7,8 +11,9 @@ if (process.platform === "win32") {
 }
 
 let mainWindow = null;
+let serverProcess = null;
 
-// Target cloud production URL (hosted on Vercel & connected to Render backend)
+const isDev = process.env.NODE_ENV === "development" || (!app.isPackaged && !process.env.TEST_PACKAGED);
 const CLOUD_APP_URL = (process.env.ELECTRON_START_URL || "https://action-flow-messenger.vercel.app/") + "?desktop=true";
 
 // Single application instance lock
@@ -23,6 +28,157 @@ if (!gotTheLock) {
       mainWindow.focus();
     }
   });
+}
+
+// Find an open local port dynamically
+function getAvailablePort() {
+  return new Promise((resolve, reject) => {
+    const srv = net.createServer();
+    srv.listen(0, "127.0.0.1", () => {
+      const port = srv.address().port;
+      srv.close(() => resolve(port));
+    });
+    srv.on("error", reject);
+  });
+}
+
+// Probe local server until ready to accept connections
+function waitForServerReady(port, maxAttempts = 60) {
+  return new Promise((resolve) => {
+    let attempts = 0;
+    const check = () => {
+      attempts++;
+      const req = http.get(`http://127.0.0.1:${port}/`, (res) => {
+        if (res.statusCode && res.statusCode < 500) {
+          resolve(true);
+        } else if (attempts < maxAttempts) {
+          setTimeout(check, 200);
+        } else {
+          resolve(false);
+        }
+      });
+      req.on("error", () => {
+        if (attempts < maxAttempts) {
+          setTimeout(check, 200);
+        } else {
+          resolve(false);
+        }
+      });
+      req.setTimeout(500, () => req.destroy());
+    };
+    check();
+  });
+}
+
+// Locate packaged or unpackaged Nitro production server
+function getProductionServerPath() {
+  if (app.isPackaged) {
+    // 1. Packaged location via asarUnpack
+    const unpackedPath = path.join(
+      process.resourcesPath,
+      "app.asar.unpacked",
+      "Frontend",
+      ".output",
+      "server",
+      "index.mjs"
+    );
+    if (fs.existsSync(unpackedPath)) return unpackedPath;
+
+    // 2. Direct resources path
+    const directPath = path.join(
+      process.resourcesPath,
+      "Frontend",
+      ".output",
+      "server",
+      "index.mjs"
+    );
+    if (fs.existsSync(directPath)) return directPath;
+  }
+
+  // 3. Local build folder (development test)
+  const localPath = path.join(__dirname, "../Frontend/.output/server/index.mjs");
+  if (fs.existsSync(localPath)) return localPath;
+
+  return null;
+}
+
+// Fork the packaged production server process
+async function startProductionServer() {
+  const serverPath = getProductionServerPath();
+  if (!serverPath) {
+    console.warn("[Electron Server] Production server script not found at expected paths.");
+    return null;
+  }
+
+  try {
+    const port = await getAvailablePort();
+    console.log(`[Electron Server] Spawning production server on 127.0.0.1:${port} from ${serverPath}`);
+
+    serverProcess = fork(serverPath, [], {
+      env: {
+        ...process.env,
+        PORT: String(port),
+        HOST: "127.0.0.1",
+        NODE_ENV: "production",
+      },
+      silent: false,
+    });
+
+    serverProcess.on("error", (err) => {
+      console.error("[Electron Server] Error in production server process:", err);
+    });
+
+    serverProcess.on("exit", (code, signal) => {
+      console.log(`[Electron Server] Server process stopped (code: ${code}, signal: ${signal})`);
+      serverProcess = null;
+    });
+
+    const isReady = await waitForServerReady(port);
+    if (isReady) {
+      console.log(`[Electron Server] Local production server successfully verified on port ${port}`);
+      return port;
+    } else {
+      console.warn("[Electron Server] Local server probe timed out; falling back to cloud.");
+      return null;
+    }
+  } catch (err) {
+    console.error("[Electron Server] Failed to initialize production server:", err);
+    return null;
+  }
+}
+
+// Differentiate internal ActionFlow navigation from external links
+function isInternalUrl(targetUrl, currentUrl) {
+  if (!targetUrl) return false;
+  try {
+    const parsedTarget = new URL(targetUrl);
+    // Local development or local production server
+    if (parsedTarget.hostname === "localhost" || parsedTarget.hostname === "127.0.0.1") {
+      return true;
+    }
+    // File scheme
+    if (parsedTarget.protocol === "file:") {
+      return true;
+    }
+    // Production domains
+    if (
+      parsedTarget.hostname.endsWith("action-flow-messenger.vercel.app") ||
+      parsedTarget.hostname.endsWith("vercel.app") ||
+      parsedTarget.hostname.endsWith("onrender.com")
+    ) {
+      return true;
+    }
+    // Match current window origin
+    if (currentUrl) {
+      const parsedCurrent = new URL(currentUrl);
+      if (parsedTarget.origin === parsedCurrent.origin) {
+        return true;
+      }
+    }
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 async function createWindow() {
@@ -51,24 +207,46 @@ async function createWindow() {
   const customUA = mainWindow.webContents.getUserAgent() + " ActionFlowDesktop/1.0.0";
   mainWindow.webContents.setUserAgent(customUA);
 
-  // Load cloud deployed ActionFlow directly from Vercel / Render
-  try {
-    await mainWindow.loadURL(CLOUD_APP_URL);
-  } catch (err) {
-    console.error("[Electron] Initial loadURL error:", err);
+  let initialUrl = CLOUD_APP_URL;
+
+  if (isDev) {
+    // Development Mode: Connect to existing ActionFlow frontend (Vite dev server)
+    const devUrl = (process.env.ELECTRON_START_URL || "http://localhost:8080") + "?desktop=true";
+    initialUrl = devUrl;
+    console.log("[Electron] Running in Development Mode, loading:", devUrl);
+  } else {
+    // Production Mode: Load packaged frontend files inside BrowserWindow
+    console.log("[Electron] Running in Production Mode, attempting local server initialization...");
+    const localPort = await startProductionServer();
+    if (localPort) {
+      initialUrl = `http://127.0.0.1:${localPort}?desktop=true`;
+      console.log("[Electron] Packaged frontend server loaded successfully on:", initialUrl);
+    } else {
+      console.log("[Electron] Local server fallback; connecting to production cloud:", CLOUD_APP_URL);
+      initialUrl = CLOUD_APP_URL;
+    }
   }
 
-  // Gracefully retry if user was offline or reconnecting
+  try {
+    await mainWindow.loadURL(initialUrl);
+  } catch (err) {
+    console.error("[Electron] Initial loadURL error:", err);
+    if (initialUrl !== CLOUD_APP_URL) {
+      mainWindow.loadURL(CLOUD_APP_URL).catch(() => {});
+    }
+  }
+
+  // Gracefully retry on network reconnections
   mainWindow.webContents.on("did-fail-load", (event, errorCode, errorDescription, validatedURL) => {
     console.error(`[Electron] Page failed to load: ${errorDescription} (${errorCode}) at ${validatedURL}`);
     setTimeout(() => {
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.loadURL(CLOUD_APP_URL).catch(() => {});
+        mainWindow.loadURL(initialUrl || CLOUD_APP_URL).catch(() => {});
       }
     }, 4000);
   });
 
-  if (process.env.OPEN_DEVTOOLS === "true") {
+  if (isDev || process.env.OPEN_DEVTOOLS === "true") {
     mainWindow.webContents.openDevTools({ mode: "right" });
   }
 
@@ -85,18 +263,41 @@ async function createWindow() {
     }
   }, 2000);
 
-  // Open external links (http/https) in user's default browser
+  // External websites open in user's default browser only; internal navigation remains in Electron window
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith("http:") || url.startsWith("https:")) {
+    const currentUrl = mainWindow ? mainWindow.webContents.getURL() : "";
+    if (isInternalUrl(url, currentUrl)) {
+      mainWindow.loadURL(url);
+      return { action: "deny" };
+    }
+    if (url.startsWith("http:") || url.startsWith("https:") || url.startsWith("mailto:")) {
       shell.openExternal(url);
       return { action: "deny" };
     }
     return { action: "allow" };
   });
 
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    const currentUrl = mainWindow ? mainWindow.webContents.getURL() : "";
+    if (!isInternalUrl(url, currentUrl)) {
+      event.preventDefault();
+      shell.openExternal(url);
+    }
+  });
+
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
+}
+
+function cleanupProcesses() {
+  if (serverProcess) {
+    console.log("[Electron] Stopping local production server process...");
+    try {
+      serverProcess.kill();
+    } catch {}
+    serverProcess = null;
+  }
 }
 
 // IPC Handlers
@@ -117,7 +318,7 @@ ipcMain.handle("send-native-notification", (event, { title, body }) => {
           notifOptions.icon = nImg;
         }
       } catch (iconErr) {
-        // Fallback without explicit icon (uses app bundle icon)
+        // Fallback without explicit icon
       }
 
       const notif = new Notification(notifOptions);
@@ -245,7 +446,11 @@ app.whenReady().then(() => {
   });
 });
 
+app.on("before-quit", cleanupProcesses);
+app.on("will-quit", cleanupProcesses);
+
 app.on("window-all-closed", () => {
+  cleanupProcesses();
   if (process.platform !== "darwin") {
     app.quit();
   }
