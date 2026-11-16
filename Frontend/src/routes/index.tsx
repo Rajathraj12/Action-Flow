@@ -962,9 +962,17 @@ function ChatApp() {
     });
 
     try {
-      const res = activeWorkspace?.id
-        ? await api.sendWorkspaceMessage(activeWorkspace.id, activeId, text)
-        : await api.sendMessage(activeId, text);
+      let res: { message: BackendMessage };
+      if (activeWorkspace?.id) {
+        try {
+          res = await api.sendWorkspaceMessage(activeWorkspace.id, activeId, text);
+        } catch (wsErr: any) {
+          console.warn("[ChatApp] Workspace send failed, attempting direct send fallback:", wsErr);
+          res = await api.sendMessage(activeId, text);
+        }
+      } else {
+        res = await api.sendMessage(activeId, text);
+      }
       const newMsg = res.message;
 
       setMessages((prev) => {
@@ -992,8 +1000,11 @@ function ChatApp() {
       });
     } catch (err: any) {
       console.error("[ChatApp] Failed to send message:", err);
+      // Restore draft so user does not lose input
+      setDraft(text);
       setMessages((prev) => prev.filter((m) => m.id !== localKey && m.localKey !== localKey));
       setNetworkError(err.message || "Failed to deliver message. Check backend connection.");
+      toast.error(err.message || "Failed to deliver message");
     }
   }
 

@@ -32,20 +32,35 @@ router.post("/:id/messages", requireAuth, async (req: AuthenticatedRequest, res:
     }
 
     // Security: Enforce conversation membership on every message write
-    const senderMembership = await ConversationMembership.findOne({
+    let senderMembership = await ConversationMembership.findOne({
       conversationId,
       userId: currentUserId,
     });
 
-    if (!senderMembership) {
-      res.status(403).json({ error: "Access denied. You are not a member of this conversation." });
-      return;
-    }
-
-    // Find conversation to get recipient
+    // Find conversation to verify existence and participants
     const conversation = await Conversation.findById(conversationId);
     if (!conversation) {
       res.status(404).json({ error: "Conversation not found" });
+      return;
+    }
+
+    if (!senderMembership) {
+      const isParticipant = conversation.participants?.some(
+        (p) => p.toString() === currentUserId?.toString()
+      );
+      if (isParticipant) {
+        senderMembership = await ConversationMembership.create({
+          conversationId,
+          userId: currentUserId,
+          role: "MEMBER",
+          status: "ACTIVE",
+          unreadCount: 0,
+        });
+      }
+    }
+
+    if (!senderMembership || senderMembership.status !== "ACTIVE") {
+      res.status(403).json({ error: "Access denied. You are not a member of this conversation." });
       return;
     }
 

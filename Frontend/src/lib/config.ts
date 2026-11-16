@@ -3,18 +3,39 @@ const PRODUCTION_FALLBACK_BACKEND = "https://action-flow-802k.onrender.com";
 
 export function getBackendUrl(): string {
   if (typeof window !== "undefined") {
-    // If accessing from another device via Wi-Fi IP or external hostname (e.g. 172.21.1.104),
-    // automatically point API & WebSocket requests to that same host on port 5000.
-    if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
+    // Check if accessing from a local network IP (e.g. 192.168.x.x, 10.x.x.x, 172.16-31.x.x) or .local
+    const isLocalIp =
+      /^(?:192\.168\.|10\.|172\.(?:1[6-9]|2\d|3[01])\.|127\.0\.0\.1)/.test(hostname) ||
+      hostname.endsWith(".local");
+
+    // Local Wi-Fi device access to developer machine
+    if (isLocalIp && !isLocalhost) {
       if (!ENV_BACKEND || ENV_BACKEND.includes("localhost") || ENV_BACKEND.includes("127.0.0.1")) {
-        return `${window.location.protocol}//${window.location.hostname}:5000`;
+        return `${window.location.protocol}//${hostname}:5000`;
       }
     }
+
+    // If running on a public production cloud domain (e.g. *.vercel.app, *.onrender.com, custom domains)
+    const isPublicWeb = !isLocalhost && !isLocalIp;
+    if (isPublicWeb) {
+      if (
+        ENV_BACKEND &&
+        !ENV_BACKEND.includes("localhost") &&
+        !ENV_BACKEND.includes("127.0.0.1") &&
+        !ENV_BACKEND.includes("your-backend-app")
+      ) {
+        return ENV_BACKEND;
+      }
+      return PRODUCTION_FALLBACK_BACKEND;
+    }
   }
-  if (!ENV_BACKEND || ENV_BACKEND.includes("your-backend-app")) {
-    return PRODUCTION_FALLBACK_BACKEND;
+
+  if (ENV_BACKEND && !ENV_BACKEND.includes("your-backend-app")) {
+    return ENV_BACKEND;
   }
-  return ENV_BACKEND;
+  return PRODUCTION_FALLBACK_BACKEND;
 }
 
 export const BACKEND_URL = getBackendUrl();

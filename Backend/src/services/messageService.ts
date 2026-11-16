@@ -70,11 +70,23 @@ export async function sendMessageService(params: SendMessageParams): Promise<For
   }
 
   // 3. Verify conversation exists, belongs to this workspace, and sender is a participant
-  const conversation = await Conversation.findOne({
+  let conversation = await Conversation.findOne({
     _id: conversationId,
     workspaceId,
     participants: senderId,
   });
+
+  if (!conversation) {
+    // Graceful fallback: check if conversation exists with sender as participant (backfill workspaceId if missing)
+    conversation = await Conversation.findOne({
+      _id: conversationId,
+      participants: senderId,
+    });
+    if (conversation && !conversation.workspaceId) {
+      conversation.workspaceId = workspaceId;
+      await conversation.save();
+    }
+  }
 
   if (!conversation) {
     throw new Error("Conversation not found or access denied in this workspace");
