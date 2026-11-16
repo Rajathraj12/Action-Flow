@@ -187,6 +187,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await signOut(auth);
       }
       localStorage.removeItem(DEV_STORAGE_KEY);
+      localStorage.removeItem("actionflow_cached_conversations");
+      localStorage.removeItem("actionflow_active_conv_id");
+      localStorage.removeItem("actionflow_cached_workspaces");
+      localStorage.removeItem("actionflow_cached_active_workspace");
+      localStorage.removeItem("actionflow_active_workspace");
+      try {
+        sessionStorage.clear();
+      } catch {}
       setUser(null);
       setFirebaseUser(null);
       setToken(null);

@@ -159,42 +159,19 @@ function formatDisplayTime(dateString?: string): string {
 }
 
 function ChatApp() {
-  const { user, token } = useAuth();
+  const { user, token, isLoading: authLoading } = useAuth();
   const { activeWorkspace } = useWorkspace();
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const [conversations, setConversations] = useState<BackendConversation[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem("actionflow_cached_conversations");
-        if (cached) return JSON.parse(cached);
-      } catch {}
-    }
-    return [];
-  });
-  const conversationsRef = useRef<BackendConversation[]>(conversations);
+
+  // Clean initialization prevents flashing stale chats from prior sessions or different users
+  const [conversations, setConversations] = useState<BackendConversation[]>([]);
+  const conversationsRef = useRef<BackendConversation[]>([]);
   conversationsRef.current = conversations;
-  const [activeId, setActiveId] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        return localStorage.getItem("actionflow_active_conv_id");
-      } catch {}
-    }
-    return null;
-  });
-  const [messages, setMessages] = useState<BackendMessage[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const initialActiveId = localStorage.getItem("actionflow_active_conv_id");
-        if (initialActiveId) {
-          const cachedMsgs = sessionStorage.getItem(`actionflow_cached_msgs_${initialActiveId}`);
-          if (cachedMsgs) return JSON.parse(cachedMsgs);
-        }
-      } catch {}
-    }
-    return [];
-  });
-  const [loadingConversations, setLoadingConversations] = useState(false);
+
+  const [activeId, setActiveId] = useState<string | null>(search?.conversationId || null);
+  const [messages, setMessages] = useState<BackendMessage[]>([]);
+  const [loadingConversations, setLoadingConversations] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
   const [query, setQuery] = useState("");
@@ -239,6 +216,12 @@ function ChatApp() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
+      // Clean up legacy stale cache keys from previous versions
+      try {
+        localStorage.removeItem("actionflow_cached_conversations");
+        localStorage.removeItem("actionflow_active_conv_id");
+      } catch {}
+
       const status = getNotificationPermissionStatus();
       setNotifyPermission(status);
       if (!isDesktopApp() && "Notification" in window && Notification.permission !== "granted") {
@@ -338,8 +321,12 @@ function ChatApp() {
 
   // 1. Load Conversations from MongoDB (Workspace Scoped)
   const loadConversations = async (selectConvId?: string) => {
-    if (!token) return;
+    if (!token) {
+      setLoadingConversations(false);
+      return;
+    }
     try {
+      setLoadingConversations(true);
       setNetworkError(null);
       let convs: BackendConversation[] = [];
       if (activeWorkspace?.id) {
@@ -368,12 +355,11 @@ function ChatApp() {
       }
 
       setConversations(dedupedConvs);
-      try {
-        localStorage.setItem("actionflow_cached_conversations", JSON.stringify(dedupedConvs));
-      } catch {}
 
       if (dedupedConvs.length > 0) {
-        const savedActiveId = typeof window !== "undefined" ? localStorage.getItem("actionflow_active_conv_id") : null;
+        const savedActiveId = typeof window !== "undefined" && activeWorkspace?.id
+          ? sessionStorage.getItem(`actionflow_active_conv_${activeWorkspace.id}`)
+          : null;
         if (selectConvId && dedupedConvs.some((c) => c.id === selectConvId)) {
           setActiveId(selectConvId);
         } else if (savedActiveId && dedupedConvs.some((c) => c.id === savedActiveId)) {
@@ -396,8 +382,10 @@ function ChatApp() {
   useEffect(() => {
     if (token) {
       loadConversations(search?.conversationId);
+    } else if (!authLoading) {
+      setLoadingConversations(false);
     }
-  }, [token, user?._id, activeWorkspace?.id, search?.conversationId]);
+  }, [token, authLoading, user?._id, activeWorkspace?.id, search?.conversationId]);
 
   // 2. Real-Time Socket.IO Setup with WhatsApp Edit, Delete, Read & Delivered Events
   useEffect(() => {
@@ -731,9 +719,6 @@ function ChatApp() {
     fetchPromise
       .then((res) => {
         setMessages(res.messages);
-        try {
-          sessionStorage.setItem(`actionflow_cached_msgs_${activeId}`, JSON.stringify(res.messages));
-        } catch {}
         setNetworkError(null);
         setConversations((prev) =>
           prev.map((c) => (c.id === activeId ? { ...c, unread: 0 } : c))
@@ -849,9 +834,11 @@ function ChatApp() {
 
   function openThread(id: string) {
     setActiveId(id);
-    try {
-      localStorage.setItem("actionflow_active_conv_id", id);
-    } catch {}
+    if (typeof window !== "undefined" && activeWorkspace?.id) {
+      try {
+        sessionStorage.setItem(`actionflow_active_conv_${activeWorkspace.id}`, id);
+      } catch {}
+    }
     setMobileOpen(true);
     setConversations((prev) =>
       prev.map((t) => (t.id === id ? { ...t, unread: 0 } : t))
@@ -2045,6 +2032,17 @@ function ChatApp() {
               </div>
             </footer>
           </>
+        ) : loadingConversations ? (
+          <div className="flex h-full flex-col items-center justify-center p-6 text-center mesh-ambient">
+            <div className="flex flex-col items-center gap-3">
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 grid place-items-center text-primary animate-pulse">
+                <MessageSquare className="h-6 w-6" />
+              </div>
+              <p className="text-xs text-muted-foreground font-medium animate-pulse">
+                Loading conversations...
+              </p>
+            </div>
+          </div>
         ) : (
           /* Empty State: Modern Command Center Showcase */
           <div className="flex h-full flex-col items-center justify-center p-6 text-center mesh-ambient overflow-y-auto">
