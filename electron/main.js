@@ -210,10 +210,22 @@ async function createWindow() {
   let initialUrl = CLOUD_APP_URL;
 
   if (isDev) {
-    // Development Mode: Connect to existing ActionFlow frontend (Vite dev server)
-    const devUrl = (process.env.ELECTRON_START_URL || "http://localhost:8080") + "?desktop=true";
-    initialUrl = devUrl;
-    console.log("[Electron] Running in Development Mode, loading:", devUrl);
+    // Development Mode: Connect to local dev server if running, otherwise use cloud app URL
+    if (process.env.ELECTRON_START_URL) {
+      initialUrl =
+        process.env.ELECTRON_START_URL +
+        (process.env.ELECTRON_START_URL.includes("?") ? "&" : "?") +
+        "desktop=true";
+    } else {
+      const devPortReady = await waitForServerReady(8080, 5);
+      if (devPortReady) {
+        initialUrl = "http://localhost:8080?desktop=true";
+        console.log("[Electron] Running in Development Mode, connected to local dev server on http://localhost:8080");
+      } else {
+        console.log("[Electron] Local dev server on 8080 not active; loading production cloud URL:", CLOUD_APP_URL);
+        initialUrl = CLOUD_APP_URL;
+      }
+    }
   } else {
     // Production Mode: Load packaged frontend files inside BrowserWindow
     console.log("[Electron] Running in Production Mode, attempting local server initialization...");

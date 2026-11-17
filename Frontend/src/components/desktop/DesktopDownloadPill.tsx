@@ -10,7 +10,7 @@ interface PlatformInfo {
   pathKey: string;
 }
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "https://action-flow-802k.onrender.com";
 
 const PLATFORMS: Record<"windows" | "mac", PlatformInfo> = {
   windows: {
