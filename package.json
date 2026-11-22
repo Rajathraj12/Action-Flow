@@ -26,11 +26,13 @@
     "afterPack": "electron/afterPack.js",
     "asar": true,
     "asarUnpack": [
-      "Frontend/.output/**/*"
+      "Frontend/.output/**/*",
+      "!Frontend/.output/public/downloads/**/*"
     ],
     "files": [
       "electron/**/*",
       "Frontend/.output/**/*",
+      "!Frontend/.output/public/downloads/**/*",
       "node_modules/tslib/**/*"
     ],
     "mac": {
@@ -68,8 +70,7 @@
           ]
         }
       ],
-      "icon": "electron/assets/icon.png",
-      "signAndEditExecutable": false
+      "icon": "electron/assets/icon.ico"
     },
     "linux": {
       "target": [

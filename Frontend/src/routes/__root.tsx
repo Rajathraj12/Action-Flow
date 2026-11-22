@@ -130,6 +130,60 @@ import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { WorkspaceProvider, useWorkspace } from "@/context/WorkspaceContext";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { initSocketClient, joinWorkspaceRoom } from "@/lib/socket";
+import { notifyDesktop } from "@/lib/notifications";
+
+function GlobalNotificationManager() {
+  const { user, token } = useAuth();
+  const { activeWorkspace } = useWorkspace();
+
+  useEffect(() => {
+    if (!token || !user) return;
+    const socket = initSocketClient(token);
+    if (!socket) return;
+
+    if (activeWorkspace?.id) {
+      joinWorkspaceRoom(activeWorkspace.id);
+    }
+
+    const handleIncomingMessage = (newMsg: any) => {
+      const isMe =
+        (user?._id && String(newMsg.senderId) === String(user._id)) ||
+        (user?.firebaseUid && String(newMsg.senderId) === String(user.firebaseUid)) ||
+        (user?._id && newMsg.sender?.id && String(newMsg.sender.id) === String(user._id));
+
+      if (!isMe) {
+        // If window is blurred, minimized, or user is viewing another page/chat
+        const isCurrentActiveAndFocused =
+          typeof document !== "undefined" &&
+          document.hasFocus() &&
+          document.visibilityState === "visible" &&
+          window.location.pathname === "/" &&
+          (window.location.search.includes(`conversationId=${newMsg.conversationId}`) ||
+            window.location.search.includes(`conv=${newMsg.conversationId}`));
+
+        if (!isCurrentActiveAndFocused) {
+          const senderName = newMsg.senderName || "New message";
+          notifyDesktop({
+            title: senderName,
+            body: newMsg.text || "Sent a message",
+            conversationId: newMsg.conversationId,
+          });
+        }
+      }
+    };
+
+    socket.on("message:new", handleIncomingMessage);
+    socket.on("message_received", handleIncomingMessage);
+
+    return () => {
+      socket.off("message:new", handleIncomingMessage);
+      socket.off("message_received", handleIncomingMessage);
+    };
+  }, [token, user?._id, activeWorkspace?.id]);
+
+  return null;
+}
 
 function RootContent() {
   const { user, isLoading } = useAuth();
@@ -148,6 +202,7 @@ function RootContent() {
 
   return (
     <div className="flex flex-col h-screen w-full overflow-hidden bg-background font-sans text-foreground">
+      {user && <GlobalNotificationManager />}
       {/* macOS Desktop Window Titlebar & Drag Strip */}
       {isMacDesktop && (
         <header

@@ -27,9 +27,9 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { getSocket } from "@/lib/socket";
+import { getSocket, initSocketClient } from "@/lib/socket";
 import { cn } from "@/lib/utils";
-import { notifyDesktop } from "@/lib/notifications";
+import { notifyDesktop, updateDesktopBadge } from "@/lib/notifications";
 
 function formatRelativeTime(dateString: string): string {
   try {
@@ -143,9 +143,15 @@ export function NotificationCenter({ isSidebarExpanded = false }: { isSidebarExp
     }
   }, [isOpen, fetchNotifications, fetchActivities, activeWorkspace?.id]);
 
+  // Sync OS Taskbar/Dock unread counter badge
+  useEffect(() => {
+    updateDesktopBadge(unreadCount);
+  }, [unreadCount]);
+
   // Real-time Socket.IO delivery
   useEffect(() => {
-    const socket = getSocket();
+    if (!token) return;
+    const socket = getSocket() || initSocketClient(token);
     if (!socket) return;
 
     const handleNewNotification = (notification: BackendNotification) => {
@@ -202,7 +208,7 @@ export function NotificationCenter({ isSidebarExpanded = false }: { isSidebarExp
       socket.off("notification:read", handleReadNotification);
       socket.off("notification:read_all", handleReadAllNotifications);
     };
-  }, []);
+  }, [token, activeWorkspace?.id]);
 
   // Close panel on click outside
   useEffect(() => {

@@ -508,20 +508,28 @@ function ChatApp() {
         (user?._id && newMsg.sender?.id && String(newMsg.sender.id) === String(user._id));
 
       if (!isMe) {
-        const currentConv = conversationsRef.current.find(
-          (c) => c.id === newMsg.conversationId
-        );
-        const senderName = newMsg.senderName || "New message";
-        const title = currentConv?.isGroup
-          ? `${senderName} (${currentConv.name || "Group"})`
-          : senderName;
-        const body = newMsg.text || "Sent a message";
+        const isCurrentActiveAndFocused =
+          newMsg.conversationId === activeId &&
+          typeof document !== "undefined" &&
+          document.hasFocus() &&
+          document.visibilityState === "visible";
 
-        notifyDesktop({
-          title,
-          body,
-          conversationId: newMsg.conversationId,
-        });
+        if (!isCurrentActiveAndFocused) {
+          const currentConv = conversationsRef.current.find(
+            (c) => c.id === newMsg.conversationId
+          );
+          const senderName = newMsg.senderName || "New message";
+          const title = currentConv?.isGroup
+            ? `${senderName} (${currentConv.name || "Group"})`
+            : senderName;
+          const body = newMsg.text || "Sent a message";
+
+          notifyDesktop({
+            title,
+            body,
+            conversationId: newMsg.conversationId,
+          });
+        }
       }
     };
 

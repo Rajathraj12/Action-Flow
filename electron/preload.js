@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("set-badge-count", count),
   getVersion: () =>
     ipcRenderer.invoke("get-app-version"),
+  flashFrame: (flag) =>
+    ipcRenderer.invoke("flash-frame", flag),
 });
 
 window.addEventListener("DOMContentLoaded", () => {

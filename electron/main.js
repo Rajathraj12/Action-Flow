@@ -10,6 +10,45 @@ if (process.platform === "win32") {
   app.setAppUserModelId("com.actionflow.desktop");
 }
 
+function ensureWindowsShortcut() {
+  if (process.platform !== "win32") return;
+  try {
+    const startMenuDir = path.join(
+      app.getPath("appData"),
+      "Microsoft",
+      "Windows",
+      "Start Menu",
+      "Programs"
+    );
+    const shortcutPath = path.join(startMenuDir, "ActionFlow.lnk");
+    const iconIcoPath = path.join(__dirname, "assets", "icon.ico");
+    const targetIcon = fs.existsSync(iconIcoPath) ? iconIcoPath : process.execPath;
+
+    const shortcutDetails = {
+      target: process.execPath,
+      args: "",
+      appUserModelId: "com.actionflow.desktop",
+      description: "ActionFlow Real-Time Messenger",
+      icon: targetIcon,
+      iconIndex: 0,
+    };
+
+    // Use "replace" if shortcut exists so it always points to the current executable with the proper AppUserModelId
+    const operation = fs.existsSync(shortcutPath) ? "replace" : "create";
+    const success = shell.writeShortcutLink(shortcutPath, operation, shortcutDetails);
+    console.log(`[Electron] Start Menu shortcut ${operation}d (success: ${success}):`, shortcutPath);
+
+    // Also update any subfolder shortcut if installed inside Start Menu\Programs\ActionFlow\
+    const subDir = path.join(startMenuDir, "ActionFlow");
+    if (fs.existsSync(subDir)) {
+      const subShortcut = path.join(subDir, "ActionFlow.lnk");
+      shell.writeShortcutLink(subShortcut, fs.existsSync(subShortcut) ? "replace" : "create", shortcutDetails);
+    }
+  } catch (err) {
+    console.warn("[Electron] Could not ensure Start Menu shortcut:", err);
+  }
+}
+
 let mainWindow = null;
 let serverProcess = null;
 
@@ -182,12 +221,19 @@ function isInternalUrl(targetUrl, currentUrl) {
 }
 
 async function createWindow() {
+  const windowIconPath = path.join(
+    __dirname,
+    "assets",
+    process.platform === "win32" ? "icon.ico" : "icon.png"
+  );
+
   mainWindow = new BrowserWindow({
     width: 1320,
     height: 840,
     minWidth: 980,
     minHeight: 640,
     title: "ActionFlow",
+    icon: fs.existsSync(windowIconPath) ? windowIconPath : path.join(__dirname, "assets/icon.png"),
     titleBarStyle: process.platform === "darwin" ? "hidden" : "default",
     trafficLightPosition: process.platform === "darwin" ? { x: 16, y: 11 } : undefined,
     show: false,
@@ -297,6 +343,10 @@ async function createWindow() {
     }
   });
 
+  mainWindow.on("focus", () => {
+    mainWindow.flashFrame(false);
+  });
+
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
@@ -316,6 +366,12 @@ function cleanupProcesses() {
 ipcMain.handle("send-native-notification", (event, { title, body }) => {
   try {
     console.log("[Electron Main] Received send-native-notification request:", { title, body });
+
+    // Flash taskbar button if window is in background or minimized
+    if (mainWindow && (!mainWindow.isFocused() || mainWindow.isMinimized())) {
+      mainWindow.flashFrame(true);
+    }
+
     if (Notification.isSupported()) {
       const notifOptions = {
         title: title || "ActionFlow",
@@ -323,14 +379,22 @@ ipcMain.handle("send-native-notification", (event, { title, body }) => {
         silent: false,
       };
 
-      try {
-        const iconPath = path.join(__dirname, "assets/icon.png");
-        const nImg = nativeImage.createFromPath(iconPath);
-        if (!nImg.isEmpty()) {
-          notifOptions.icon = nImg;
+      const notifIcon = path.join(__dirname, "assets", "notification-icon.png");
+      const defaultIcon = path.join(__dirname, "assets", "icon.png");
+      const chosenIcon = fs.existsSync(notifIcon) ? notifIcon : defaultIcon;
+
+      if (fs.existsSync(chosenIcon)) {
+        if (process.platform === "win32") {
+          // On Windows, pass direct file path string so Windows Toast XML parses it directly
+          notifOptions.icon = chosenIcon;
+        } else {
+          try {
+            const nImg = nativeImage.createFromPath(chosenIcon);
+            if (!nImg.isEmpty()) notifOptions.icon = nImg;
+          } catch {
+            notifOptions.icon = chosenIcon;
+          }
         }
-      } catch (iconErr) {
-        // Fallback without explicit icon
       }
 
       const notif = new Notification(notifOptions);
@@ -339,7 +403,11 @@ ipcMain.handle("send-native-notification", (event, { title, body }) => {
           if (mainWindow.isMinimized()) mainWindow.restore();
           mainWindow.show();
           mainWindow.focus();
+          mainWindow.flashFrame(false);
         }
+      });
+      notif.on("failed", (ev, error) => {
+        console.error("[Electron Main] Windows notification display failed:", error);
       });
       notif.show();
 
@@ -347,9 +415,19 @@ ipcMain.handle("send-native-notification", (event, { title, body }) => {
         app.dock.bounce("informational");
       }
       return true;
+    } else {
+      console.warn("[Electron Main] Notification.isSupported() returned false");
     }
   } catch (err) {
     console.error("[Electron Main] Error showing notification:", err);
+  }
+  return false;
+});
+
+ipcMain.handle("flash-frame", (event, flag) => {
+  if (mainWindow) {
+    mainWindow.flashFrame(Boolean(flag));
+    return true;
   }
   return false;
 });
@@ -439,6 +517,7 @@ function setupMenu() {
 }
 
 app.whenReady().then(() => {
+  ensureWindowsShortcut();
   if (session && session.defaultSession) {
     session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
       if (permission === "notifications") {
@@ -446,6 +525,12 @@ app.whenReady().then(() => {
       } else {
         callback(false);
       }
+    });
+    session.defaultSession.setPermissionCheckHandler((webContents, permission) => {
+      if (permission === "notifications") {
+        return true;
+      }
+      return false;
     });
   }
   setupMenu();

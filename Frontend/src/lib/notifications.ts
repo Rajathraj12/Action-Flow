@@ -164,8 +164,20 @@ export function getNotificationPermissionStatus(): NotificationPermission | "uns
   return Notification.permission;
 }
 
+let lastNotificationKey = "";
+let lastNotificationTime = 0;
+
 export async function notifyDesktop({ title, body, conversationId }: NotifyOptions) {
   if (typeof window === "undefined") return;
+
+  // Deduplicate identical alerts within 1.5 seconds across global and local listeners
+  const notifKey = `${title}:::${body}`;
+  const now = Date.now();
+  if (notifKey === lastNotificationKey && now - lastNotificationTime < 1500) {
+    return;
+  }
+  lastNotificationKey = notifKey;
+  lastNotificationTime = now;
 
   // 1. Play alert chime
   playNotificationChime();
@@ -173,19 +185,29 @@ export async function notifyDesktop({ title, body, conversationId }: NotifyOptio
   // 2. Flash tab title when outside the tab
   flashDocumentTitle(title);
 
-  // 3. Native Electron OS Notification (macOS Notification Center / Windows Action Center)
+  // 3. Flash taskbar button in Electron when in background
+  if ((window as any).electronAPI?.flashFrame) {
+    try {
+      (window as any).electronAPI.flashFrame(true).catch(() => {});
+    } catch {}
+  }
+
+  // 4. Native Electron OS Notification (macOS Notification Center / Windows Action Center)
+  let nativeDispatched = false;
   if ((window as any).electronAPI?.sendNotification) {
     try {
-      (window as any).electronAPI.sendNotification(title, body).catch(() => {});
-      return;
+      const res = await (window as any).electronAPI.sendNotification(title, body);
+      nativeDispatched = Boolean(res);
     } catch (err) {
       console.warn("[ActionFlow Desktop] Native notification error:", err);
     }
   }
 
-  // 4. Web Notification API (Windows Action Center via Browser)
+  if (nativeDispatched) return;
+
+  // 5. Web Notification API (Windows Action Center via Browser or HTML5 fallback)
   if ("Notification" in window && Notification.permission === "granted") {
-    const iconUrl = new URL("/icon.png", window.location.origin).href;
+    const iconUrl = new URL("/notification-icon.png", window.location.origin).href;
 
     // Strategy A: ServiceWorker showNotification (Recommended by Chrome for Windows Action Center)
     try {
