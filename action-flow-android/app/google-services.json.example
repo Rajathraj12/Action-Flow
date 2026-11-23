@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "828584620626",
+    "project_id": "capstone-actionflow",
+    "storage_bucket": "capstone-actionflow.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:828584620626:android:f55d89baf6324d5877658b",
+        "android_client_info": {
+          "package_name": "com.actionflow"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "YOUR_FIREBASE_API_KEY_HERE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
